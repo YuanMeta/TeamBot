@@ -1,6 +1,6 @@
 import SuperJSON from 'superjson'
 import { createTRPCClient, httpBatchLink, loggerLink } from '@trpc/client'
-import type { AppRouter } from '~/.server/trpc/trpc'
+import type { AppRouter } from '~/.server/trpc/router'
 export const trpc = createTRPCClient<AppRouter>({
   links: [
     httpBatchLink({

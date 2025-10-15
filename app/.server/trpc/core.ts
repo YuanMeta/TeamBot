@@ -1,8 +1,7 @@
 import { initTRPC, TRPCError } from '@trpc/server'
-import { prisma } from '~/.server/lib/prisma'
+import { prisma } from '../lib/prisma'
 import { ZodError } from 'zod'
 import superjson from 'superjson'
-import { appRouter } from './trpc'
 import type { LoaderFunctionArgs } from 'react-router'
 
 export async function createTRPCContext(opts: { headers: Headers }) {
@@ -38,7 +37,3 @@ export const procedure = t.procedure.use(({ ctx, next }) => {
     }
   })
 })
-
-const createCaller = createCallerFactory(appRouter)
-export const caller = async (loaderArgs: LoaderFunctionArgs) =>
-  createCaller(await createTRPCContext({ headers: loaderArgs.request.headers }))

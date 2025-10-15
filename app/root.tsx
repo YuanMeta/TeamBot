@@ -4,11 +4,22 @@ import {
   Meta,
   Outlet,
   Scripts,
-  ScrollRestoration
+  ScrollRestoration,
+  useLoaderData,
+  type LoaderFunctionArgs
 } from 'react-router'
 
 import type { Route } from './+types/root'
+import { themeSessionResolver } from './.server/session'
 import './app.css'
+import { PreventFlashOnWrongTheme, ThemeProvider, useTheme } from 'remix-themes'
+
+export async function loader({ request }: LoaderFunctionArgs) {
+  const { getTheme } = await themeSessionResolver(request)
+  return {
+    theme: getTheme()
+  }
+}
 
 export const links: Route.LinksFunction = () => [
   { rel: 'preconnect', href: 'https://fonts.googleapis.com' },
@@ -41,8 +52,38 @@ export function Layout({ children }: { children: React.ReactNode }) {
   )
 }
 
-export default function App() {
-  return <Outlet />
+export default function AppWithProviders() {
+  const data = useLoaderData()
+  return (
+    <ThemeProvider specifiedTheme={data.theme} themeAction='/set-theme'>
+      <App />
+    </ThemeProvider>
+  )
+}
+
+// Use the theme in your app.
+// If the theme is missing in session storage, PreventFlashOnWrongTheme will get
+// the browser theme before hydration and will prevent a flash in browser.
+// The client code runs conditionally, it won't be rendered if we have a theme in session storage.
+function App() {
+  const data = useLoaderData()
+  const [theme] = useTheme()
+  return (
+    <html lang='en' data-theme={theme ?? ''}>
+      <head>
+        <meta charSet='utf-8' />
+        <meta name='viewport' content='width=device-width,initial-scale=1' />
+        <Meta />
+        <PreventFlashOnWrongTheme ssrTheme={Boolean(data.theme)} />
+        <Links />
+      </head>
+      <body>
+        <Outlet />
+        <ScrollRestoration />
+        <Scripts />
+      </body>
+    </html>
+  )
 }
 
 export function ErrorBoundary({ error }: Route.ErrorBoundaryProps) {

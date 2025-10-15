@@ -2,7 +2,7 @@ import { fetchRequestHandler } from '@trpc/server/adapters/fetch'
 
 import type { ActionFunctionArgs, LoaderFunctionArgs } from 'react-router'
 import { createTRPCContext } from '~/.server/trpc/core'
-import { appRouter } from '~/.server/trpc/trpc'
+import { appRouter } from '~/.server/trpc/router'
 
 export const loader = async (args: LoaderFunctionArgs) => {
   return handleRequest(args)
