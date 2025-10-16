@@ -8,6 +8,7 @@ import {
   useLoaderData,
   type LoaderFunctionArgs
 } from 'react-router'
+import { observer } from 'mobx-react-lite'
 
 import type { Route } from './+types/root'
 import { themeSessionResolver } from './.server/session'
@@ -34,23 +35,23 @@ export const links: Route.LinksFunction = () => [
   }
 ]
 
-export function Layout({ children }: { children: React.ReactNode }) {
-  return (
-    <html lang='en'>
-      <head>
-        <meta charSet='utf-8' />
-        <meta name='viewport' content='width=device-width, initial-scale=1' />
-        <Meta />
-        <Links />
-      </head>
-      <body>
-        {children}
-        <ScrollRestoration />
-        <Scripts />
-      </body>
-    </html>
-  )
-}
+// export function Layout({ children }: { children: React.ReactNode }) {
+//   return (
+//     <html lang='en'>
+//       <head>
+//         <meta charSet='utf-8' />
+//         <meta name='viewport' content='width=device-width, initial-scale=1' />
+//         <Meta />
+//         <Links />
+//       </head>
+//       <body>
+//         {children}
+//         <ScrollRestoration />
+//         <Scripts />
+//       </body>
+//     </html>
+//   )
+// }
 
 export default function AppWithProviders() {
   const data = useLoaderData()
@@ -61,15 +62,11 @@ export default function AppWithProviders() {
   )
 }
 
-// Use the theme in your app.
-// If the theme is missing in session storage, PreventFlashOnWrongTheme will get
-// the browser theme before hydration and will prevent a flash in browser.
-// The client code runs conditionally, it won't be rendered if we have a theme in session storage.
-function App() {
+const App = observer(() => {
   const data = useLoaderData()
   const [theme] = useTheme()
   return (
-    <html lang='en' data-theme={theme ?? ''}>
+    <html lang='en' className={theme ?? ''}>
       <head>
         <meta charSet='utf-8' />
         <meta name='viewport' content='width=device-width,initial-scale=1' />
@@ -84,7 +81,7 @@ function App() {
       </body>
     </html>
   )
-}
+})
 
 export function ErrorBoundary({ error }: Route.ErrorBoundaryProps) {
   let message = 'Oops!'

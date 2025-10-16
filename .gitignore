@@ -9,3 +9,5 @@
 /generated/prisma
 dev.db
 test-client.ts
+*.db-wal
+*.db-shm

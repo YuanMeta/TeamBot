@@ -6,4 +6,7 @@ const globalForPrisma = globalThis as unknown as {
 
 export const prisma = globalForPrisma.prisma ?? new PrismaClient()
 
+prisma.$queryRaw`PRAGMA journal_mode = WAL;`.catch((err) => {
+  console.log('wal mode err', err)
+})
 if (process.env.NODE_ENV !== 'production') globalForPrisma.prisma = prisma

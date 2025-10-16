@@ -12,7 +12,14 @@ export const userRouter = {
         id: ctx.user?.id
       }
     })
-
+    await ctx.db.chat.findMany({
+      where: {
+        memory: {
+          path: '$.name',
+          equals: '123'
+        }
+      }
+    })
     return user
   })
 } satisfies TRPCRouterRecord
