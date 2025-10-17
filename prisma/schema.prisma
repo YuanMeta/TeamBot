@@ -51,10 +51,11 @@ model Provider {
   mode      String
   apiKey    String?
   baseUrl   String?
-  models    Json     @default("[]")
-  options   Json     @default("{}")
+  models    Json
+  options   Json?
   createdAt DateTime @default(now())
   updatedAt DateTime @updatedAt
+  chats     Chat[]
 
   @@map("providers")
 }
@@ -69,8 +70,11 @@ model Chat {
   userId       String
   user         User      @relation(fields: [userId], references: [id], onDelete: Cascade)
   messages     Message[]
+  providerId   String?
+  provider     Provider? @relation(fields: [providerId], references: [id])
 
   @@index([userId])
+  @@index([providerId])
   @@map("chats")
 }
 

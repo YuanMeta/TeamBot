@@ -4,10 +4,10 @@ import {
   createTRPCContext,
   createTRPCRouter
 } from './core'
-import { userRouter } from './user'
+import { manageRouter } from './manage'
 
 export const appRouter = createTRPCRouter({
-  user: userRouter
+  manage: manageRouter
 })
 
 export type AppRouter = typeof appRouter

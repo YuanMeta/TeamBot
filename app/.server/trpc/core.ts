@@ -2,7 +2,6 @@ import { initTRPC, TRPCError } from '@trpc/server'
 import { prisma } from '../lib/prisma'
 import { ZodError } from 'zod'
 import superjson from 'superjson'
-import type { LoaderFunctionArgs } from 'react-router'
 
 export async function createTRPCContext(opts: { headers: Headers }) {
   return {
@@ -28,9 +27,9 @@ export const createTRPCRouter = t.router
 export const publicProcedure = t.procedure
 
 export const procedure = t.procedure.use(({ ctx, next }) => {
-  if (!ctx.user?.id) {
-    throw new TRPCError({ code: 'UNAUTHORIZED' })
-  }
+  // if (!ctx.user?.id) {
+  //   throw new TRPCError({ code: 'UNAUTHORIZED' })
+  // }
   return next({
     ctx: {
       user: ctx.user

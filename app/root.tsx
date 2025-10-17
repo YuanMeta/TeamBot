@@ -14,6 +14,7 @@ import type { Route } from './+types/root'
 import { themeSessionResolver } from './.server/session'
 import './app.css'
 import { PreventFlashOnWrongTheme, ThemeProvider, useTheme } from 'remix-themes'
+import { Toaster } from '~/components/ui/sonner'
 
 export async function loader({ request }: LoaderFunctionArgs) {
   const { getTheme } = await themeSessionResolver(request)
@@ -78,6 +79,7 @@ const App = observer(() => {
         <Outlet />
         <ScrollRestoration />
         <Scripts />
+        <Toaster />
       </body>
     </html>
   )

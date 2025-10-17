@@ -5,12 +5,10 @@ import { createDeepSeek } from '@ai-sdk/deepseek'
 import {
   streamText,
   tool,
-  streamObject,
   type UIMessage,
   convertToModelMessages,
   stepCountIs
 } from 'ai'
-import { createGoogleGenerativeAI } from '@ai-sdk/google'
 import { z } from 'zod'
 
 const tools = {
@@ -77,7 +75,7 @@ export async function loader({ request }: Route.LoaderArgs) {
     }
   }
   return result.toUIMessageStreamResponse({
-    onFinish: ({
+    onFinish: async ({
       responseMessage,
       messages: uiMessages,
       isContinuation,

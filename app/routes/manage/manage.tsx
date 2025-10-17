@@ -63,7 +63,7 @@ export default observer(() => {
             <SidebarTrigger />
           </div>
         </div>
-        <div className={'overflow-y-auto h-max flex-1 p-4'}>
+        <div className={'overflow-y-auto h-0 flex-1 p-4'}>
           <Outlet />
         </div>
       </main>
