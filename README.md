@@ -1,87 +1,29 @@
-# Welcome to React Router!
+## TeamChat
 
-A modern, production-ready template for building full-stack React applications using React Router.
+一个团队多人使用的大模型对话程序（开发中）。
 
-[![Open in StackBlitz](https://developer.stackblitz.com/img/open_in_stackblitz.svg)](https://stackblitz.com/github/remix-run/react-router-templates/tree/main/default)
+## 特点
 
-## Features
+- 多平台接入
+  - Open Ai
+  - Anthropic
+  - Deepseek
+  - Qwen
+  - Gemini
+  - OpenRouter
 
-- 🚀 Server-side rendering
-- ⚡️ Hot Module Replacement (HMR)
-- 📦 Asset bundling and optimization
-- 🔄 Data loading and mutations
-- 🔒 TypeScript by default
-- 🎉 TailwindCSS for styling
-- 📖 [React Router docs](https://reactrouter.com/)
+- 支持多搜索引擎接入 （实时搜索增强大模型回答）
+  - Google
+  - Tavily
+  - Exa
+  - Bing
 
-## Getting Started
+- 由后台配置Api Key，成员仅需使用不在暴露Api Key。
+- 基于提供方、成员、时间维度进行Token统计。
+- 可添加知识库进行RAG对话。
+  - 基于上传文件搭建知识库。
+  - 基于在线文档站搭建知识库。
 
-### Installation
-
-Install the dependencies:
-
-```bash
-npm install
-```
-
-### Development
-
-Start the development server with HMR:
-
-```bash
-npm run dev
-```
-
-Your application will be available at `http://localhost:5173`.
-
-## Building for Production
-
-Create a production build:
-
-```bash
-npm run build
-```
-
-## Deployment
-
-### Docker Deployment
-
-To build and run using Docker:
-
-```bash
-docker build -t my-app .
-
-# Run the container
-docker run -p 3000:3000 my-app
-```
-
-The containerized application can be deployed to any platform that supports Docker, including:
-
-- AWS ECS
-- Google Cloud Run
-- Azure Container Apps
-- Digital Ocean App Platform
-- Fly.io
-- Railway
-
-### DIY Deployment
-
-If you're familiar with deploying Node applications, the built-in app server is production-ready.
-
-Make sure to deploy the output of `npm run build`
-
-```
-├── package.json
-├── package-lock.json (or pnpm-lock.yaml, or bun.lockb)
-├── build/
-│   ├── client/    # Static assets
-│   └── server/    # Server-side code
-```
-
-## Styling
-
-This template comes with [Tailwind CSS](https://tailwindcss.com/) already configured for a simple default starting experience. You can use whatever CSS framework you prefer.
-
----
-
-Built with ❤️ using React Router.
+- 可添加基于http的自定义tools调用。
+- 支持PWA（安装至桌面）和移动适配。
+- 支持基于OpenID Connect (OAuth2.0) 的SSO登录接入。
