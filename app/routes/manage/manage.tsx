@@ -13,7 +13,7 @@ import { observer } from 'mobx-react-lite'
 // Menu items.
 const items = [
   {
-    title: 'Assistant',
+    title: '助手',
     url: '/manage/assistant',
     icon: BotMessageSquare
   },
@@ -23,8 +23,8 @@ const items = [
     icon: Waypoints
   },
   {
-    title: 'User',
-    url: '/manage/user',
+    title: '成员',
+    url: '/manage/member',
     icon: Users
   },
   {

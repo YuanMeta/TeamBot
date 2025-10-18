@@ -15,6 +15,10 @@ export default [
     {
       path: 'sso',
       file: 'routes/manage/sso.tsx'
+    },
+    {
+      path: 'member',
+      file: 'routes/manage/member.tsx'
     }
   ]),
   route('*', 'routes/404.tsx')

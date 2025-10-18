@@ -8,14 +8,15 @@ datasource db {
 }
 
 model User {
-  id        String   @id @default(cuid())
-  email     String?  @unique
-  avatar    String?
-  name      String?
-  password  String?
-  createdAt DateTime @default(now())
-  updatedAt DateTime @updatedAt
-
+  id               String        @id @default(cuid())
+  email            String?       @unique
+  avatar           String?
+  name             String?
+  password         String?
+  role             String
+  createdAt        DateTime      @default(now())
+  updatedAt        DateTime      @updatedAt
+  deleted          Boolean       @default(false)
   messages         Message[]
   chats            Chat[]
   RelationPlatform RelationIdp[]
