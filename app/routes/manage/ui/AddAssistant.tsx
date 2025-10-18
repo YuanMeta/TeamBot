@@ -21,12 +21,12 @@ import { SelectFilter } from '~/components/ui/select-filter'
 import { isFormInValid } from '~/lib/utils'
 import { trpc } from '~/.client/trpc'
 import { useEffect } from 'react'
-import type { TrpcRequestError } from '~/types'
+import type { AssistantOptions, TrpcRequestError } from '~/types'
 import { toast } from 'sonner'
 import { useLocalState } from '~/hooks/localState'
 import { Spinner } from '~/components/ui/spinner'
 
-export const AddProvide = observer(
+export const AddAssistant = observer(
   (props: { open: boolean; onClose: () => void; id: string | null }) => {
     const [state, setState] = useLocalState({
       submitting: false
@@ -37,7 +37,8 @@ export const AddProvide = observer(
         mode: 'openai',
         models: [] as string[],
         apiKey: null as string | null,
-        baseUrl: null as string | null
+        baseUrl: null as string | null,
+        options: {} as AssistantOptions
       },
       onSubmit: async ({ value }) => {
         setState({ submitting: true })
@@ -53,15 +54,16 @@ export const AddProvide = observer(
             models: value.models,
             name: value.name,
             apiKey: value.apiKey || null,
-            baseUrl: value.baseUrl || null
+            baseUrl: value.baseUrl || null,
+            options: {}
           }
           if (props.id) {
-            await trpc.manage.updateProvider.mutate({
+            await trpc.manage.updateAssistant.mutate({
               id: props.id as string,
               ...data
             })
           } else {
-            await trpc.manage.createProvider.mutate(data)
+            await trpc.manage.createAssistant.mutate(data)
           }
         } catch (e) {
           const err = e as TrpcRequestError
@@ -77,14 +79,15 @@ export const AddProvide = observer(
     })
     useEffect(() => {
       if (props.id) {
-        trpc.manage.getProvider.query(props.id).then((res) => {
+        trpc.manage.getAssistant.query(props.id).then((res) => {
           if (res) {
             form.reset({
               mode: res.mode,
               name: res.name,
               models: res.models as string[],
               apiKey: res.apiKey,
-              baseUrl: res.baseUrl
+              baseUrl: res.baseUrl,
+              options: {}
             })
           }
         })
@@ -286,6 +289,37 @@ export const AddProvide = observer(
                       placeholder='Base URL'
                       autoComplete='off'
                     />
+                    {isInvalid && (
+                      <FieldError errors={field.state.meta.errors} />
+                    )}
+                  </Field>
+                )
+              }}
+            />
+            <form.Field
+              name='options.searchMode'
+              children={(field) => {
+                const isInvalid =
+                  field.state.meta.isTouched && !field.state.meta.isValid
+                return (
+                  <Field data-invalid={isInvalid}>
+                    <FieldLabel htmlFor={field.name}>网络搜索模式</FieldLabel>
+                    <Select
+                      value={field.state.value}
+                      onValueChange={(value) => {
+                        field.setValue(value as any)
+                      }}
+                    >
+                      <SelectTrigger className={'w-full'}>
+                        <SelectValue placeholder='选择搜索模式' />
+                      </SelectTrigger>
+                      <SelectContent>
+                        <SelectItem value='openrouter'>
+                          <ModelIcon mode='openrouter' size={20} />
+                          OpenRouter
+                        </SelectItem>
+                      </SelectContent>
+                    </Select>
                     {isInvalid && (
                       <FieldError errors={field.state.meta.errors} />
                     )}

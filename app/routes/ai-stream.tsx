@@ -7,7 +7,8 @@ import {
   tool,
   type UIMessage,
   convertToModelMessages,
-  stepCountIs
+  stepCountIs,
+  type ModelMessage
 } from 'ai'
 import { z } from 'zod'
 

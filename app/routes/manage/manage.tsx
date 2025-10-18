@@ -13,8 +13,8 @@ import { observer } from 'mobx-react-lite'
 // Menu items.
 const items = [
   {
-    title: 'Provider',
-    url: '/manage/provider',
+    title: 'Assistant',
+    url: '/manage/assistant',
     icon: BotMessageSquare
   },
   {

@@ -9,8 +9,8 @@ export default [
   route('manage', 'routes/manage/manage.tsx', [
     index('routes/manage/index.tsx'),
     {
-      path: 'provider',
-      file: 'routes/manage/provider.tsx'
+      path: 'assistant',
+      file: 'routes/manage/assistant.tsx'
     },
     {
       path: 'sso',

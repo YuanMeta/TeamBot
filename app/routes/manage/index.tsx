@@ -1,7 +1,7 @@
 import { redirect } from 'react-router'
 
 export async function loader() {
-  return redirect('/manage/provider')
+  return redirect('/manage/assistant')
 }
 
 export default function ManageIndex() {

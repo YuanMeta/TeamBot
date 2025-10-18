@@ -10,6 +10,7 @@ datasource db {
 model User {
   id        String   @id @default(cuid())
   email     String?  @unique
+  avatar    String?
   name      String?
   password  String?
   createdAt DateTime @default(now())
@@ -25,11 +26,12 @@ model User {
 model Idp {
   id               String        @id @default(cuid())
   name             String
+  params           Json
   createdAt        DateTime      @default(now())
   updatedAt        DateTime      @updatedAt
   RelationPlatform RelationIdp[]
 
-  @@map("platforms")
+  @@map("idp")
 }
 
 model RelationIdp {
@@ -42,52 +44,55 @@ model RelationIdp {
   idp       Idp      @relation(fields: [idpId], references: [id], onDelete: Cascade)
 
   @@index([userId, idpId])
-  @@map("relation_platforms")
+  @@map("relation_idps")
 }
 
-model Provider {
+model Assistant {
   id        String   @id @default(cuid())
   name      String
   mode      String
   apiKey    String?
   baseUrl   String?
+  prompt    String?
   models    Json
   options   Json?
   createdAt DateTime @default(now())
   updatedAt DateTime @updatedAt
   chats     Chat[]
 
-  @@map("providers")
+  @@map("assistants")
 }
 
 model Chat {
-  id           String    @id @default(cuid())
+  id           String     @id @default(cuid())
   title        String
-  createdAt    DateTime  @default(now())
+  createdAt    DateTime   @default(now())
   memory       Json?
-  updatedAt    DateTime  @updatedAt
-  lastChatTime DateTime  @default(now())
+  updatedAt    DateTime   @updatedAt
+  lastChatTime DateTime   @default(now())
   userId       String
-  user         User      @relation(fields: [userId], references: [id], onDelete: Cascade)
+  user         User       @relation(fields: [userId], references: [id], onDelete: Cascade)
   messages     Message[]
-  providerId   String?
-  provider     Provider? @relation(fields: [providerId], references: [id])
+  assistantId  String?
+  provider     Assistant? @relation(fields: [assistantId], references: [id])
 
   @@index([userId])
-  @@index([providerId])
+  @@index([assistantId])
   @@map("chats")
 }
 
 model Message {
   id        String   @id @default(cuid())
   content   String
-  role      String // 'user' | 'assistant' | 'system'
+  role      String // 'user' | 'assistant' | 'system' | 'tool'
   userId    String
   chatId    String
+  context   Json?
   createdAt DateTime @default(now())
-
-  user User @relation(fields: [userId], references: [id], onDelete: Cascade)
-  chat Chat @relation(fields: [chatId], references: [id], onDelete: Cascade)
+  files     Json?
+  images    Json?
+  user      User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+  chat      Chat     @relation(fields: [chatId], references: [id], onDelete: Cascade)
 
   @@index([userId, chatId])
   @@map("messages")

@@ -17,3 +17,14 @@ export interface TrpcRequestError extends TRPCError {
     message: string
   }
 }
+
+export interface ChatFile {
+  path?: string
+  name?: string
+  base64?: string
+  size: number
+}
+
+export interface AssistantOptions {
+  searchMode?: 'openrouter'
+}

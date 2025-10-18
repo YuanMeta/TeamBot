@@ -16,15 +16,17 @@ export const manageRouter = {
     .mutation(async ({ input }) => {
       return checkLLmConnect(input)
     }),
-  getProviders: procedure.query(async ({ ctx }) => {
-    return ctx.db.provider.findMany()
+  getAssistants: procedure.query(async ({ ctx }) => {
+    return ctx.db.assistant.findMany({
+      orderBy: { createdAt: 'desc' }
+    })
   }),
-  getProvider: procedure.input(z.string()).query(async ({ input, ctx }) => {
-    return ctx.db.provider.findUnique({
+  getAssistant: procedure.input(z.string()).query(async ({ input, ctx }) => {
+    return ctx.db.assistant.findUnique({
       where: { id: input }
     })
   }),
-  updateProvider: procedure
+  updateAssistant: procedure
     .input(
       z.object({
         id: z.string().min(1),
@@ -32,23 +34,24 @@ export const manageRouter = {
         mode: z.string().min(1),
         models: z.array(z.string()).min(1),
         apiKey: z.string().nullable(),
-        baseUrl: z.string().nullable()
+        baseUrl: z.string().nullable(),
+        options: z.record(z.string(), z.any())
       })
     )
     .mutation(async ({ input, ctx }) => {
-      return ctx.db.provider.update({
+      return ctx.db.assistant.update({
         where: { id: input.id },
         data: {
           name: input.name,
           mode: input.mode,
           models: input.models,
           apiKey: input.apiKey,
-          baseUrl: input.baseUrl
-          // options: input.options
+          baseUrl: input.baseUrl,
+          options: input.options
         }
       })
     }),
-  createProvider: procedure
+  createAssistant: procedure
     .input(
       z.object({
         id: z.string().optional(),
@@ -56,19 +59,19 @@ export const manageRouter = {
         mode: z.string().min(1),
         models: z.array(z.string()).min(1),
         apiKey: z.string().nullable(),
-        baseUrl: z.string().nullable()
-        // options: z.record(z.string(), z.any()).optional()
+        baseUrl: z.string().nullable(),
+        options: z.record(z.string(), z.any())
       })
     )
     .mutation(async ({ input, ctx }) => {
-      return ctx.db.provider.create({
+      return ctx.db.assistant.create({
         data: {
           name: input.name,
           mode: input.mode,
           models: input.models,
           apiKey: input.apiKey,
-          baseUrl: input.baseUrl
-          // options: input.options
+          baseUrl: input.baseUrl,
+          options: input.options
         }
       })
     })

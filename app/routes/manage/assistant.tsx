@@ -7,7 +7,7 @@ import {
   getSortedRowModel,
   useReactTable
 } from '@tanstack/react-table'
-import { MoreHorizontal, PencilLine, Plus, Trash } from 'lucide-react'
+import { PencilLine, Plus, Trash } from 'lucide-react'
 
 import {
   Table,
@@ -18,23 +18,15 @@ import {
   TableRow
 } from '~/components/ui/table'
 import { Button } from '~/components/ui/button'
-import {
-  DropdownMenu,
-  DropdownMenuContent,
-  DropdownMenuItem,
-  DropdownMenuLabel,
-  DropdownMenuSeparator,
-  DropdownMenuTrigger
-} from '~/components/ui/dropdown-menu'
 import { observer } from 'mobx-react-lite'
 import { useLocalState } from '~/hooks/localState'
-import { AddProvide } from './ui/AddProvider'
-import type { Provider } from '@prisma/client'
+import { AddAssistant } from './ui/AddAssistant'
+import type { Assistant } from '@prisma/client'
 import { useEffect, useMemo } from 'react'
 import { trpc } from '~/.client/trpc'
 
 export default observer(() => {
-  const columns: ColumnDef<Provider>[] = useMemo(() => {
+  const columns: ColumnDef<Assistant>[] = useMemo(() => {
     return [
       {
         accessorKey: 'name',
@@ -87,15 +79,15 @@ export default observer(() => {
           )
         }
       }
-    ] as ColumnDef<Provider>[]
+    ] as ColumnDef<Assistant>[]
   }, [])
   const [state, setState] = useLocalState({
     openProviderForm: false,
     selectedProviderId: null as null | string,
-    data: [] as Provider[]
+    data: [] as Assistant[]
   })
   useEffect(() => {
-    trpc.manage.getProviders.query().then((res) => {
+    trpc.manage.getAssistants.query().then((res) => {
       setState({ data: res })
     })
   }, [])
@@ -121,7 +113,7 @@ export default observer(() => {
               }}
             >
               <Plus />
-              Model Provider
+              Assistant
             </Button>
           </div>
         </div>
@@ -177,7 +169,7 @@ export default observer(() => {
         </div>
       </div>
       {state.openProviderForm && (
-        <AddProvide
+        <AddAssistant
           open={state.openProviderForm}
           id={state.selectedProviderId}
           onClose={() => setState({ openProviderForm: false })}
