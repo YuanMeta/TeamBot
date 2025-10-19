@@ -27,7 +27,7 @@ import { useLocalState } from '~/hooks/localState'
 import { sleep } from '~/lib/utils'
 
 export const AddMember = observer(
-  (props: { open: boolean; onClose: () => void }) => {
+  (props: { open: boolean; onClose: () => void; onUpdate: () => void }) => {
     const form = useForm({
       defaultValues: {
         name: '',
@@ -43,6 +43,8 @@ export const AddMember = observer(
           name: value.name,
           role: value.role as 'admin' | 'member'
         })
+        props.onUpdate()
+        props.onClose()
       }
     })
     useEffect(() => {

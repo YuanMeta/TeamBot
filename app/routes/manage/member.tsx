@@ -177,6 +177,7 @@ export default observer(() => {
         />
         <AddMember
           open={state.openAddMember}
+          onUpdate={() => getMembers()}
           onClose={() => setState({ openAddMember: false })}
         />
       </div>
