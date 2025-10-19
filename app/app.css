@@ -124,3 +124,7 @@
     @apply bg-background text-foreground;
   }
 }
+
+.modal-content {
+  @apply max-h-[calc(100vh_-_260px)] overflow-y-auto px-5 py-2;
+}

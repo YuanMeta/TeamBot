@@ -9,3 +9,7 @@ export function cn(...inputs: ClassValue[]) {
 export const isFormInValid = (field: any) => {
   return field.state.meta.isTouched && !field.state.meta.isValid
 }
+
+export const sleep = (ms: number) => {
+  return new Promise((resolve) => setTimeout(resolve, ms))
+}

@@ -81,10 +81,10 @@ export const manageRouter = {
   createMember: procedure
     .input(
       z.object({
-        email: z.email(),
-        password: z.string().min(8).max(50),
+        email: z.email().optional(),
+        password: z.string().min(6).max(30),
         name: z.string().min(1),
-        role: z.enum(['admin', 'user'])
+        role: z.enum(['admin', 'member'])
       })
     )
     .mutation(async ({ input, ctx }) => {
@@ -94,7 +94,8 @@ export const manageRouter = {
           password: await PasswordManager.hashPassword(input.password),
           name: input.name,
           role: input.role
-        }
+        },
+        select: { id: true }
       })
     }),
   updateMember: procedure
@@ -134,12 +135,16 @@ export const manageRouter = {
           { email: { contains: input.keyword } }
         ]
       }
-      return ctx.db.user.findMany({
+      const members = await ctx.db.user.findMany({
         where,
         select: { id: true, email: true, name: true, avatar: true, role: true },
         skip: (input.page - 1) * input.pageSize,
         take: input.pageSize
       })
+      const total = await ctx.db.user.count({
+        where
+      })
+      return { members, total }
     }),
   deleteMember: procedure
     .input(

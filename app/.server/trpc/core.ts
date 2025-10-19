@@ -6,7 +6,7 @@ import superjson from 'superjson'
 export async function createTRPCContext(opts: { headers: Headers }) {
   return {
     db: prisma,
-    user: null as null | { id: string }
+    userId: ''
   }
 }
 type Context = Awaited<ReturnType<typeof createTRPCContext>>
@@ -32,7 +32,7 @@ export const procedure = t.procedure.use(({ ctx, next }) => {
   // }
   return next({
     ctx: {
-      user: ctx.user
+      userId: 'cmgxhfthr00002uqbk9gb47d2'
     }
   })
 })

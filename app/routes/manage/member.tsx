@@ -18,9 +18,10 @@ import { Button } from '~/components/ui/button'
 import { observer } from 'mobx-react-lite'
 import { useLocalState } from '~/hooks/localState'
 import type { User } from '@prisma/client'
-import { useEffect, useMemo } from 'react'
+import { useCallback, useEffect, useMemo } from 'react'
 import { trpc } from '~/.client/trpc'
 import { Pagination } from '~/components/project/pagination'
+import { AddMember } from './ui/AddMemeber'
 
 export default observer(() => {
   const columns: ColumnDef<User>[] = useMemo(() => {
@@ -40,16 +41,14 @@ export default observer(() => {
         )
       },
       {
-        header: '模型',
-        accessorKey: 'models',
+        header: '角色',
+        accessorKey: 'role',
         cell: ({ row }) => (
-          <div className='lowercase'>{row.getValue('models')}</div>
+          <div className='lowercase'>
+            {row.getValue('role') === 'member' ? '成员' : '管理员'}
+          </div>
         )
       },
-      // {
-      //   accessorKey: '参数',
-      //   cell: ({ row }) => <div className='lowercase'>{row.getValue('email')}</div>
-      // },
       {
         id: 'actions',
         cell: ({ row }) => {
@@ -61,9 +60,9 @@ export default observer(() => {
                 size='icon-sm'
                 aria-label='Submit'
                 onClick={() => {
-                  setState({
-                    selectedProviderId: data.id
-                  })
+                  // setState({
+                  //   selectedProviderId: data.id
+                  // })
                 }}
               >
                 <PencilLine className={'size-3'} />
@@ -81,11 +80,12 @@ export default observer(() => {
     page: 1,
     pageSize: 10,
     keyword: '',
-    selectedProviderId: null as null | string,
-    data: [] as User[]
+    openAddMember: false,
+    selectedMemberId: null as null | string,
+    data: [] as User[],
+    total: 0
   })
-
-  useEffect(() => {
+  const getMembers = useCallback(() => {
     trpc.manage.getMembers
       .query({
         page: state.page,
@@ -93,8 +93,11 @@ export default observer(() => {
         keyword: state.keyword
       })
       .then((res) => {
-        setState({ data: res as any })
+        setState({ data: res.members as any, total: res.total })
       })
+  }, [])
+  useEffect(() => {
+    getMembers()
   }, [])
   const table = useReactTable({
     data: state.data,
@@ -108,7 +111,7 @@ export default observer(() => {
           <div>
             <Button
               onClick={() => {
-                table.setPageIndex(1)
+                setState({ openAddMember: true })
               }}
             >
               <Plus />
@@ -166,7 +169,16 @@ export default observer(() => {
             </TableBody>
           </Table>
         </div>
-        <Pagination page={1} pageSize={10} total={1} onPageChange={() => {}} />
+        <Pagination
+          page={state.page}
+          pageSize={state.pageSize}
+          total={state.total}
+          onPageChange={() => {}}
+        />
+        <AddMember
+          open={state.openAddMember}
+          onClose={() => setState({ openAddMember: false })}
+        />
       </div>
     </div>
   )
