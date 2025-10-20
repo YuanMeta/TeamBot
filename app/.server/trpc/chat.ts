@@ -1,21 +1,68 @@
 import type { TRPCRouterRecord } from '@trpc/server'
 import { procedure } from './core'
 import z from 'zod'
+import type { Message } from '@prisma/client'
 
 export const chatRouter = {
   createChat: procedure
     .input(
       z.object({
-        assistantId: z.string().min(1)
+        assistantId: z.string().min(1),
+        model: z.string().optional(),
+        messages: z
+          .object({
+            content: z.string(),
+            role: z.enum(['user', 'assistant', 'system']),
+            files: z
+              .array(
+                z.object({
+                  path: z.string(),
+                  size: z.number()
+                })
+              )
+              .optional()
+          })
+          .array()
       })
     )
     .mutation(async ({ input, ctx }) => {
-      // return ctx.db.chat.create({
-      //   data: {
-      //     assistantId: input.assistantId,
-      //     userId: ctx.user.id
-      //   }
-      // })
+      return await ctx.db.$transaction(async (t) => {
+        const chat = await t.chat.create({
+          data: {
+            assistantId: input.assistantId,
+            userId: ctx.userId,
+            title: ''
+          }
+        })
+        let messages: Message[] = []
+        for (let m of input.messages) {
+          const message = await t.message.create({
+            data: {
+              chatId: chat.id,
+              content: m.content,
+              role: m.role,
+              userId: ctx.userId,
+              files: m.files?.length
+                ? {
+                    createMany: {
+                      data: m.files.map((file) => {
+                        return {
+                          userId: ctx.userId,
+                          path: file.path,
+                          size: file.size,
+                          origin: 'file'
+                        }
+                      })
+                    }
+                  }
+                : undefined
+            },
+            include: { files: true }
+          })
+          messages.push(message)
+        }
+        return { chat, messages }
+      })
     }),
   getChats: procedure
     .input(
@@ -51,31 +98,16 @@ export const chatRouter = {
         where: {
           chatId: input.chatId
         },
-        select: {
-          id: true,
-          context: true,
-          content: true,
-          terminated: true,
-          error: true,
-          usage: true,
-          height: true,
-          updatedAt: true,
-          model: true,
-          files: {
-            select: { id: true, path: true, origin: true, size: true }
-          },
-          role: true,
-          createdAt: true
-        }
+        include: { files: true }
       })
     }),
-  createMessage: procedure
+  createMessages: procedure
     .input(
       z
         .object({
           chatId: z.string(),
           content: z.string(),
-          role: z.enum(['user', 'assistant', 'system', 'tool']),
+          role: z.enum(['user', 'assistant', 'system']),
           files: z
             .array(
               z.object({
@@ -83,8 +115,7 @@ export const chatRouter = {
                 size: z.number()
               })
             )
-            .optional(),
-          context: z.record(z.string(), z.any()).optional()
+            .optional()
         })
         .array()
     )
@@ -117,7 +148,8 @@ export const chatRouter = {
           terminated: z.boolean().optional(),
           tools: z.record(z.string(), z.any()).optional(),
           model: z.string().optional(),
-          content: z.string().optional()
+          content: z.string().optional(),
+          context: z.record(z.string(), z.any()).optional()
         })
       })
     )
