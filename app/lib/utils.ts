@@ -13,3 +13,5 @@ export const isFormInValid = (field: any) => {
 export const sleep = (ms: number) => {
   return new Promise((resolve) => setTimeout(resolve, ms))
 }
+
+export const isClient = typeof window !== 'undefined'

@@ -16,5 +16,26 @@ export const chatRouter = {
       //     userId: ctx.user.id
       //   }
       // })
+    }),
+  getChats: procedure
+    .input(
+      z.object({
+        offset: z.int().optional()
+      })
+    )
+    .query(async ({ ctx, input }) => {
+      return ctx.db.chat.findMany({
+        where: {
+          userId: ctx.userId
+        },
+        skip: input.offset || 0,
+        take: 50,
+        select: {
+          id: true,
+          lastChatTime: true,
+          title: true
+        },
+        orderBy: { lastChatTime: 'desc' }
+      })
     })
 } satisfies TRPCRouterRecord

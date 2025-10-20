@@ -1,0 +1,7 @@
+.sidebar-action {
+  @apply w-9 h-9 flex items-center justify-center hover:bg-sidebar-accent rounded-md transition-colors duration-150 cursor-pointer;
+}
+
+.sidebar-item {
+  @apply flex h-9 items-center text-primary/90 text-sm hover:bg-sidebar-accent rounded-lg transition-colors duration-150 cursor-pointer;
+}

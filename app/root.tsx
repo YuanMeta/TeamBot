@@ -12,7 +12,7 @@ import { observer } from 'mobx-react-lite'
 
 import type { Route } from './+types/root'
 import { themeSessionResolver } from './.server/session'
-import './app.css'
+import './styles/app.css'
 import { PreventFlashOnWrongTheme, ThemeProvider, useTheme } from 'remix-themes'
 import { Toaster } from '~/components/ui/sonner'
 

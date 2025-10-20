@@ -75,7 +75,7 @@ model Chat {
   user         User       @relation(fields: [userId], references: [id], onDelete: Cascade)
   messages     Message[]
   assistantId  String?
-  provider     Assistant? @relation(fields: [assistantId], references: [id])
+  assistant    Assistant? @relation(fields: [assistantId], references: [id])
 
   @@index([userId])
   @@index([assistantId])

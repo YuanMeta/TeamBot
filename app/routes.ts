@@ -6,6 +6,7 @@ export default [
   route('ai-chat', 'routes/ai-chat.tsx'),
   route('api/trpc/*', 'routes/api/trpc.ts'),
   route('set-theme', 'routes/set-theme.ts'),
+  route('chat', 'routes/chat/chat.tsx'),
   route('manage', 'routes/manage/manage.tsx', [
     index('routes/manage/index.tsx'),
     {
