@@ -1,7 +1,7 @@
 import { useLocalObservable } from 'mobx-react-lite'
 import { action, type AnnotationsMap } from 'mobx'
-import { useCallback } from 'react'
-
+import { useCallback, useLayoutEffect } from 'react'
+import { Subject, Observable } from 'rxjs'
 type GetFields<
   T,
   K = {
@@ -34,4 +34,15 @@ export const useLocalState = <T extends Record<string, any>>(
     []
   )
   return [state, setState]
+}
+
+export const useSubject = <T>(
+  subject: Subject<T> | Observable<T>,
+  fn: (value: T) => void,
+  deps: any[] = []
+) => {
+  useLayoutEffect(() => {
+    const cancel = subject.subscribe(fn)
+    return () => cancel.unsubscribe()
+  }, deps)
 }

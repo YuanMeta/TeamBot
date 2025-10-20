@@ -93,7 +93,30 @@ export async function loader({ request }: Route.LoaderArgs) {
 }
 export async function action({ request }: Route.LoaderArgs) {
   const json = await request.json()
-  const { messages }: { messages: UIMessage[] } = json
+  // const { messages }: { messages: UIMessage[] } = json
+  const messages: UIMessage[] = []
+  messages.push({
+    id: '123',
+    role: 'assistant',
+    parts: [
+      {
+        type: 'dynamic-tool',
+        toolName: 'getWeather',
+        toolCallId: '123',
+        state: 'output-available',
+        input: {
+          city: '北京'
+        },
+        output: {
+          city: '北京'
+        }
+      },
+      {
+        type: 'text',
+        text: '这里是来自ai的回答'
+      }
+    ]
+  })
   // messages.push({
   //   parts: [
   //     {

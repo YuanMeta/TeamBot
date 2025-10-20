@@ -65,17 +65,21 @@ model Assistant {
 }
 
 model Chat {
-  id           String     @id @default(cuid())
-  title        String
-  createdAt    DateTime   @default(now())
-  memory       Json?
-  updatedAt    DateTime   @updatedAt
-  lastChatTime DateTime   @default(now())
-  userId       String
-  user         User       @relation(fields: [userId], references: [id], onDelete: Cascade)
-  messages     Message[]
-  assistantId  String?
-  assistant    Assistant? @relation(fields: [assistantId], references: [id])
+  id            String        @id @default(cuid())
+  title         String
+  createdAt     DateTime      @default(now())
+  updatedAt     DateTime      @updatedAt
+  lastChatTime  DateTime      @default(now())
+  userId        String
+  summary       String?
+  messageOffset Int           @default(0)
+  user          User          @relation(fields: [userId], references: [id], onDelete: Cascade)
+  messages      Message[]
+  assistantId   String?
+  assistant     Assistant?    @relation(fields: [assistantId], references: [id])
+  files         MessageFile[]
+  public        Boolean       @default(false)
+  model         String?
 
   @@index([userId])
   @@index([assistantId])
@@ -83,18 +87,40 @@ model Chat {
 }
 
 model Message {
-  id        String   @id @default(cuid())
-  content   String
-  role      String // 'user' | 'assistant' | 'system' | 'tool'
-  userId    String
-  chatId    String
-  context   Json?
-  createdAt DateTime @default(now())
-  files     Json?
-  images    Json?
-  user      User     @relation(fields: [userId], references: [id], onDelete: Cascade)
-  chat      Chat     @relation(fields: [chatId], references: [id], onDelete: Cascade)
+  id         String        @id @default(cuid())
+  content    String
+  role       String // 'user' | 'assistant' | 'system'
+  userId     String
+  chatId     String
+  context    Json?
+  height     Int?
+  usage      Json?
+  error      String?
+  tools      Json?
+  model      String?
+  terminated Boolean       @default(false)
+  createdAt  DateTime      @default(now())
+  updatedAt  DateTime      @default(now())
+  user       User          @relation(fields: [userId], references: [id], onDelete: Cascade)
+  chat       Chat          @relation(fields: [chatId], references: [id], onDelete: Cascade)
+  files      MessageFile[]
 
   @@index([userId, chatId])
   @@map("messages")
+}
+
+model MessageFile {
+  id        String   @id @default(cuid())
+  messageId String
+  message   Message  @relation(fields: [messageId], references: [id], onDelete: Cascade)
+  chatId    String
+  chat      Chat     @relation(fields: [chatId], references: [id], onDelete: Cascade)
+  path      String
+  size      Int
+  origin    String // file
+  createdAt DateTime @default(now())
+
+  @@index([messageId])
+  @@index([chatId])
+  @@map("message_files")
 }
