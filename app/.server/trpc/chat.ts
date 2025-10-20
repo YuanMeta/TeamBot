@@ -105,5 +105,26 @@ export const chatRouter = {
           }
         })
       })
+    }),
+  updateMessage: procedure
+    .input(
+      z.object({
+        id: z.string(),
+        data: z.object({
+          height: z.number().optional(),
+          error: z.string().optional(),
+          usage: z.record(z.string(), z.any()).optional(),
+          terminated: z.boolean().optional(),
+          tools: z.record(z.string(), z.any()).optional(),
+          model: z.string().optional(),
+          content: z.string().optional()
+        })
+      })
+    )
+    .mutation(({ ctx, input }) => {
+      return ctx.db.message.update({
+        where: { id: input.id, userId: ctx.userId },
+        data: input.data
+      })
     })
 } satisfies TRPCRouterRecord

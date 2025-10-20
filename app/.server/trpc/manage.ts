@@ -156,36 +156,11 @@ export const manageRouter = {
     .mutation(async ({ input, ctx }) => {
       if (input.deleteData) {
         while (true) {
-          const messages = await ctx.db.message.findMany({
-            where: {
-              userId: input.memberId
-            },
+          const messages = await ctx.db.messageFile.findMany({
+            where: { userId: input.memberId },
             take: 100
           })
           if (messages.length > 0) {
-            const removeFile = messages.reduce((acc, message) => {
-              let removePath: string[] = []
-              let files: ChatFile[] = message.files as unknown as ChatFile[],
-                images: ChatFile[] = message.images as unknown as ChatFile[]
-              if (files?.length) {
-                for (let file of files) {
-                  if (file.path) {
-                    removePath.push(file.path)
-                  }
-                }
-              }
-              if (images?.length) {
-                for (let image of images) {
-                  if (image.path) {
-                    removePath.push(image.path)
-                  }
-                }
-              }
-              return removePath
-            }, [] as string[])
-            if (removeFile.length) {
-              // 删除文件
-            }
           }
           if (messages.length < 100) {
             break

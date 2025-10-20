@@ -20,6 +20,7 @@ model User {
   messages         Message[]
   chats            Chat[]
   RelationPlatform RelationIdp[]
+  files            MessageFile[]
 
   @@map("users")
 }
@@ -65,20 +66,19 @@ model Assistant {
 }
 
 model Chat {
-  id            String        @id @default(cuid())
+  id            String     @id @default(cuid())
   title         String
-  createdAt     DateTime      @default(now())
-  updatedAt     DateTime      @updatedAt
-  lastChatTime  DateTime      @default(now())
+  createdAt     DateTime   @default(now())
+  updatedAt     DateTime   @updatedAt
+  lastChatTime  DateTime   @default(now())
   userId        String
   summary       String?
-  messageOffset Int           @default(0)
-  user          User          @relation(fields: [userId], references: [id], onDelete: Cascade)
+  messageOffset Int        @default(0)
+  user          User       @relation(fields: [userId], references: [id], onDelete: Cascade)
   messages      Message[]
   assistantId   String?
-  assistant     Assistant?    @relation(fields: [assistantId], references: [id])
-  files         MessageFile[]
-  public        Boolean       @default(false)
+  assistant     Assistant? @relation(fields: [assistantId], references: [id])
+  public        Boolean    @default(false)
   model         String?
 
   @@index([userId])
@@ -111,16 +111,16 @@ model Message {
 
 model MessageFile {
   id        String   @id @default(cuid())
+  userId    String
+  user      User     @relation(fields: [userId], references: [id], onDelete: Cascade)
   messageId String
   message   Message  @relation(fields: [messageId], references: [id], onDelete: Cascade)
-  chatId    String
-  chat      Chat     @relation(fields: [chatId], references: [id], onDelete: Cascade)
   path      String
   size      Int
   origin    String // file
   createdAt DateTime @default(now())
 
   @@index([messageId])
-  @@index([chatId])
+  @@index([userId])
   @@map("message_files")
 }
