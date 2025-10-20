@@ -11,7 +11,7 @@ export const chatRouter = {
         model: z.string().optional(),
         messages: z
           .object({
-            content: z.string(),
+            content: z.string().optional(),
             role: z.enum(['user', 'assistant', 'system']),
             files: z
               .array(
@@ -106,7 +106,7 @@ export const chatRouter = {
       z
         .object({
           chatId: z.string(),
-          content: z.string(),
+          content: z.string().optional(),
           role: z.enum(['user', 'assistant', 'system']),
           files: z
             .array(

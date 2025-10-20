@@ -3,6 +3,7 @@ import { type RouteConfig, index, route } from '@react-router/dev/routes'
 export default [
   index('routes/home.tsx'),
   route('ai-stream', 'routes/ai-stream.tsx'),
+  route('chat/completions', 'routes/chat/completions.ts'),
   route('ai-chat', 'routes/ai-chat.tsx'),
   route('api/trpc/*', 'routes/api/trpc.ts'),
   route('set-theme', 'routes/set-theme.ts'),

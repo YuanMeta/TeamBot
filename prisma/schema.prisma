@@ -88,7 +88,7 @@ model Chat {
 
 model Message {
   id         String        @id @default(cuid())
-  content    String
+  content    String?
   role       String // 'user' | 'assistant' | 'system'
   userId     String
   chatId     String
