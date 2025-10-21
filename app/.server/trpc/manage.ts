@@ -3,7 +3,6 @@ import z from 'zod'
 import { procedure } from './core'
 import { checkLLmConnect } from '../lib/checkConnect'
 import { PasswordManager } from '../lib/password'
-import type { ChatFile } from '~/types'
 import type { Prisma } from '@prisma/client'
 
 export const manageRouter = {
@@ -21,7 +20,14 @@ export const manageRouter = {
     }),
   getAssistants: procedure.query(async ({ ctx }) => {
     return ctx.db.assistant.findMany({
-      orderBy: { createdAt: 'desc' }
+      orderBy: { createdAt: 'desc' },
+      select: {
+        id: true,
+        name: true,
+        mode: true,
+        models: true,
+        options: true
+      }
     })
   }),
   getAssistant: procedure.input(z.string()).query(async ({ input, ctx }) => {

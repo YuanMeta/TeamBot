@@ -17,6 +17,7 @@ export const chatRouter = {
               .array(
                 z.object({
                   path: z.string(),
+                  name: z.string(),
                   size: z.number()
                 })
               )
@@ -48,6 +49,7 @@ export const chatRouter = {
                       data: m.files.map((file) => {
                         return {
                           userId: ctx.userId,
+                          name: file.name,
                           path: file.path,
                           size: file.size,
                           origin: 'file'
@@ -101,40 +103,79 @@ export const chatRouter = {
         include: { files: true }
       })
     }),
+  getAssistants: procedure.query(async ({ ctx }) => {
+    const assistants = await ctx.db.assistant.findMany({
+      select: {
+        id: true,
+        name: true,
+        mode: true,
+        models: true,
+        options: true
+      }
+    })
+    return assistants.map((a) => {
+      const op = a.options as { searchMode?: string }
+      return {
+        ...a,
+        options: {
+          searchMode: op?.searchMode
+        }
+      }
+    })
+  }),
   createMessages: procedure
     .input(
-      z
-        .object({
-          chatId: z.string(),
-          content: z.string().optional(),
-          role: z.enum(['user', 'assistant', 'system']),
-          files: z
-            .array(
-              z.object({
-                path: z.string(),
-                size: z.number()
-              })
-            )
-            .optional()
-        })
-        .array()
+      z.object({
+        chatId: z.string(),
+        messages: z
+          .object({
+            chatId: z.string(),
+            content: z.string().optional(),
+            role: z.enum(['user', 'assistant', 'system']),
+            files: z
+              .array(
+                z.object({
+                  path: z.string(),
+                  size: z.number(),
+                  name: z.string()
+                })
+              )
+              .optional()
+          })
+          .array()
+      })
     )
     .mutation(async ({ input, ctx }) => {
-      return ctx.db.message.createMany({
-        data: input.map((item) => {
-          return {
-            chatId: item.chatId,
-            content: item.content,
-            role: item.role,
-            userId: ctx.userId,
-            files: item.files?.map((file) => {
-              return {
-                path: file.path,
-                size: file.size
-              }
-            })
-          }
-        })
+      return ctx.db.$transaction(async (t) => {
+        let messages: Message[] = []
+        for (let m of input.messages) {
+          const message = await t.message.create({
+            data: {
+              chatId: input.chatId,
+              content: m.content,
+              role: m.role,
+              userId: ctx.userId,
+              files: m.files?.length
+                ? {
+                    createMany: {
+                      data: m.files.map((file) => {
+                        return {
+                          userId: ctx.userId,
+                          name: file.name,
+                          path: file.path,
+                          size: file.size,
+                          origin: 'file'
+                        }
+                      })
+                    }
+                  }
+                : undefined
+            },
+            include: { files: true }
+          })
+          messages.push(message)
+        }
+        return { messages }
       })
     }),
   updateMessage: procedure
