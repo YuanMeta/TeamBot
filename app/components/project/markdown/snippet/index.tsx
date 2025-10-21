@@ -1,5 +1,4 @@
 import { memo } from 'react'
-import { Flexbox } from 'react-layout-kit'
 import SyntaxHighlighter from '../code/SyntaxHighlighter'
 
 export interface SnippetProps {
@@ -45,17 +44,11 @@ const Snippet = memo<SnippetProps>(
   }) => {
     const tirmedChildren = children.trim()
     return (
-      <Flexbox
-        align={'center'}
-        gap={8}
-        horizontal
-        {...rest}
-        className={'inline-code'}
-      >
+      <div {...rest} className={'inline-code flex items-center gap-2'}>
         <SyntaxHighlighter language={language}>
           {[symbol, tirmedChildren].filter(Boolean).join(' ')}
         </SyntaxHighlighter>
-      </Flexbox>
+      </div>
     )
   }
 )

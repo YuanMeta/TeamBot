@@ -3,7 +3,7 @@ import MessageContent from './MessageContent'
 import dayjs from 'dayjs'
 import relativeTime from 'dayjs/plugin/relativeTime'
 import { AlertCircleIcon, Check, Clipboard, RotateCcw } from 'lucide-react'
-import { useGetSetState } from 'react-use'
+
 import { observer } from 'mobx-react-lite'
 import { useTranslation } from 'react-i18next'
 import { Alert, AlertDescription, AlertTitle } from '~/components/ui/alert'
@@ -12,14 +12,14 @@ import type { Message } from '@prisma/client'
 import { useStore, type MessageData } from '../../store/store'
 import { copyToClipboard } from '~/.client/copy'
 import { markdownToPureHtml } from '~/lib/mdToHtml'
-
+import { useLocalState } from '~/hooks/localState'
 dayjs.extend(relativeTime)
 
 export const AiMessage = observer<{ msg: MessageData }>(({ msg }) => {
   const { t } = useTranslation()
   const ref = useRef<HTMLDivElement>(null)
   const store = useStore()
-  const [state, setState] = useGetSetState({
+  const [state, setState] = useLocalState({
     copied: false,
     isEditing: false
   })
@@ -93,7 +93,7 @@ export const AiMessage = observer<{ msg: MessageData }>(({ msg }) => {
                 <RotateCcw size={14} />
               </div>
               <div className={'msg-action'} onClick={copy}>
-                {state().copied ? <Check size={14} /> : <Clipboard size={14} />}
+                {state.copied ? <Check size={14} /> : <Clipboard size={14} />}
               </div>
             </div>
             <div>

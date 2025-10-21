@@ -1,9 +1,9 @@
 import { memo, type ReactNode } from 'react'
 import { Check, ChevronDown, Copy } from 'lucide-react'
 import SyntaxHighlighter from './SyntaxHighlighter'
-import { useSetState } from 'react-use'
 import { copyToClipboard } from '~/.client/copy'
-
+import { observer } from 'mobx-react-lite'
+import { useLocalState } from '~/hooks/localState'
 export interface HighlighterProps {
   actionsRender?: (props: {
     content: string
@@ -38,7 +38,7 @@ export interface HighlighterProps {
   wrap?: boolean
 }
 
-export const Highlighter = memo<HighlighterProps>(
+export const Highlighter = observer<HighlighterProps>(
   ({
     children,
     language = 'markdown',
@@ -53,7 +53,7 @@ export const Highlighter = memo<HighlighterProps>(
   }) => {
     const tirmedChildren = children.trim()
 
-    const [state, setState] = useSetState({
+    const [state, setState] = useLocalState({
       copied: false,
       expand: true
     })

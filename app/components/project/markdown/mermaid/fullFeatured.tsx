@@ -1,22 +1,25 @@
 import { type ReactNode, memo } from 'react'
 
 import type { MermaidProps } from './type'
-import { useSetState } from 'react-use'
+import { observer } from 'mobx-react-lite'
+import { useLocalState } from '~/hooks/localState'
 
-export const MermaidFullFeatured = memo<
+export const MermaidFullFeatured = observer<
   Omit<MermaidProps, 'children'> & { children: ReactNode; content: string }
 >(({ showLanguage, content, children, className, ...rest }) => {
-  const [state, setState] = useSetState({
+  const [state, setState] = useLocalState({
     copied: false,
     expand: true
   })
   return (
     <div
       className={`relative my-5 overflow-hidden rounded-md transition-colors ${className || ''}`}
-      data-code-type="mermaid"
+      data-code-type='mermaid'
       {...rest}
     >
-      <div style={state.expand ? {} : { height: 0, overflow: 'hidden' }}>{children}</div>
+      <div style={state.expand ? {} : { height: 0, overflow: 'hidden' }}>
+        {children}
+      </div>
     </div>
   )
 })

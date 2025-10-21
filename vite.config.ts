@@ -7,8 +7,8 @@ export default defineConfig({
   plugins: [tailwindcss(), reactRouter(), tsconfigPaths()],
   ssr: {
     noExternal: ['@lobehub/icons', '@lobehub/ui', '@lobehub/fluent-emoji']
+  },
+  optimizeDeps: {
+    include: ['react-use']
   }
-  // optimizeDeps: {
-  //   include: ['@lobehub/icons', '@lobehub/ui', '@lobehub/fluent-emoji']
-  // }
 })

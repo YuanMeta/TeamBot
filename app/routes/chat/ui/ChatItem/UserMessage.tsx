@@ -1,7 +1,6 @@
 import isHotkey from 'is-hotkey'
 import { Check, Copy, Pencil } from 'lucide-react'
 import { useCallback, useEffect, useRef } from 'react'
-import { useGetSetState } from 'react-use'
 import { observer } from 'mobx-react-lite'
 import { runInAction } from 'mobx'
 import { useTranslation } from 'react-i18next'
@@ -11,7 +10,7 @@ import { copyToClipboard } from '~/.client/copy'
 import { Textarea } from '~/components/ui/textarea'
 import { Button } from '~/components/ui/button'
 import { trpc } from '~/.client/trpc'
-
+import { useLocalState } from '~/hooks/localState'
 const fileTypeIconMap = [
   [/\.pdf$/i, 'pdf', '#F54838'],
   [/\.docx$/i, 'doc', '#0078D4'],
@@ -26,7 +25,7 @@ export const UserMessage = observer<{ msg: MessageData }>(({ msg }) => {
   const store = useStore()
   const { t } = useTranslation()
   const ref = useRef<HTMLDivElement>(null)
-  const [state, setState] = useGetSetState({
+  const [state, setState] = useLocalState({
     copied: false,
     inputText: msg.content || '',
     isEditing: false
@@ -66,7 +65,7 @@ export const UserMessage = observer<{ msg: MessageData }>(({ msg }) => {
   }, [msg.content])
 
   const update = useCallback(() => {
-    if (state().inputText) {
+    if (state.inputText) {
       setState({ isEditing: false })
       const lastUserMsg =
         store.state.messages?.[store.state.messages.length - 2]
@@ -77,7 +76,7 @@ export const UserMessage = observer<{ msg: MessageData }>(({ msg }) => {
       })
       if (lastUserMsg) {
         runInAction(() => {
-          lastUserMsg.content = state().inputText
+          lastUserMsg.content = state.inputText
           lastUserMsg.context = []
         })
       }
@@ -91,7 +90,7 @@ export const UserMessage = observer<{ msg: MessageData }>(({ msg }) => {
         update()
       }
       if (isHotkey('mod+enter', e)) {
-        setState({ inputText: state().inputText + '\n' })
+        setState({ inputText: state.inputText + '\n' })
       }
       if (isHotkey('escape', e)) {
         setState({ isEditing: false, inputText: msg.content || '' })
@@ -124,10 +123,10 @@ export const UserMessage = observer<{ msg: MessageData }>(({ msg }) => {
         contentVisibility: 'auto'
       }}
     >
-      {state().isEditing && (
+      {state.isEditing && (
         <div className={'w-[80%]'}>
           <Textarea
-            value={state().inputText}
+            value={state.inputText}
             id={`msg-${msg.id}`}
             onKeyDown={hotKey}
             className={'resize-none'}
@@ -152,7 +151,7 @@ export const UserMessage = observer<{ msg: MessageData }>(({ msg }) => {
           </div>
         </div>
       )}
-      {!state().isEditing && (
+      {!state.isEditing && (
         <div className={'flex w-full justify-end group'}>
           <div
             className={
@@ -160,7 +159,7 @@ export const UserMessage = observer<{ msg: MessageData }>(({ msg }) => {
             }
           >
             <div className={'msg-action'} onClick={copy}>
-              {state().copied ? <Check size={14} /> : <Copy size={14} />}
+              {state.copied ? <Check size={14} /> : <Copy size={14} />}
             </div>
             <div className={'msg-action'} onClick={startEditing}>
               <Pencil size={14} />

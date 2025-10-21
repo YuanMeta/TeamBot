@@ -1,18 +1,17 @@
 import { useCallback, useEffect, useLayoutEffect, useRef } from 'react'
-import { useGetSetState } from 'react-use'
 // import ChatItem from './ChatItem'
 import { ChevronDown } from 'lucide-react'
 import { observer } from 'mobx-react-lite'
 import ChatItem from './ChatItem'
 import { useStore } from '../store/store'
-import { useSubject } from '~/hooks/localState'
+import { useLocalState, useSubject } from '~/hooks/localState'
 
 export const AiMessageList = observer(() => {
   const store = useStore()
   const scrollRef = useRef<HTMLDivElement>(null)
   const listRef = useRef<HTMLDivElement>(null)
   const scrollTimer = useRef(0)
-  const [state, setState] = useGetSetState({
+  const [state, setState] = useLocalState({
     atBottom: false,
     isScrolling: false,
     followOutput: false,
@@ -91,7 +90,7 @@ export const AiMessageList = observer(() => {
       >
         <div
           ref={listRef}
-          className={`chat-list ${state().visible ? 'animate-show' : 'hidden'} ${store.state.pending ? 'pending' : ''}`}
+          className={`chat-list ${state.visible ? 'animate-show' : 'hidden'} ${store.state.pending ? 'pending' : ''}`}
         >
           <div className={'w-full'}>
             {store.state.messages.map((m) => (
@@ -104,7 +103,7 @@ export const AiMessageList = observer(() => {
         onClick={() => {
           scrollToBottom('smooth')
         }}
-        className={`absolute left-1/2 -translate-x-1/2 p-0.5 bg-[var(--primary-bg-color)] z-10 bottom-4 rounded-full border dark:border-white/10 border-black/20 opacity-0 ${state().showScrollToBottom ? 'animate-show cursor-pointer' : 'pointer-events-none'}`}
+        className={`absolute left-1/2 -translate-x-1/2 p-0.5 bg-[var(--primary-bg-color)] z-10 bottom-4 rounded-full border dark:border-white/10 border-black/20 opacity-0 ${state.showScrollToBottom ? 'animate-show cursor-pointer' : 'pointer-events-none'}`}
       >
         <ChevronDown
           size={16}
