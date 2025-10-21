@@ -5,11 +5,12 @@ import { useGetSetState } from 'react-use'
 import { observer } from 'mobx-react-lite'
 import { runInAction } from 'mobx'
 import { useTranslation } from 'react-i18next'
-import { useTheme } from '@/components/theme-provider'
-import { Button } from '@/components/ui/button'
-import { Textarea } from '@/components/ui/textarea'
-import type { Message } from '@/types/table'
-import { useChatStore } from '../store'
+import { useStore, type MessageData } from '../../store/store'
+import { useTheme } from 'remix-themes'
+import { copyToClipboard } from '~/.client/copy'
+import { Textarea } from '~/components/ui/textarea'
+import { Button } from '~/components/ui/button'
+import { trpc } from '~/.client/trpc'
 
 const fileTypeIconMap = [
   [/\.pdf$/i, 'pdf', '#F54838'],
@@ -20,9 +21,9 @@ const fileTypeIconMap = [
   [/\.md$/i, 'md', '#f59e0b']
 ] as [RegExp, string, string][]
 
-export const UserMessage = observer<{ msg: Message }>(({ msg }) => {
-  const { isDarkMode } = useTheme()
-  const store = useChatStore()
+export const UserMessage = observer<{ msg: MessageData }>(({ msg }) => {
+  const [theme] = useTheme()
+  const store = useStore()
   const { t } = useTranslation()
   const ref = useRef<HTMLDivElement>(null)
   const [state, setState] = useGetSetState({
@@ -35,15 +36,20 @@ export const UserMessage = observer<{ msg: Message }>(({ msg }) => {
       const fileType = fileTypeIconMap.find(([regex]) => regex.test(fileName))
       return fileType
         ? [fileType[1], fileType[2]]
-        : [fileName.split('.').pop()?.toLocaleLowerCase() || 'file', isDarkMode ? '#fff' : '#000']
+        : [
+            fileName.split('.').pop()?.toLocaleLowerCase() || 'file',
+            theme === 'dark' ? '#fff' : '#000'
+          ]
     },
-    [isDarkMode]
+    [theme]
   )
 
   const startEditing = useCallback(() => {
     setState({ isEditing: true })
     setTimeout(() => {
-      const textarea = document.getElementById(`msg-${msg.id}`) as HTMLTextAreaElement
+      const textarea = document.getElementById(
+        `msg-${msg.id}`
+      ) as HTMLTextAreaElement
       if (textarea) {
         textarea.focus()
         textarea.setSelectionRange(textarea.value.length, textarea.value.length)
@@ -52,7 +58,7 @@ export const UserMessage = observer<{ msg: Message }>(({ msg }) => {
   }, [])
 
   const copy = useCallback(() => {
-    store.rpc.copyToClipboard({ text: msg.content })
+    copyToClipboard({ text: msg.content! })
     setState({ copied: true })
     setTimeout(() => {
       setState({ copied: false })
@@ -62,10 +68,11 @@ export const UserMessage = observer<{ msg: Message }>(({ msg }) => {
   const update = useCallback(() => {
     if (state().inputText) {
       setState({ isEditing: false })
-      const lastUserMsg = store.state.messages?.[store.state.messages.length - 2]
+      const lastUserMsg =
+        store.state.messages?.[store.state.messages.length - 2]
       store.setState((draft) => {
         const remove = draft.messages!.slice(-2)!
-        store.rpc.deleteMessages(remove.map((m) => m.id))
+        // store.rpc.deleteMessages(remove.map((m) => m.id))
         draft.messages = draft.messages!.slice(0, -2)
       })
       if (lastUserMsg) {
@@ -96,8 +103,11 @@ export const UserMessage = observer<{ msg: Message }>(({ msg }) => {
     const dom = ref.current
     if (dom && !msg.height) {
       setTimeout(() => {
-        store.rpc.updateMessage(msg.id, {
-          height: dom.clientHeight
+        trpc.chat.updateMessage.mutate({
+          id: msg.id,
+          data: {
+            height: dom.clientHeight
+          }
         })
         runInAction(() => {
           msg.height = dom.clientHeight
@@ -110,7 +120,7 @@ export const UserMessage = observer<{ msg: Message }>(({ msg }) => {
       className={'py-3 pl-10 flex flex-col items-end user-message'}
       ref={ref}
       style={{
-        containIntrinsicHeight: msg.height,
+        containIntrinsicHeight: msg.height || undefined,
         contentVisibility: 'auto'
       }}
     >
@@ -134,10 +144,10 @@ export const UserMessage = observer<{ msg: Message }>(({ msg }) => {
                 setState({ isEditing: false, inputText: msg.content || '' })
               }}
             >
-              {t('chat.message.cancel')}
+              取消
             </Button>
             <Button onClick={update} size={'sm'}>
-              {t('chat.message.update')}
+              更新
             </Button>
           </div>
         </div>
@@ -156,7 +166,9 @@ export const UserMessage = observer<{ msg: Message }>(({ msg }) => {
               <Pencil size={14} />
             </div>
           </div>
-          <div className={'chat-user-message px-4 py-1.5 max-w-[80%] leading-5'}>
+          <div
+            className={'chat-user-message px-4 py-1.5 max-w-[80%] leading-5'}
+          >
             <div>{msg.content}</div>
           </div>
         </div>
@@ -192,11 +204,11 @@ export const UserMessage = observer<{ msg: Message }>(({ msg }) => {
       {!!msg.files?.length && (
         <div className={'mt-1.5 space-x-2 flex justify-end flex-wrap'}>
           {msg.files.map((f, i) => {
-            const [type, color] = getFileTypeIcon(f.name)
+            const [type, color] = getFileTypeIcon(f.path)
             return (
               <div
                 key={i}
-                title={f.name}
+                title={f.name!}
                 className={
                   'max-w-[300px] flex items-center truncate rounded-lg bg-blue-500/20 text-[13px] px-2 py-1.5 mb-0.5'
                 }
@@ -208,7 +220,7 @@ export const UserMessage = observer<{ msg: Message }>(({ msg }) => {
           })}
         </div>
       )}
-      {!!msg.images?.length && (
+      {/* {!!msg.images?.length && (
         <div className={'mt-2 space-x-2 flex justify-end flex-wrap'}>
           {msg.images.map((f, i) => {
             return (
@@ -221,12 +233,16 @@ export const UserMessage = observer<{ msg: Message }>(({ msg }) => {
                   'w-36 h-auto flex items-center rounded-lg text-[13px] mb-0.5 overflow-hidden cursor-default max-h-96'
                 }
               >
-                <img src={f.content!} className={'w-full h-full object-cover'} alt="" />
+                <img
+                  src={f.content!}
+                  className={'w-full h-full object-cover'}
+                  alt=''
+                />
               </div>
             )
           })}
         </div>
-      )}
+      )} */}
     </div>
   )
 })

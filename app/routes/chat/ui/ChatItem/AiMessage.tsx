@@ -9,13 +9,13 @@ import { useTranslation } from 'react-i18next'
 import { Alert, AlertDescription, AlertTitle } from '~/components/ui/alert'
 import { runInAction } from 'mobx'
 import type { Message } from '@prisma/client'
-import { useStore } from '../../store/store'
+import { useStore, type MessageData } from '../../store/store'
 import { copyToClipboard } from '~/.client/copy'
 import { markdownToPureHtml } from '~/lib/mdToHtml'
 
 dayjs.extend(relativeTime)
 
-export const AiMessage = observer<{ msg: Message }>(({ msg }) => {
+export const AiMessage = observer<{ msg: MessageData }>(({ msg }) => {
   const { t } = useTranslation()
   const ref = useRef<HTMLDivElement>(null)
   const store = useStore()

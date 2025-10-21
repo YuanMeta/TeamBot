@@ -1,9 +1,9 @@
 import { UserMessage } from './UserMessage'
 import { AiMessage } from './AiMessage'
 import { observer } from 'mobx-react-lite'
-import type { Message } from '@/types/table'
+import type { MessageData } from '../../store/store'
 
-const ChatItem = observer<{ msg: Message }>(({ msg }) => {
+const ChatItem = observer<{ msg: MessageData }>(({ msg }) => {
   if (msg.role === 'user') {
     return <UserMessage msg={msg} />
   }

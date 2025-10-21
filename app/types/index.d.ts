@@ -28,3 +28,11 @@ export interface ChatFile {
 export interface AssistantOptions {
   searchMode?: 'openrouter'
 }
+
+export interface ToolCall {
+  name: string
+  id: string
+  state: any
+  input: any
+  output: any
+}
