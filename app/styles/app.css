@@ -139,3 +139,7 @@ body {
     sans-serif;
   -webkit-font-smoothing: antialiased;
 }
+
+button:focus-visible {
+  box-shadow: none !important;
+}

@@ -19,7 +19,10 @@ const state = {
   }[],
   messages: [] as MessageData[],
   pending: false,
+  ready: false,
   assistants: [] as Assistant[],
+  assistantMap: {} as Record<string, Assistant>,
+  cacheModel: null as string | null,
   selectedChat: null as null | {
     id: string
     title: string
@@ -29,17 +32,15 @@ const state = {
   },
   get assistant(): Assistant | null {
     if (this.selectedChat) {
-      const as = this.assistants.find(
-        (a) => a.id === this.selectedChat?.assistantId
-      )
+      const as = this.assistantMap[this.selectedChat?.assistantId!]
       if (as) {
         return as
       }
     }
-    const model = localStorage.getItem('last_assistant_model')
-    if (model) {
-      const [assistantId] = model.split(':')
-      const as = this.assistants.find((a) => a.id === assistantId)
+    // const model = localStorage.getItem('last_assistant_model')
+    if (this.cacheModel) {
+      const [assistantId] = this.cacheModel.split(':')
+      const as = this.assistantMap[assistantId]
       if (as) {
         return as
       }
@@ -54,9 +55,9 @@ const state = {
         return this.selectedChat.model
       }
     }
-    const model = localStorage.getItem('last_assistant_model')
-    if (model) {
-      const [assistantId, modelName] = model.split(':')
+    // const model = localStorage.getItem('last_assistant_model')
+    if (this.cacheModel) {
+      const [assistantId, modelName] = this.cacheModel.split(':')
       if (as?.id === assistantId && models?.includes(modelName)) {
         return modelName
       }
@@ -71,19 +72,28 @@ export class ChatStore extends StructStore<typeof state> {
   constructor() {
     super(state)
     if (isClient) {
-      this.loadAssistants()
-      this.loadChats()
+      this.init()
     }
   }
-  loadAssistants() {
-    trpc.chat.getAssistants.query().then((res) => {
+  async init() {
+    this.state.cacheModel = localStorage.getItem('last_assistant_model')
+    await this.loadAssistants()
+    await this.loadChats()
+    this.setState((state) => (state.ready = true))
+  }
+  async loadAssistants() {
+    this.state.assistantMap = {}
+    await trpc.chat.getAssistants.query().then((res) => {
+      res.forEach((a) => {
+        this.state.assistantMap[a.id] = a as unknown as Assistant
+      })
       this.setState((state) => {
         state.assistants = res as unknown as Assistant[]
       })
     })
   }
-  loadChats() {
-    trpc.chat.getChats
+  async loadChats() {
+    await trpc.chat.getChats
       .query({
         offset: this.state.chats.length
       })
@@ -97,6 +107,23 @@ export class ChatStore extends StructStore<typeof state> {
     this.setState((state) => {
       state.selectedChat = chat
     })
+  }
+  async selectModel(assistantId: string, model: string) {
+    if (this.state.selectedChat) {
+      this.setState((state) => {
+        state.selectedChat!.assistantId = assistantId
+        state.selectedChat!.model = model
+      })
+      trpc.chat.updateChat.mutate({
+        id: this.state.selectedChat.id,
+        data: {
+          model,
+          assistantId
+        }
+      })
+    }
+    this.state.cacheModel = `${assistantId}:${model}`
+    localStorage.setItem('last_assistant_model', this.state.cacheModel)
   }
 }
 

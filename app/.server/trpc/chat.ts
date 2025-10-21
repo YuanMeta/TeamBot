@@ -199,5 +199,25 @@ export const chatRouter = {
         where: { id: input.id, userId: ctx.userId },
         data: input.data
       })
+    }),
+  updateChat: procedure
+    .input(
+      z.object({
+        id: z.string(),
+        data: z.object({
+          model: z.string().optional(),
+          assistantId: z.string().optional(),
+          title: z.string().optional(),
+          public: z.boolean().optional(),
+          messageOffset: z.number().optional(),
+          summary: z.string().optional()
+        })
+      })
+    )
+    .mutation(({ input, ctx }) => {
+      return ctx.db.chat.update({
+        where: { id: input.id, userId: ctx.userId },
+        data: input.data
+      })
     })
 } satisfies TRPCRouterRecord
