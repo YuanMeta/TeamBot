@@ -4,6 +4,9 @@
 
 .sidebar-item {
   @apply flex h-9 items-center text-primary/90 text-sm hover:bg-sidebar-accent rounded-lg transition-colors duration-150 cursor-pointer;
+  &.active {
+    @apply bg-sidebar-accent;
+  }
 }
 
 .chat-input-mask {
@@ -197,4 +200,8 @@
   &.active {
     @apply hover:text-sky-600 text-sky-600;
   }
+}
+
+.chat-list {
+  @apply mx-auto max-w-[750px];
 }

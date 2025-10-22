@@ -2,6 +2,11 @@ import dayjs from 'dayjs'
 import type { ChatStore, MessageData } from './store'
 import { nanoid } from 'nanoid'
 import { trpc } from '~/.client/trpc'
+import {
+  parseJsonEventStream,
+  uiMessageChunkSchema,
+  type UIMessageChunk
+} from 'ai'
 export class ChatClient {
   constructor(private readonly store: ChatStore) {}
   async complete(data: { text: string }) {
@@ -52,6 +57,51 @@ export class ChatClient {
         state.messages[state.messages.length - 1].chatId = addRecord.chat.id
       })
       console.log('list', this.store.state.messages)
+    }
+    const res = await fetch('/chat/completions', {
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/json'
+      },
+      body: JSON.stringify({
+        chatId: this.store.state.selectedChat?.id
+      }),
+      credentials: 'include'
+    })
+    const p = parseJsonEventStream<UIMessageChunk>({
+      stream: res.body as any,
+      schema: uiMessageChunkSchema
+    })
+    // res.body?.pipeThrough(new TextDecoderStream())
+    const reader = p?.getReader()
+    const decoder = new TextDecoder()
+    if (reader) {
+      while (true) {
+        const { done, value } = await reader.read()
+        if (done) break
+        // const a = value as unknown as UIMessageChunk
+        // console.log('value', value)
+        if (value.success) {
+          if (value.value.type === 'reasoning-delta' && value.value.delta) {
+            const reasoning = value.value.delta
+            this.store.setState((state) => {
+              const aiMsg = state.messages[state.messages.length - 1]
+              aiMsg.reasoning = (aiMsg.reasoning || '') + reasoning
+            })
+          } else if (value.value.type === 'text-delta' && value.value.delta) {
+            const text = value.value.delta
+            this.store.setState((state) => {
+              const aiMsg = state.messages[state.messages.length - 1]
+              if (!aiMsg.content || aiMsg.content === '...') {
+                aiMsg.content = text
+              } else {
+                aiMsg.content += text
+              }
+            })
+          }
+          console.log('value', value.value)
+        }
+      }
     }
   }
 }

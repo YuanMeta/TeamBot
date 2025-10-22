@@ -120,7 +120,6 @@ export default function AIChat() {
               </button>
             </div>
           </form>
-
           {/* {response && (
             <div className='bg-gray-50 rounded-lg p-6 border border-gray-200'>
               <h2 className='text-lg font-semibold mb-3 text-gray-800'>

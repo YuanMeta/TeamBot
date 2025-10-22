@@ -24,7 +24,7 @@ export const Thinking = memo<ThinkingProps>(
 
     return (
       <div
-        className={`flex flex-col gap-2 w-fit py-1 px-2 rounded-md text-gray-500 transition-colors duration-200 transform-gpu ${
+        className={`flex flex-col gap-2 w-fit py-1.5 px-3 rounded-md text-gray-500 transition-colors duration-200 transform-gpu ${
           showDetail
             ? 'bg-neutral-50 dark:bg-neutral-800'
             : 'hover:bg-neutral-50 dark:hover:bg-neutral-800'
@@ -43,7 +43,7 @@ export const Thinking = memo<ThinkingProps>(
           }}
         >
           {thinking ? (
-            <div className={'flex items-center gap-2'}>
+            <div className={'flex items-center gap-1'}>
               <AtomIcon
                 size={16}
                 className='text-gray-500 dark:text-gray-400'
@@ -51,7 +51,7 @@ export const Thinking = memo<ThinkingProps>(
               <div className='shine-text'>深度思考中...</div>
             </div>
           ) : (
-            <div className={'flex items-center'}>
+            <div className={'flex items-center gap-1'}>
               <AtomIcon
                 size={16}
                 className='text-gray-500 dark:text-gray-400'

@@ -10,6 +10,7 @@ import { TRPCError } from '@trpc/server'
 import { prisma } from '~/.server/lib/prisma'
 import type { ToolCall } from '~/types'
 import { createClient } from '~/.server/lib/checkConnect'
+import type { Message } from '@prisma/client'
 
 const InputSchema = z.object({
   chatId: z.string(),
@@ -90,41 +91,38 @@ export async function action({ request }: Route.LoaderArgs) {
     apiKey: chat.assistant!.apiKey,
     baseUrl: chat.assistant!.baseUrl
   })!
-  // 使用 AI SDK 生成流式文本，包含工具
+
   const result = streamText({
     model: client(chat.model!),
-    // tools, // 工具会在需要时自动调用,
     messages: convertToModelMessages(uiMessages),
     stopWhen: stepCountIs(5),
-    onStepFinish: (data) => {
+    onStepFinish: async (data) => {
       console.log('step finish', data)
+      if (data.finishReason === 'stop') {
+        let insertData: Partial<Message> = {}
+        for (let c of data.content) {
+          if (c.type === 'reasoning') {
+            insertData.reasoning = c.text
+          } else if (c.type === 'text') {
+            insertData.content = c.text
+          }
+        }
+        if (insertData.content) {
+          await prisma.message.update({
+            where: { id: assistantMessage.id },
+            data: {
+              reasoning: insertData.reasoning,
+              content: insertData.content!,
+              usage: data.usage
+            }
+          })
+        }
+      }
     },
     onError: (error) => {
       console.log('step error', error)
     }
   })
-  console.log('request body', (await result.request).body)
-  return result.toUIMessageStreamResponse({
-    onFinish: ({ responseMessage, messages, isContinuation, isAborted }) => {
-      responseMessage.parts.forEach((p) => {
-        if (p.type === 'dynamic-tool') {
-          const tool = p.toolName
-          const toolCallId = p.toolCallId
-          const state = p.state
-          const input = p.input
-          const output = p.output
-        }
-      })
-      // 在服务端可拿到最终返回给客户端的 UIMessage
-      console.log('UI stream finished', {
-        isContinuation,
-        isAborted,
-        responseMessage
-      })
-    },
-    onError: (error: any) => {
-      console.log('stream error', error)
-      return error?.message || 'stream error'
-    }
-  })
+  // console.log('request body', (await result.request).body)
+  return result.toUIMessageStreamResponse()
 }

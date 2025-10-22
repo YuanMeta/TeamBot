@@ -21,7 +21,7 @@ const MessageContent = observer<{ msg: MessageData }>(({ msg }) => {
           <Reasoning
             content={msg.reasoning}
             duration={msg.reasoningDuration}
-            thinking={!!msg.reasoning && !msg.reasoningDuration}
+            thinking={!!msg.reasoning && !msg.reasoningDuration && !msg.content}
           />
         )}
         {msg.content !== '...' && (

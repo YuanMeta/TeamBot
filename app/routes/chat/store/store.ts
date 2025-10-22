@@ -32,6 +32,7 @@ const state = {
     lastChatTime: Date
     assistantId: string | null
     model: string | null
+    messages?: MessageData[]
   }[],
   messages: [] as MessageData[],
   pending: false,
@@ -45,6 +46,7 @@ const state = {
     lastChatTime: Date
     assistantId: string | null
     model: string | null
+    messages?: MessageData[]
   },
   get assistant(): Assistant | null {
     if (this.selectedChat) {
@@ -124,7 +126,23 @@ export class ChatStore extends StructStore<typeof state> {
   selectChat(chat: typeof this.state.selectedChat) {
     this.setState((state) => {
       state.selectedChat = chat
+      if (chat?.messages) {
+        state.messages = chat.messages
+      }
     })
+    if (chat && !chat.messages) {
+      trpc.chat.getChatMessage
+        .query({
+          chatId: chat.id
+        })
+        .then((res) => {
+          console.log('res', res)
+
+          this.setState((state) => {
+            state.messages = res as unknown as MessageData[]
+          })
+        })
+    }
   }
   async selectModel(assistantId: string, model: string) {
     if (this.state.selectedChat) {

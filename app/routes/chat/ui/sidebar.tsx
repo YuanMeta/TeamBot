@@ -42,7 +42,11 @@ export const ChatSidebar = observer(() => {
           <div className={'text-primary/60 text-sm pl-4 mb-2'}>聊天</div>
           <div className={'px-1.5'}>
             {store.state.chats.map((chat) => (
-              <div className={`sidebar-item px-2.5`} key={chat.id}>
+              <div
+                className={`sidebar-item px-2.5 ${store.state.selectedChat?.id === chat.id ? 'active' : ''}`}
+                key={chat.id}
+                onClick={() => store.selectChat(chat)}
+              >
                 <span className={'truncate'}>{chat.title || '新对话'}</span>
               </div>
             ))}

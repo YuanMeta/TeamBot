@@ -74,6 +74,38 @@ export const chatRouter = {
         return { chat, messages }
       })
     }),
+  getChatMessage: procedure
+    .input(
+      z.object({
+        chatId: z.string()
+      })
+    )
+    .query(async ({ ctx, input }) => {
+      return ctx.db.message.findMany({
+        where: {
+          chatId: input.chatId,
+          userId: ctx.userId
+        },
+        select: {
+          id: true,
+          chatId: true,
+          files: true,
+          context: true,
+          content: true,
+          createdAt: true,
+          updatedAt: true,
+          height: true,
+          reasoning: true,
+          model: true,
+          usage: true,
+          error: true,
+          tools: true,
+          terminated: true,
+          role: true,
+          reasoningDuration: true
+        }
+      })
+    }),
   getChats: procedure
     .input(
       z.object({
@@ -106,9 +138,34 @@ export const chatRouter = {
     .query(async ({ ctx, input }) => {
       return ctx.db.message.findMany({
         where: {
-          chatId: input.chatId
+          chatId: input.chatId,
+          userId: ctx.userId
         },
-        include: { files: true }
+        select: {
+          id: true,
+          chatId: true,
+          files: {
+            select: {
+              id: true,
+              name: true,
+              size: true,
+              path: true
+            }
+          },
+          context: true,
+          content: true,
+          createdAt: true,
+          updatedAt: true,
+          height: true,
+          reasoning: true,
+          model: true,
+          usage: true,
+          error: true,
+          tools: true,
+          terminated: true,
+          role: true,
+          reasoningDuration: true
+        }
       })
     }),
   getAssistants: procedure.query(async ({ ctx }) => {
