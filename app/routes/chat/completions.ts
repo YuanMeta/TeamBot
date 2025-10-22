@@ -10,7 +10,8 @@ import { TRPCError } from '@trpc/server'
 import { prisma } from '~/.server/lib/prisma'
 import type { ToolCall } from '~/types'
 import { createClient } from '~/.server/lib/checkConnect'
-import type { Message } from '@prisma/client'
+import type { Message, Prisma } from '@prisma/client'
+import { getUrlContent } from '~/.server/lib/tools'
 
 const InputSchema = z.object({
   chatId: z.string(),
@@ -64,7 +65,7 @@ export async function action({ request }: Route.LoaderArgs) {
             toolCallId: t.id,
             input: t.input,
             output: t.output,
-            state: t.state
+            state: 'output-available'
           })
         })
       }
@@ -96,33 +97,50 @@ export async function action({ request }: Route.LoaderArgs) {
     model: client(chat.model!),
     messages: convertToModelMessages(uiMessages),
     stopWhen: stepCountIs(5),
-    onStepFinish: async (data) => {
-      console.log('step finish', data)
-      if (data.finishReason === 'stop') {
-        let insertData: Partial<Message> = {}
-        for (let c of data.content) {
+    tools: { getUrlContent },
+    onFinish: async (data) => {
+      // console.log('request', JSON.stringify(data.request.body || null))
+      let text = ''
+      let reasoning: undefined | '' = undefined
+      let tools: ToolCall[] = []
+      for (let s of data.steps) {
+        for (let c of s.content) {
+          if (c.type === 'text') {
+            text += c.text
+            if (s.finishReason === 'tool-calls') {
+              text += '\n\n'
+            }
+          }
+          if (c.type === 'tool-result') {
+            tools.push({
+              name: c.toolName,
+              id: c.toolCallId,
+              input: c.input,
+              output: c.output
+            })
+          }
           if (c.type === 'reasoning') {
-            insertData.reasoning = c.text
-          } else if (c.type === 'text') {
-            insertData.content = c.text
+            reasoning = (reasoning || '') + c.text
           }
         }
-        if (insertData.content) {
-          await prisma.message.update({
-            where: { id: assistantMessage.id },
-            data: {
-              reasoning: insertData.reasoning,
-              content: insertData.content!,
-              usage: data.usage
-            }
-          })
-        }
+      }
+      if (text) {
+        await prisma.message.update({
+          where: { id: assistantMessage.id },
+          data: {
+            reasoning: reasoning,
+            content: text,
+            usage: data.usage,
+            tools: tools.length
+              ? (tools as unknown as Prisma.JsonArray)
+              : undefined
+          }
+        })
       }
     },
     onError: (error) => {
       console.log('step error', error)
     }
   })
-  // console.log('request body', (await result.request).body)
   return result.toUIMessageStreamResponse()
 }

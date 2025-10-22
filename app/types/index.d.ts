@@ -32,7 +32,6 @@ export interface AssistantOptions {
 export interface ToolCall {
   name: string
   id: string
-  state: any
   input: any
   output: any
 }
