@@ -18,7 +18,10 @@ export const ChatInput = observer(() => {
     focus?: () => void
   }>({})
   const onSend = useCallback(async (text: string) => {
-    // if (!text || store.state.pending) return
+    if (!text || store.state.pending) return
+    store.client.complete({
+      text: text
+    })
     // let files: MessageFile[] = []
     // let images: MessageFile[] = []
     // for (let f of state.files) {
@@ -57,7 +60,7 @@ export const ChatInput = observer(() => {
     // })
   }, [])
   return (
-    <div className={'chat-input w-full relative'}>
+    <div className={'chat-input w-full relative px-4'}>
       {/* <div className={'chat-input-mask'}></div> */}
       <div
         className={`pb-2 w-full flex flex-col border border-border rounded-2xl max-w-[760px] mx-auto px-3 pt-3`}

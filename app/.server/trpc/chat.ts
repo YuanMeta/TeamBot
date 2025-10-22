@@ -32,7 +32,15 @@ export const chatRouter = {
           data: {
             assistantId: input.assistantId,
             userId: ctx.userId,
-            title: ''
+            title: '',
+            model: input.model
+          },
+          select: {
+            model: true,
+            assistantId: true,
+            id: true,
+            lastChatTime: true,
+            title: true
           }
         })
         let messages: Message[] = []

@@ -19,7 +19,7 @@ export const Header = observer(() => {
   return (
     <div
       className={
-        'h-[52px] flex items-center justify-between border-b border-border px-3'
+        'h-[52px] flex items-center justify-between dark:border-b border-border px-3'
       }
     >
       <div>
@@ -71,7 +71,7 @@ export const Header = observer(() => {
       </div>
 
       <div>
-        <Button variant={'outline'}>
+        <Button variant={'ghost'}>
           <SquareArrowOutUpRight />
           共享
         </Button>

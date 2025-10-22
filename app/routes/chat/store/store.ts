@@ -2,13 +2,29 @@ import { createContext, useContext } from 'react'
 import { StructStore } from './struct'
 import { trpc } from '~/.client/trpc'
 import { isClient } from '~/lib/utils'
-import type { Assistant, Message, MessageFile } from '@prisma/client'
+import type { Assistant, MessageFile } from '@prisma/client'
 import { Subject } from 'rxjs'
+import { ChatClient } from './client'
 
-export interface MessageData extends Message {
+export interface MessageData {
+  id?: string
   tid?: string
+  chatId: string
+  content: string
+  role: 'user' | 'assistant' | 'system'
+  model?: string
+  reasoning?: string | null
+  terminated?: boolean
+  reasoningDuration?: number | null
+  context?: Record<string, any> | null
+  height?: number | null
+  usage?: Record<string, any> | null
+  error?: string | null
+  tools?: Record<string, any> | null
   files?: MessageFile[]
+  updatedAt: Date
 }
+
 const state = {
   chats: [] as {
     id: string
@@ -69,6 +85,7 @@ export class ChatStore extends StructStore<typeof state> {
   scrollToActiveMessage$ = new Subject<void>()
   scrollToTop$ = new Subject<void>()
   abortController: AbortController | null = null
+  client = new ChatClient(this)
   constructor() {
     super(state)
     if (isClient) {

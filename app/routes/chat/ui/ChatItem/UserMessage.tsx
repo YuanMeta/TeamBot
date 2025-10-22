@@ -100,10 +100,10 @@ export const UserMessage = observer<{ msg: MessageData }>(({ msg }) => {
   )
   useEffect(() => {
     const dom = ref.current
-    if (dom && !msg.height) {
+    if (dom && !msg.height && msg.id) {
       setTimeout(() => {
         trpc.chat.updateMessage.mutate({
-          id: msg.id,
+          id: msg.id!,
           data: {
             height: dom.clientHeight
           }
@@ -113,7 +113,7 @@ export const UserMessage = observer<{ msg: MessageData }>(({ msg }) => {
         })
       }, 100)
     }
-  }, [])
+  }, [msg.id])
   return (
     <div
       className={'py-3 pl-10 flex flex-col items-end user-message'}
@@ -165,9 +165,7 @@ export const UserMessage = observer<{ msg: MessageData }>(({ msg }) => {
               <Pencil size={14} />
             </div>
           </div>
-          <div
-            className={'chat-user-message px-4 py-1.5 max-w-[80%] leading-5'}
-          >
+          <div className={'chat-user-message px-4 py-2 max-w-[80%] leading-5'}>
             <div>{msg.content}</div>
           </div>
         </div>
