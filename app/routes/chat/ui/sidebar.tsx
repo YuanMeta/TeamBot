@@ -2,6 +2,7 @@ import { observer } from 'mobx-react-lite'
 import { OpenAI } from '@lobehub/icons'
 import { BookMarked, PanelLeftClose, Search, SquarePen } from 'lucide-react'
 import { useStore } from '../store/store'
+import { Skeleton } from '~/components/ui/skeleton'
 export const ChatSidebar = observer(() => {
   const store = useStore()
   return (
@@ -41,8 +42,8 @@ export const ChatSidebar = observer(() => {
           <div className={'text-primary/60 text-sm pl-4 mb-2'}>聊天</div>
           <div className={'px-1.5'}>
             {store.state.chats.map((chat) => (
-              <div className={'sidebar-item px-2.5'}>
-                <span className={'truncate'}>{chat.title}</span>
+              <div className={`sidebar-item px-2.5`} key={chat.id}>
+                <span className={'truncate'}>{chat.title || '新对话'}</span>
               </div>
             ))}
             {!store.state.chats.length && (

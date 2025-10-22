@@ -66,7 +66,7 @@ export const AiMessageList = observer(() => {
       behavior: 'instant'
     })
   })
-  useLayoutEffect(() => {
+  useSubject(store.transList$, () => {
     setState({ visible: false, showScrollToBottom: false })
     scrollRef.current?.scrollTo({
       top: 0,
@@ -79,8 +79,7 @@ export const AiMessageList = observer(() => {
           listRef.current!.scrollHeight > window.innerHeight - 200
       })
     }, 50)
-  }, [store.state.selectedChat?.id])
-
+  })
   return (
     <div className={'relative h-full'}>
       <div
@@ -94,7 +93,7 @@ export const AiMessageList = observer(() => {
         >
           <div className={'w-full'}>
             {store.state.messages.map((m) => (
-              <ChatItem key={m.id} msg={m} />
+              <ChatItem key={m.tid || m.id} msg={m} />
             ))}
           </div>
         </div>

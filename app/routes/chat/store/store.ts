@@ -84,6 +84,7 @@ const state = {
 export class ChatStore extends StructStore<typeof state> {
   scrollToActiveMessage$ = new Subject<void>()
   scrollToTop$ = new Subject<void>()
+  transList$ = new Subject<void>()
   abortController: AbortController | null = null
   client = new ChatClient(this)
   constructor() {
