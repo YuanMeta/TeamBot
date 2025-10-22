@@ -194,7 +194,6 @@ export const chatRouter = {
         chatId: z.string(),
         messages: z
           .object({
-            chatId: z.string(),
             content: z.string().optional(),
             role: z.enum(['user', 'assistant', 'system']),
             files: z

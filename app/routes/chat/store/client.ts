@@ -33,6 +33,23 @@ export class ChatClient {
     })
     if (this.store.state.selectedChat) {
       const chat = this.store.state.selectedChat
+      const addRecord = await trpc.chat.createMessages.mutate({
+        chatId: chat.id,
+        messages: [
+          {
+            content: data.text,
+            role: 'user'
+          },
+          {
+            role: 'assistant',
+            content: '...'
+          }
+        ]
+      })
+      this.store.setState((state) => {
+        state.messages[state.messages.length - 2].id = addRecord.messages[0].id
+        state.messages[state.messages.length - 1].id = addRecord.messages[1].id
+      })
     } else {
       const addRecord = await trpc.chat.createChat.mutate({
         assistantId: this.store.state.assistant!.id,
@@ -56,8 +73,8 @@ export class ChatClient {
         state.messages[state.messages.length - 1].id = addRecord.messages[1].id
         state.messages[state.messages.length - 1].chatId = addRecord.chat.id
       })
-      console.log('list', this.store.state.messages)
     }
+    console.log('list', this.store.state.messages)
     const res = await fetch('/chat/completions', {
       method: 'POST',
       headers: {
@@ -74,13 +91,10 @@ export class ChatClient {
     })
     // res.body?.pipeThrough(new TextDecoderStream())
     const reader = p?.getReader()
-    const decoder = new TextDecoder()
     if (reader) {
       while (true) {
         const { done, value } = await reader.read()
         if (done) break
-        // const a = value as unknown as UIMessageChunk
-        // console.log('value', value)
         if (value.success) {
           if (value.value.type === 'reasoning-delta' && value.value.delta) {
             const reasoning = value.value.delta

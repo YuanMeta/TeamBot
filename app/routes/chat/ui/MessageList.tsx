@@ -91,11 +91,11 @@ export const AiMessageList = observer(() => {
           ref={listRef}
           className={`chat-list ${state.visible ? 'animate-show' : 'hidden'} ${store.state.pending ? 'pending' : ''}`}
         >
-          <div className={'w-full'}>
-            {store.state.messages.map((m) => (
-              <ChatItem key={m.tid || m.id} msg={m} />
-            ))}
-          </div>
+          {/* <div className={'w-full'}> */}
+          {store.state.messages.map((m) => (
+            <ChatItem key={m.tid || m.id} msg={m} />
+          ))}
+          {/* </div> */}
         </div>
       </div>
       <div

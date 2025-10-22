@@ -123,6 +123,6 @@ export async function action({ request }: Route.LoaderArgs) {
       console.log('step error', error)
     }
   })
-  // console.log('request body', (await result.request).body)
+  console.log('request body', (await result.request).body)
   return result.toUIMessageStreamResponse()
 }

@@ -3,7 +3,7 @@
 }
 
 .sidebar-item {
-  @apply flex h-9 items-center text-primary/90 text-sm hover:bg-sidebar-accent rounded-lg transition-colors duration-150 cursor-pointer;
+  @apply flex h-9 items-center text-primary/90 text-sm hover:bg-sidebar-accent/70 rounded-lg transition-colors duration-150 cursor-pointer;
   &.active {
     @apply bg-sidebar-accent;
   }
@@ -29,7 +29,7 @@
   );
   pointer-events: none;
 }
-.message-list {
+.chat-list {
   @apply text-neutral-950 dark:text-neutral-100;
   opacity: 0;
 }
@@ -39,20 +39,20 @@
   border-radius: 18px;
   word-break: break-all;
 }
-.message-list .ai-message .last {
+.chat-list .ai-message .last {
   display: none;
 }
-.message-list .ai-message:last-child {
-  min-height: calc(100vh - 110px);
+.chat-list .ai-message:last-child {
+  min-height: calc(100vh - 248px);
   .last {
     display: flex;
   }
 }
 
-.message-list .user-message .last {
+.chat-list .user-message .last {
   display: none;
 }
-.message-list .user-message:nth-last-child(2) {
+.chat-list .user-message:nth-last-child(2) {
   .last {
     display: flex;
   }
@@ -204,4 +204,16 @@
 
 .chat-list {
   @apply mx-auto max-w-[750px];
+}
+
+@keyframes show {
+  from {
+    opacity: 0;
+  }
+  to {
+    opacity: 1;
+  }
+}
+.animate-show {
+  animation: show 0.2s forwards ease;
 }

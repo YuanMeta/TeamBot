@@ -127,6 +127,7 @@ export class ChatStore extends StructStore<typeof state> {
     this.setState((state) => {
       state.selectedChat = chat
       if (chat?.messages) {
+        this.transList$.next()
         state.messages = chat.messages
       }
     })
@@ -136,8 +137,7 @@ export class ChatStore extends StructStore<typeof state> {
           chatId: chat.id
         })
         .then((res) => {
-          console.log('res', res)
-
+          this.transList$.next()
           this.setState((state) => {
             state.messages = res as unknown as MessageData[]
           })
