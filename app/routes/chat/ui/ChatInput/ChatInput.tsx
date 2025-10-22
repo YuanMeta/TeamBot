@@ -1,13 +1,11 @@
-import { AtSign, CircleX, Earth, FilePlus, SendHorizontal } from 'lucide-react'
+import { CircleStop, CircleX } from 'lucide-react'
 import { observer } from 'mobx-react-lite'
 import { useCallback, useEffect, useRef } from 'react'
 import { InputArea } from './InputArea'
-import { AsPanel } from './AsPanel'
-import { SwiftchModel } from './SwiftchModel'
-import { chooseFile } from './ChooseFile'
 import { useStore } from '../../store/store'
 import { useLocalState } from '~/hooks/localState'
 import { FileChoose } from './FileChoose'
+import { Button } from '~/components/ui/button'
 export const ChatInput = observer(() => {
   const store = useStore()
   const [state, setState] = useLocalState({
@@ -19,7 +17,7 @@ export const ChatInput = observer(() => {
   }>({})
   const onSend = useCallback(async (text: string) => {
     if (!text || store.state.pending) return
-    store.client.complete({
+    store.chat({
       text: text
     })
     // let files: MessageFile[] = []
@@ -169,14 +167,18 @@ export const ChatInput = observer(() => {
                 <Earth size={18} />
               </div>
             )} */}
-            <AsPanel />
-            <SwiftchModel />
           </div>
           <div className={'flex items-center justify-between'}>
             <div className={'flex items-center gap-3'}>
-              <div className={'hover:bg-zinc-100 rounded-sm p-1'}>
-                <SendHorizontal size={18} />
-              </div>
+              <Button
+                size={'icon-sm'}
+                variant={'ghost'}
+                onClick={() => store.stop()}
+              >
+                {/* <SendHorizontal size={18} /> */}
+
+                <CircleStop size={18} />
+              </Button>
             </div>
           </div>
         </div>

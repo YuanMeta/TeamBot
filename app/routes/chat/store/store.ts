@@ -158,8 +158,39 @@ export class ChatStore extends StructStore<typeof state> {
         }
       })
     }
-    this.state.cacheModel = `${assistantId}:${model}`
-    localStorage.setItem('last_assistant_model', this.state.cacheModel)
+    this.setState((state) => {
+      state.cacheModel = `${assistantId}:${model}`
+      localStorage.setItem('last_assistant_model', state.cacheModel)
+    })
+  }
+  async chat(data: { text: string }) {
+    this.setState((state) => (state.pending = true))
+    try {
+      await this.client.complete(data)
+    } catch (e) {
+      console.log('err', e)
+    } finally {
+      this.setState((state) => (state.pending = false))
+    }
+  }
+  async stop() {
+    if (this.state.selectedChat && this.state.pending) {
+      this.client.abortController?.abort()
+      this.client.abortController = null
+      this.setState((state) => {
+        state.pending = false
+        const aiMsg = state.messages[state.messages.length - 1]
+        if (aiMsg) {
+          aiMsg.terminated = true
+          trpc.chat.updateMessage.mutate({
+            id: aiMsg.id!,
+            data: {
+              terminated: true
+            }
+          })
+        }
+      })
+    }
   }
 }
 

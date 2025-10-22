@@ -46,14 +46,14 @@ export const AiMessage = observer<{ msg: MessageData }>(({ msg }) => {
         //   height: content.offsetHeight + 12
         // })
         runInAction(() => {
-          msg.height = dom.offsetHeight
+          msg.height = content.offsetHeight + 8
         })
       }, 100)
     }
   }, [msg.usage, msg.error])
   return (
     <div
-      className={'px-1 pt-2 ai-message w-full'}
+      className={'px-1 pt-3 ai-message w-full'}
       data-msg-id={msg.id}
       ref={ref}
       style={{
@@ -76,9 +76,9 @@ export const AiMessage = observer<{ msg: MessageData }>(({ msg }) => {
           )}
           {!!msg.terminated && (
             <div
-              className={'dark:text-gray-300 italic text-sm mt-1 text-gray-400'}
+              className={'dark:text-gray-300 italic text-sm mt-2 text-gray-400'}
             >
-              {t('chat.message.systemStopped')}
+              已手动终止对话。
             </div>
           )}
           <div

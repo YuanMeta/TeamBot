@@ -35,7 +35,7 @@
 }
 
 .chat-user-message {
-  @apply bg-neutral-200/70;
+  @apply bg-neutral-200/70 dark:bg-neutral-200/15;
   border-radius: 18px;
   word-break: break-all;
 }
@@ -43,7 +43,7 @@
   display: none;
 }
 .chat-list .ai-message:last-child {
-  min-height: calc(100vh - 248px);
+  min-height: calc(100vh - 260px);
   .last {
     display: flex;
   }
@@ -216,4 +216,8 @@
 }
 .animate-show {
   animation: show 0.2s forwards ease;
+}
+
+.shiki {
+  @apply p-3;
 }

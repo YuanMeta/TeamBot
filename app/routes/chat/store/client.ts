@@ -8,8 +8,10 @@ import {
   type UIMessageChunk
 } from 'ai'
 export class ChatClient {
+  abortController: AbortController | null = null
   constructor(private readonly store: ChatStore) {}
   async complete(data: { text: string }) {
+    this.abortController = new AbortController()
     const messages: typeof this.store.state.messages = []
     const tChatId = nanoid()
     messages.push({
@@ -80,6 +82,7 @@ export class ChatClient {
       headers: {
         'Content-Type': 'application/json'
       },
+      signal: this.abortController.signal,
       body: JSON.stringify({
         chatId: this.store.state.selectedChat?.id
       }),
