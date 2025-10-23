@@ -13,6 +13,7 @@ import { useStore, type MessageData } from '../../store/store'
 import { copyToClipboard } from '~/.client/copy'
 import { markdownToPureHtml } from '~/lib/mdToHtml'
 import { useLocalState } from '~/hooks/localState'
+import type { MessagePart } from '~/types'
 dayjs.extend(relativeTime)
 
 export const AiMessage = observer<{ msg: MessageData }>(({ msg }) => {
@@ -26,31 +27,35 @@ export const AiMessage = observer<{ msg: MessageData }>(({ msg }) => {
 
   const copy = useCallback(async () => {
     setState({ copied: true })
-    if (msg.content) {
+    const parts = msg.parts as MessagePart[]
+    let content = parts
+      ?.slice()
+      .reverse()
+      .find((s: MessagePart) => s.type === 'text')
+    if (content) {
       copyToClipboard({
-        html: await markdownToPureHtml(msg.content),
-        text: msg.content
+        html: await markdownToPureHtml(content),
+        text: content
       })
     }
-
     setTimeout(() => {
       setState({ copied: false })
     }, 1000)
-  }, [msg.content])
+  }, [])
   useEffect(() => {
-    const dom = ref.current
-    if (dom && msg.content && !msg.height && (msg.error || msg.usage)) {
-      const content = dom.children[0] as HTMLElement
-      setTimeout(() => {
-        // store.rpc.updateMessage(msg.id, {
-        //   height: content.offsetHeight + 12
-        // })
-        runInAction(() => {
-          msg.height = content.offsetHeight + 8
-        })
-      }, 100)
-    }
-  }, [msg.usage, msg.error])
+    // const dom = ref.current
+    // if (dom && msg.content && !msg.height && (msg.error || msg.usage)) {
+    //   const content = dom.children[0] as HTMLElement
+    //   setTimeout(() => {
+    //     // store.rpc.updateMessage(msg.id, {
+    //     //   height: content.offsetHeight + 12
+    //     // })
+    //     runInAction(() => {
+    //       msg.height = content.offsetHeight + 8
+    //     })
+    //   }, 100)
+    // }
+  }, [msg.error])
   return (
     <div
       className={'px-1 pt-3 ai-message w-full'}

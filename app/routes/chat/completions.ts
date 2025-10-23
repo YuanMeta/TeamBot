@@ -8,9 +8,9 @@ import type { Route } from './+types/completions'
 import z from 'zod'
 import { TRPCError } from '@trpc/server'
 import { prisma } from '~/.server/lib/prisma'
-import type { ChatStep, Usage } from '~/types'
+import type { MessagePart, Usage } from '~/types'
 import { createClient } from '~/.server/lib/checkConnect'
-import type { Message, Prisma } from '@prisma/client'
+import type { Prisma } from '@prisma/client'
 import { getUrlContent } from '~/.server/lib/tools'
 
 const InputSchema = z.object({
@@ -56,44 +56,34 @@ export async function action({ request }: Route.LoaderArgs) {
         role: m.role as 'user' | 'assistant',
         parts: []
       }
-      let steps = m.steps as unknown as ChatStep[]
-      if (m.role === 'system') {
-        msg.parts.push({
-          type: 'text',
-          text: m.userPrompt!
-        })
-      }
-      if (m.role === 'assistant' && steps) {
-        for (let s of steps) {
-          for (let p of s.parts) {
-            if (p.type === 'text') {
-              msg.parts.push({
-                type: 'text',
-                text: p.text
-              })
-            }
-            if (p.type === 'tool') {
-              if (p.state === 'output-error') {
-                msg.parts.push({
-                  type: 'dynamic-tool',
-                  toolName: p.toolName,
-                  toolCallId: p.toolCallId,
-                  input: p.input,
-                  output: undefined,
-                  state: 'output-error',
-                  errorText: p.errorText || ''
-                })
-              } else {
-                msg.parts.push({
-                  type: 'dynamic-tool',
-                  toolName: p.toolName,
-                  toolCallId: p.toolCallId,
-                  input: p.input,
-                  output: p.output,
-                  state: p.state as 'output-available'
-                })
-              }
-            }
+      let parts = m.parts as unknown as MessagePart[]
+      for (let p of parts) {
+        if (p.type === 'text') {
+          msg.parts.push({
+            type: 'text',
+            text: p.text
+          })
+        }
+        if (p.type === 'tool') {
+          if (p.state === 'output-error') {
+            msg.parts.push({
+              type: 'dynamic-tool',
+              toolName: p.toolName,
+              toolCallId: p.toolCallId,
+              input: p.input,
+              output: undefined,
+              state: 'output-error',
+              errorText: p.errorText || ''
+            })
+          } else {
+            msg.parts.push({
+              type: 'dynamic-tool',
+              toolName: p.toolName,
+              toolCallId: p.toolCallId,
+              input: p.input,
+              output: p.output,
+              state: p.state as 'output-available'
+            })
           }
         }
         uiMessages.push(msg)
@@ -107,7 +97,7 @@ export async function action({ request }: Route.LoaderArgs) {
     parts: [
       {
         type: 'text',
-        text: userMessage.userPrompt!
+        text: (userMessage.parts as MessagePart[])?.[0]?.text!
       }
     ]
   })
@@ -124,8 +114,9 @@ export async function action({ request }: Route.LoaderArgs) {
     tools: { getUrlContent },
     onFinish: async (data) => {
       console.log('data', data.steps)
-      console.log('request', JSON.stringify(data.request.body || null))
-      const steps: ChatStep[] = []
+      // console.log('request', JSON.stringify(data.request.body || null))
+      const steps: any[] = []
+      const parts: MessagePart[] = []
       let usage: Usage = {
         inputTokens: 0,
         outputTokens: 0,
@@ -134,10 +125,13 @@ export async function action({ request }: Route.LoaderArgs) {
         cachedInputTokens: 0
       }
       for (let s of data.steps) {
-        let step: ChatStep = {
+        let step = {
           usage: s.usage,
-          finishReason: s.finishReason as 'stop' | 'tool-calls' | 'error',
-          parts: []
+          finishReason: s.finishReason as 'stop' | 'tool-calls',
+          toolName:
+            s.finishReason === 'tool-calls'
+              ? s.content.find((c) => c.type === 'tool-result')?.toolName
+              : undefined
         }
         if (s.usage) {
           for (let key in s.usage) {
@@ -149,13 +143,13 @@ export async function action({ request }: Route.LoaderArgs) {
         }
         for (let c of s.content) {
           if (c.type === 'text') {
-            step.parts.push({
+            parts.push({
               type: 'text',
               text: c.text
             })
           }
           if (c.type === 'tool-result' || c.type === 'tool-error') {
-            step.parts.push({
+            parts.push({
               type: 'tool',
               toolName: c.toolName,
               toolCallId: c.toolCallId,
@@ -165,22 +159,22 @@ export async function action({ request }: Route.LoaderArgs) {
                 c.type === 'tool-result' ? 'output-available' : 'output-error'
             })
           }
-          if (c.type === 'reasoning') {
-            step.parts.push({
+          if (c.type === 'reasoning' && c.text) {
+            parts.push({
               type: 'reasoning',
-              reasoning: c.text
+              reasoning: c.text,
+              completed: true
             })
           }
         }
-        if (step.parts.length) {
-          steps.push(step)
-        }
+        steps.push(step)
       }
-      if (steps.length) {
-        console.log('update', JSON.stringify(steps))
+      if (parts.length) {
+        console.log('update', JSON.stringify(parts))
         await prisma.message.update({
           where: { id: assistantMessage.id },
           data: {
+            parts,
             steps: steps as unknown as Prisma.JsonArray,
             input_tokens: usage.inputTokens,
             output_tokens: usage.outputTokens,

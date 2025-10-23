@@ -1,4 +1,4 @@
-import { type ReactNode } from 'react'
+import { Fragment, type ReactNode } from 'react'
 import { observer } from 'mobx-react-lite'
 import Markdown from '~/components/project/markdown/markdown'
 import BubblesLoading from './BubbleLoading'
@@ -13,22 +13,35 @@ export interface MessageContentProps {
 }
 
 const MessageContent = observer<{ msg: MessageData }>(({ msg }) => {
-  if (msg.content === '...' && !msg.reasoning) return <BubblesLoading />
+  if (!msg.parts?.length) return <BubblesLoading />
   return (
     <div className={'relative max-w-full'}>
       <div className={'flex flex-col gap-0.5'}>
-        {!!msg.reasoning && (
-          <Reasoning
-            content={msg.reasoning}
-            duration={msg.reasoningDuration}
-            thinking={!!msg.reasoning && !msg.reasoningDuration && !msg.content}
-          />
-        )}
-        {msg.content !== '...' && (
-          <Markdown fontSize={16} fullFeaturedCodeBlock={true} variant={'chat'}>
-            {msg.content!}
-          </Markdown>
-        )}
+        {msg.parts.map((p, index) => (
+          <div key={index} className={'space-y-2'}>
+            {p.type === 'text' && (
+              <Markdown
+                fontSize={16}
+                fullFeaturedCodeBlock={true}
+                variant={'chat'}
+              >
+                {p.text}
+              </Markdown>
+            )}
+            {p.type === 'tool' && (
+              <div>
+                tools: {p.toolName} {JSON.stringify(p.input || null)}
+              </div>
+            )}
+            {p.type === 'reasoning' && (
+              <Reasoning
+                content={p.reasoning}
+                duration={msg.reasoningDuration}
+                thinking={!p.completed}
+              />
+            )}
+          </div>
+        ))}
       </div>
     </div>
   )

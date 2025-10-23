@@ -36,7 +36,7 @@ interface Usage {
   reasoningTokens?: number
   cachedInputTokens?: number
 }
-interface ToolStep {
+interface ToolPart {
   type: 'tool'
   toolName: string
   toolCallId: string
@@ -46,18 +46,15 @@ interface ToolStep {
   errorText?: string
 }
 
-interface ReasonStep {
+interface ReasonPart {
   type: 'reasoning'
   reasoning: string
+  completed: boolean
 }
 
-interface TextStep {
+interface TextPart {
   type: 'text'
   text: string
 }
 
-interface ChatStep {
-  usage?: Usage
-  finishReason?: 'stop' | 'tool-calls' | 'error'
-  parts: (TextStep | ReasonStep | ToolStep)[]
-}
+export type MessagePart = TextStep | ReasonStep | ToolPart

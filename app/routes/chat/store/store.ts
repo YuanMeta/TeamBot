@@ -5,22 +5,20 @@ import { isClient } from '~/lib/utils'
 import type { Assistant, MessageFile } from '@prisma/client'
 import { Subject } from 'rxjs'
 import { ChatClient } from './client'
+import type { MessagePart } from '~/types'
 
 export interface MessageData {
   id?: string
   tid?: string
   chatId: string
-  content: string
   role: 'user' | 'assistant' | 'system'
   model?: string
-  reasoning?: string | null
   terminated?: boolean
+  parts?: MessagePart[] | null
   reasoningDuration?: number | null
   context?: Record<string, any> | null
   height?: number | null
-  usage?: Record<string, any> | null
   error?: string | null
-  tools?: Record<string, any> | null
   files?: MessageFile[]
   updatedAt: Date
 }

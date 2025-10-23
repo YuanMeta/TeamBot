@@ -95,14 +95,14 @@ model Message {
   height              Int?
   error               String?
   model               String?
-  userPrompt          String?
   reasoningDuration   Int?
-  steps               Json?
+  parts               Json?
   input_tokens        Int?
   output_tokens       Int?
   total_tokens        Int?
   reasoning_tokens    Int?
   cached_input_tokens Int?
+  steps               Json?
   terminated          Boolean       @default(false)
   createdAt           DateTime      @default(now())
   updatedAt           DateTime      @default(now())

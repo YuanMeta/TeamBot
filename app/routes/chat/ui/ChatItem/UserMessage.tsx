@@ -11,6 +11,8 @@ import { Textarea } from '~/components/ui/textarea'
 import { Button } from '~/components/ui/button'
 import { trpc } from '~/.client/trpc'
 import { useLocalState } from '~/hooks/localState'
+import { getUserPrompt } from '~/lib/chat'
+import type { MessagePart } from '~/types'
 const fileTypeIconMap = [
   [/\.pdf$/i, 'pdf', '#F54838'],
   [/\.docx$/i, 'doc', '#0078D4'],
@@ -27,7 +29,7 @@ export const UserMessage = observer<{ msg: MessageData }>(({ msg }) => {
   const ref = useRef<HTMLDivElement>(null)
   const [state, setState] = useLocalState({
     copied: false,
-    inputText: msg.content || '',
+    inputText: getUserPrompt(msg.parts as MessagePart[]) || '',
     isEditing: false
   })
   const getFileTypeIcon = useCallback(
@@ -57,12 +59,12 @@ export const UserMessage = observer<{ msg: MessageData }>(({ msg }) => {
   }, [])
 
   const copy = useCallback(() => {
-    copyToClipboard({ text: msg.content! })
+    copyToClipboard({ text: getUserPrompt(msg.parts as MessagePart[]) || '' })
     setState({ copied: true })
     setTimeout(() => {
       setState({ copied: false })
     }, 1000)
-  }, [msg.content])
+  }, [])
 
   const update = useCallback(() => {
     if (state.inputText) {
@@ -76,28 +78,28 @@ export const UserMessage = observer<{ msg: MessageData }>(({ msg }) => {
       })
       if (lastUserMsg) {
         runInAction(() => {
-          lastUserMsg.content = state.inputText
+          lastUserMsg.parts = [{ type: 'text', text: state.inputText }]
           lastUserMsg.context = []
         })
       }
       // store.chat.completion(state().inputText, undefined, lastUserMsg)
     }
   }, [state])
-  const hotKey = useCallback(
-    (e: React.KeyboardEvent<HTMLTextAreaElement>) => {
-      if (isHotkey('enter', e)) {
-        e.preventDefault()
-        update()
-      }
-      if (isHotkey('mod+enter', e)) {
-        setState({ inputText: state.inputText + '\n' })
-      }
-      if (isHotkey('escape', e)) {
-        setState({ isEditing: false, inputText: msg.content || '' })
-      }
-    },
-    [msg.content]
-  )
+  const hotKey = useCallback((e: React.KeyboardEvent<HTMLTextAreaElement>) => {
+    if (isHotkey('enter', e)) {
+      e.preventDefault()
+      update()
+    }
+    if (isHotkey('mod+enter', e)) {
+      setState({ inputText: state.inputText + '\n' })
+    }
+    if (isHotkey('escape', e)) {
+      setState({
+        isEditing: false,
+        inputText: getUserPrompt(msg.parts as MessagePart[]) || ''
+      })
+    }
+  }, [])
   useEffect(() => {
     const dom = ref.current
     if (dom && !msg.height && msg.id) {
@@ -140,7 +142,10 @@ export const UserMessage = observer<{ msg: MessageData }>(({ msg }) => {
               variant={'outline'}
               size={'sm'}
               onClick={() => {
-                setState({ isEditing: false, inputText: msg.content || '' })
+                setState({
+                  isEditing: false,
+                  inputText: getUserPrompt(msg.parts as MessagePart[]) || ''
+                })
               }}
             >
               取消
@@ -166,7 +171,7 @@ export const UserMessage = observer<{ msg: MessageData }>(({ msg }) => {
             </div>
           </div>
           <div className={'chat-user-message px-4 py-2 max-w-[80%] leading-5'}>
-            <div>{msg.content}</div>
+            <div>{getUserPrompt(msg.parts as MessagePart[])}</div>
           </div>
         </div>
       )}

@@ -58,7 +58,12 @@ export const chatRouter = {
                   }
                 }
               : undefined,
-            userPrompt: input.userPrompt
+            parts: [
+              {
+                type: 'text',
+                text: input.userPrompt
+              }
+            ]
           },
           include: { files: true }
         })
@@ -94,10 +99,9 @@ export const chatRouter = {
           createdAt: true,
           updatedAt: true,
           height: true,
-          userPrompt: true,
+          parts: true,
           model: true,
           error: true,
-          steps: true,
           terminated: true,
           role: true
         }
@@ -150,10 +154,9 @@ export const chatRouter = {
             }
           },
           context: true,
-          userPrompt: true,
+          parts: true,
           createdAt: true,
           updatedAt: true,
-          steps: true,
           height: true,
           model: true,
           error: true,
@@ -213,7 +216,14 @@ export const chatRouter = {
               chatId: input.chatId,
               role: m.role,
               userId: ctx.userId,
-              userPrompt: m.userPrompt,
+              parts: m.userPrompt
+                ? [
+                    {
+                      type: 'text',
+                      text: m.userPrompt
+                    }
+                  ]
+                : undefined,
               files: m.files?.length
                 ? {
                     createMany: {
