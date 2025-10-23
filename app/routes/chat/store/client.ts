@@ -7,46 +7,37 @@ import {
   uiMessageChunkSchema,
   type UIMessageChunk
 } from 'ai'
+import type { MessagePart } from '~/types'
+import { observable, runInAction } from 'mobx'
 export class ChatClient {
   abortController: AbortController | null = null
   constructor(private readonly store: ChatStore) {}
-  async complete(data: { text: string }) {
+  async complete(data: { text: string; onFinish?: () => void }) {
     this.abortController = new AbortController()
-    const messages: typeof this.store.state.messages = []
     const tChatId = nanoid()
-    messages.push({
+    const userMessage = observable<MessageData>({
       tid: nanoid(),
       chatId: this.store.state.selectedChat?.id || tChatId,
-      content: data.text,
+      parts: [{ type: 'text', text: data.text }],
       role: 'user',
       model: this.store.state.model!,
       updatedAt: dayjs().toDate()
     })
-    messages.push({
+    const aiMessage = observable<MessageData>({
       tid: nanoid(),
       chatId: this.store.state.selectedChat?.id || tChatId,
-      content: '...',
       role: 'assistant',
       model: this.store.state.model!,
       updatedAt: dayjs().add(1, 'second').toDate()
     })
     this.store.setState((state) => {
-      state.messages.push(...messages)
+      state.messages.push(userMessage, aiMessage)
     })
     if (this.store.state.selectedChat) {
       const chat = this.store.state.selectedChat
       const addRecord = await trpc.chat.createMessages.mutate({
         chatId: chat.id,
-        messages: [
-          {
-            content: data.text,
-            role: 'user'
-          },
-          {
-            role: 'assistant',
-            content: '...'
-          }
-        ]
+        userPrompt: data.text
       })
       this.store.setState((state) => {
         state.messages[state.messages.length - 2].id = addRecord.messages[0].id
@@ -56,16 +47,7 @@ export class ChatClient {
       const addRecord = await trpc.chat.createChat.mutate({
         assistantId: this.store.state.assistant!.id,
         model: this.store.state.model!,
-        messages: [
-          {
-            content: data.text,
-            role: 'user'
-          },
-          {
-            role: 'assistant',
-            content: '...'
-          }
-        ]
+        userPrompt: data.text
       })
       this.store.setState((state) => {
         state.chats.unshift(addRecord.chat)
@@ -76,7 +58,6 @@ export class ChatClient {
         state.messages[state.messages.length - 1].chatId = addRecord.chat.id
       })
     }
-    console.log('list', this.store.state.messages)
     const res = await fetch('/chat/completions', {
       method: 'POST',
       headers: {
@@ -92,33 +73,99 @@ export class ChatClient {
       stream: res.body as any,
       schema: uiMessageChunkSchema
     })
-    // res.body?.pipeThrough(new TextDecoderStream())
     const reader = p?.getReader()
     if (reader) {
+      let parts: Record<string, MessagePart> = {}
       while (true) {
         const { done, value } = await reader.read()
         if (done) break
         if (value.success) {
-          if (value.value.type === 'reasoning-delta' && value.value.delta) {
-            const reasoning = value.value.delta
-            this.store.setState((state) => {
-              const aiMsg = state.messages[state.messages.length - 1]
-              aiMsg.reasoning = (aiMsg.reasoning || '') + reasoning
-            })
-          } else if (value.value.type === 'text-delta' && value.value.delta) {
-            const text = value.value.delta
-            this.store.setState((state) => {
-              const aiMsg = state.messages[state.messages.length - 1]
-              if (!aiMsg.content || aiMsg.content === '...') {
-                aiMsg.content = text
-              } else {
-                aiMsg.content += text
-              }
-            })
-          }
+          runInAction(() => {
+            switch (value.value.type) {
+              case 'tool-input-start':
+                const part = observable({
+                  type: 'tool',
+                  toolName: value.value.toolName,
+                  toolCallId: value.value.toolCallId,
+                  input: null,
+                  output: '',
+                  completed: false,
+                  state: 'start'
+                })
+                parts[part.toolCallId] = part
+                this.addPart(part, aiMessage)
+                break
+              case 'tool-input-error':
+                if (parts[value.value.toolCallId]) {
+                  parts[value.value.toolCallId].state = 'error'
+                }
+                break
+              case 'tool-output-error':
+                if (parts[value.value.toolCallId]) {
+                  parts[value.value.toolCallId].state = 'error'
+                }
+                break
+              case 'tool-input-delta':
+                if (parts[value.value.toolCallId]) {
+                  parts[value.value.toolCallId].output +=
+                    value.value.inputTextDelta
+                }
+                break
+              case 'tool-output-available':
+                if (parts[value.value.toolCallId]) {
+                  parts[value.value.toolCallId].state = 'completed'
+                  parts[value.value.toolCallId].output = value.value.output
+                }
+                break
+              case 'text-start':
+                const textPart = observable({
+                  type: 'text',
+                  text: ''
+                })
+                parts[value.value.id] = textPart
+                this.addPart(textPart, aiMessage)
+                break
+              case 'text-delta':
+                if (parts[value.value.id]) {
+                  parts[value.value.id].text += value.value.delta
+                }
+                break
+              case 'reasoning-start':
+                const reasoningPart = observable({
+                  type: 'reasoning',
+                  reasoning: '',
+                  completed: false
+                })
+                parts[value.value.id] = reasoningPart
+                this.addPart(reasoningPart, aiMessage)
+                break
+              case 'reasoning-delta':
+                if (parts[value.value.id]) {
+                  parts[value.value.id].reasoning += value.value.delta
+                }
+                break
+              case 'reasoning-end':
+                if (parts[value.value.id]) {
+                  parts[value.value.id].completed = true
+                }
+                break
+              case 'finish':
+                data.onFinish?.()
+                break
+            }
+          })
           console.log('value', value.value)
         }
       }
     }
+  }
+  private addPart(part: MessagePart, aiMsg: MessageData) {
+    runInAction(() => {
+      if (!aiMsg.parts) {
+        aiMsg.parts = [part]
+      } else {
+        aiMsg.parts.push(part)
+      }
+    })
   }
 }

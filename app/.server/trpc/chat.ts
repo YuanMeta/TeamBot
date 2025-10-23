@@ -189,61 +189,59 @@ export const chatRouter = {
     .input(
       z.object({
         chatId: z.string(),
-        messages: z
-          .object({
-            content: z.string().optional(),
-            role: z.enum(['user', 'assistant', 'system']),
-            userPrompt: z.string().optional(),
-            files: z
-              .array(
-                z.object({
-                  path: z.string(),
-                  size: z.number(),
-                  name: z.string()
-                })
-              )
-              .optional()
-          })
-          .array()
+        userPrompt: z.string().optional(),
+        files: z
+          .array(
+            z.object({
+              path: z.string(),
+              size: z.number(),
+              name: z.string()
+            })
+          )
+          .optional()
       })
     )
     .mutation(async ({ input, ctx }) => {
       return ctx.db.$transaction(async (t) => {
         let messages: Message[] = []
-        for (let m of input.messages) {
-          const message = await t.message.create({
-            data: {
-              chatId: input.chatId,
-              role: m.role,
-              userId: ctx.userId,
-              parts: m.userPrompt
-                ? [
-                    {
-                      type: 'text',
-                      text: m.userPrompt
-                    }
-                  ]
-                : undefined,
-              files: m.files?.length
-                ? {
-                    createMany: {
-                      data: m.files.map((file) => {
-                        return {
-                          userId: ctx.userId,
-                          name: file.name,
-                          path: file.path,
-                          size: file.size,
-                          origin: 'file'
-                        }
-                      })
-                    }
+        const userMessage = await t.message.create({
+          data: {
+            chatId: input.chatId,
+            role: 'user',
+            userId: ctx.userId,
+            parts: [
+              {
+                type: 'text',
+                text: input.userPrompt
+              }
+            ],
+            files: input.files?.length
+              ? {
+                  createMany: {
+                    data: input.files.map((file) => {
+                      return {
+                        userId: ctx.userId,
+                        name: file.name,
+                        path: file.path,
+                        size: file.size,
+                        origin: 'file'
+                      }
+                    })
                   }
-                : undefined
-            },
-            include: { files: true }
-          })
-          messages.push(message)
-        }
+                }
+              : undefined
+          },
+          include: { files: true }
+        })
+        const aiMessage = await t.message.create({
+          data: {
+            chatId: input.chatId,
+            role: 'assistant',
+            userId: ctx.userId
+          }
+        })
+        messages.push(userMessage)
+        messages.push(aiMessage)
         return { messages }
       })
     }),

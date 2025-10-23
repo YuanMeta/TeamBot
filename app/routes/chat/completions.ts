@@ -155,8 +155,7 @@ export async function action({ request }: Route.LoaderArgs) {
               toolCallId: c.toolCallId,
               input: c.input,
               output: c.type === 'tool-result' ? c.output : undefined,
-              state:
-                c.type === 'tool-result' ? 'output-available' : 'output-error'
+              state: c.type === 'tool-result' ? 'completed' : 'error'
             })
           }
           if (c.type === 'reasoning' && c.text) {

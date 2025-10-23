@@ -42,7 +42,7 @@ interface ToolPart {
   toolCallId: string
   input: any
   output: any
-  state?: string
+  state?: 'start' | 'completed' | 'error'
   errorText?: string
 }
 
