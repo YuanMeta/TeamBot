@@ -2,7 +2,8 @@ import {
   convertToModelMessages,
   stepCountIs,
   streamText,
-  type UIMessage
+  type UIMessage,
+  type APICallError
 } from 'ai'
 import type { Route } from './+types/completions'
 import z from 'zod'
@@ -65,7 +66,7 @@ export async function action({ request }: Route.LoaderArgs) {
           })
         }
         if (p.type === 'tool') {
-          if (p.state === 'output-error') {
+          if (p.state === 'error') {
             msg.parts.push({
               type: 'dynamic-tool',
               toolName: p.toolName,
@@ -82,12 +83,12 @@ export async function action({ request }: Route.LoaderArgs) {
               toolCallId: p.toolCallId,
               input: p.input,
               output: p.output,
-              state: p.state as 'output-available'
+              state: 'output-available'
             })
           }
         }
-        uiMessages.push(msg)
       }
+      uiMessages.push(msg)
     })
   }
   const [userMessage, assistantMessage] = messages.slice(-2)
@@ -101,6 +102,7 @@ export async function action({ request }: Route.LoaderArgs) {
       }
     ]
   })
+
   const client = createClient({
     mode: chat.assistant!.mode,
     apiKey: chat.assistant!.apiKey,
@@ -113,7 +115,7 @@ export async function action({ request }: Route.LoaderArgs) {
     stopWhen: stepCountIs(5),
     tools: { getUrlContent },
     onFinish: async (data) => {
-      console.log('data', data.steps)
+      // console.log('data', data.steps)
       // console.log('request', JSON.stringify(data.request.body || null))
       const steps: any[] = []
       const parts: MessagePart[] = []
@@ -169,7 +171,6 @@ export async function action({ request }: Route.LoaderArgs) {
         steps.push(step)
       }
       if (parts.length) {
-        console.log('update', JSON.stringify(parts))
         await prisma.message.update({
           where: { id: assistantMessage.id },
           data: {
@@ -185,7 +186,8 @@ export async function action({ request }: Route.LoaderArgs) {
       }
     },
     onError: (error) => {
-      console.log('step error', error)
+      let err = error.error as APICallError
+      console.log('request', err)
     }
   })
   return result.toUIMessageStreamResponse()

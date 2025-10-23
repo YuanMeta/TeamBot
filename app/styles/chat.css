@@ -221,3 +221,7 @@
 .shiki {
   @apply p-3;
 }
+
+.inline-code .shiki {
+  @apply rounded-md py-1.5 px-2 mt-2;
+}
