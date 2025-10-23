@@ -1,29 +1,23 @@
 import type { TRPCRouterRecord } from '@trpc/server'
 import { procedure } from './core'
 import z from 'zod'
-import type { Message } from '@prisma/client'
-
+import { type Message } from '@prisma/client'
 export const chatRouter = {
   createChat: procedure
     .input(
       z.object({
         assistantId: z.string().min(1),
         model: z.string().optional(),
-        messages: z
-          .object({
-            content: z.string().optional(),
-            role: z.enum(['user', 'assistant', 'system']),
-            files: z
-              .array(
-                z.object({
-                  path: z.string(),
-                  name: z.string(),
-                  size: z.number()
-                })
-              )
-              .optional()
-          })
-          .array()
+        files: z
+          .array(
+            z.object({
+              path: z.string(),
+              name: z.string(),
+              size: z.number()
+            })
+          )
+          .optional(),
+        userPrompt: z.string()
       })
     )
     .mutation(async ({ input, ctx }) => {
@@ -44,33 +38,39 @@ export const chatRouter = {
           }
         })
         let messages: Message[] = []
-        for (let m of input.messages) {
-          const message = await t.message.create({
-            data: {
-              chatId: chat.id,
-              content: m.content,
-              role: m.role,
-              userId: ctx.userId,
-              files: m.files?.length
-                ? {
-                    createMany: {
-                      data: m.files.map((file) => {
-                        return {
-                          userId: ctx.userId,
-                          name: file.name,
-                          path: file.path,
-                          size: file.size,
-                          origin: 'file'
-                        }
-                      })
-                    }
+        const userMessage = await t.message.create({
+          data: {
+            chatId: chat.id,
+            role: 'user',
+            userId: ctx.userId,
+            files: input.files?.length
+              ? {
+                  createMany: {
+                    data: input.files.map((file) => {
+                      return {
+                        userId: ctx.userId,
+                        name: file.name,
+                        path: file.path,
+                        size: file.size,
+                        origin: 'file'
+                      }
+                    })
                   }
-                : undefined
-            },
-            include: { files: true }
-          })
-          messages.push(message)
-        }
+                }
+              : undefined,
+            userPrompt: input.userPrompt
+          },
+          include: { files: true }
+        })
+        const assistantMessage = await t.message.create({
+          data: {
+            chatId: chat.id,
+            role: 'assistant',
+            userId: ctx.userId
+          }
+        })
+        messages.push(userMessage)
+        messages.push(assistantMessage)
         return { chat, messages }
       })
     }),
@@ -91,18 +91,15 @@ export const chatRouter = {
           chatId: true,
           files: true,
           context: true,
-          content: true,
           createdAt: true,
           updatedAt: true,
           height: true,
-          reasoning: true,
+          userPrompt: true,
           model: true,
-          usage: true,
           error: true,
-          tools: true,
+          steps: true,
           terminated: true,
-          role: true,
-          reasoningDuration: true
+          role: true
         }
       })
     }),
@@ -153,18 +150,15 @@ export const chatRouter = {
             }
           },
           context: true,
-          content: true,
+          userPrompt: true,
           createdAt: true,
           updatedAt: true,
+          steps: true,
           height: true,
-          reasoning: true,
           model: true,
-          usage: true,
           error: true,
-          tools: true,
           terminated: true,
-          role: true,
-          reasoningDuration: true
+          role: true
         }
       })
     }),
@@ -196,6 +190,7 @@ export const chatRouter = {
           .object({
             content: z.string().optional(),
             role: z.enum(['user', 'assistant', 'system']),
+            userPrompt: z.string().optional(),
             files: z
               .array(
                 z.object({
@@ -216,9 +211,9 @@ export const chatRouter = {
           const message = await t.message.create({
             data: {
               chatId: input.chatId,
-              content: m.content,
               role: m.role,
               userId: ctx.userId,
+              userPrompt: m.userPrompt,
               files: m.files?.length
                 ? {
                     createMany: {
@@ -249,12 +244,10 @@ export const chatRouter = {
         data: z.object({
           height: z.number().optional(),
           error: z.string().optional(),
-          usage: z.record(z.string(), z.any()).optional(),
           terminated: z.boolean().optional(),
-          tools: z.record(z.string(), z.any()).optional(),
           model: z.string().optional(),
-          content: z.string().optional(),
-          context: z.record(z.string(), z.any()).optional()
+          context: z.record(z.string(), z.any()).optional(),
+          userPrompt: z.string().optional()
         })
       })
     )

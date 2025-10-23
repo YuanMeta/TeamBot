@@ -8,7 +8,7 @@ import type { Route } from './+types/completions'
 import z from 'zod'
 import { TRPCError } from '@trpc/server'
 import { prisma } from '~/.server/lib/prisma'
-import type { ToolCall } from '~/types'
+import type { ChatStep, Usage } from '~/types'
 import { createClient } from '~/.server/lib/checkConnect'
 import type { Message, Prisma } from '@prisma/client'
 import { getUrlContent } from '~/.server/lib/tools'
@@ -53,27 +53,51 @@ export async function action({ request }: Route.LoaderArgs) {
     messages.slice(0, -2).map((m) => {
       const msg: UIMessage = {
         id: m.id,
-        role: m.role as 'user' | 'assistant' | 'system',
+        role: m.role as 'user' | 'assistant',
         parts: []
       }
-      const tools = m.tools as unknown as ToolCall[]
-      if (tools?.length) {
-        tools.forEach((t) => {
-          msg.parts.push({
-            type: 'dynamic-tool',
-            toolName: t.name,
-            toolCallId: t.id,
-            input: t.input,
-            output: t.output,
-            state: 'output-available'
-          })
+      let steps = m.steps as unknown as ChatStep[]
+      if (m.role === 'system') {
+        msg.parts.push({
+          type: 'text',
+          text: m.userPrompt!
         })
       }
-      msg.parts.push({
-        type: 'text',
-        text: m.content || ''
-      })
-      uiMessages.push(msg)
+      if (m.role === 'assistant' && steps) {
+        for (let s of steps) {
+          for (let p of s.parts) {
+            if (p.type === 'text') {
+              msg.parts.push({
+                type: 'text',
+                text: p.text
+              })
+            }
+            if (p.type === 'tool') {
+              if (p.state === 'output-error') {
+                msg.parts.push({
+                  type: 'dynamic-tool',
+                  toolName: p.toolName,
+                  toolCallId: p.toolCallId,
+                  input: p.input,
+                  output: undefined,
+                  state: 'output-error',
+                  errorText: p.errorText || ''
+                })
+              } else {
+                msg.parts.push({
+                  type: 'dynamic-tool',
+                  toolName: p.toolName,
+                  toolCallId: p.toolCallId,
+                  input: p.input,
+                  output: p.output,
+                  state: p.state as 'output-available'
+                })
+              }
+            }
+          }
+        }
+        uiMessages.push(msg)
+      }
     })
   }
   const [userMessage, assistantMessage] = messages.slice(-2)
@@ -83,7 +107,7 @@ export async function action({ request }: Route.LoaderArgs) {
     parts: [
       {
         type: 'text',
-        text: userMessage.content!
+        text: userMessage.userPrompt!
       }
     ]
   })
@@ -99,41 +123,70 @@ export async function action({ request }: Route.LoaderArgs) {
     stopWhen: stepCountIs(5),
     tools: { getUrlContent },
     onFinish: async (data) => {
-      // console.log('request', JSON.stringify(data.request.body || null))
-      let text = ''
-      let reasoning: undefined | '' = undefined
-      let tools: ToolCall[] = []
+      console.log('data', data.steps)
+      console.log('request', JSON.stringify(data.request.body || null))
+      const steps: ChatStep[] = []
+      let usage: Usage = {
+        inputTokens: 0,
+        outputTokens: 0,
+        totalTokens: 0,
+        reasoningTokens: 0,
+        cachedInputTokens: 0
+      }
       for (let s of data.steps) {
-        for (let c of s.content) {
-          if (c.type === 'text') {
-            text += c.text
-            if (s.finishReason === 'tool-calls') {
-              text += '\n\n'
+        let step: ChatStep = {
+          usage: s.usage,
+          finishReason: s.finishReason as 'stop' | 'tool-calls' | 'error',
+          parts: []
+        }
+        if (s.usage) {
+          for (let key in s.usage) {
+            let keyName = key as keyof Usage
+            if (usage[keyName] !== undefined) {
+              usage[keyName] += (s.usage[keyName] as number) || 0
             }
           }
-          if (c.type === 'tool-result') {
-            tools.push({
-              name: c.toolName,
-              id: c.toolCallId,
+        }
+        for (let c of s.content) {
+          if (c.type === 'text') {
+            step.parts.push({
+              type: 'text',
+              text: c.text
+            })
+          }
+          if (c.type === 'tool-result' || c.type === 'tool-error') {
+            step.parts.push({
+              type: 'tool',
+              toolName: c.toolName,
+              toolCallId: c.toolCallId,
               input: c.input,
-              output: c.output
+              output: c.type === 'tool-result' ? c.output : undefined,
+              state:
+                c.type === 'tool-result' ? 'output-available' : 'output-error'
             })
           }
           if (c.type === 'reasoning') {
-            reasoning = (reasoning || '') + c.text
+            step.parts.push({
+              type: 'reasoning',
+              reasoning: c.text
+            })
           }
         }
+        if (step.parts.length) {
+          steps.push(step)
+        }
       }
-      if (text) {
+      if (steps.length) {
+        console.log('update', JSON.stringify(steps))
         await prisma.message.update({
           where: { id: assistantMessage.id },
           data: {
-            reasoning: reasoning,
-            content: text,
-            usage: data.usage,
-            tools: tools.length
-              ? (tools as unknown as Prisma.JsonArray)
-              : undefined
+            steps: steps as unknown as Prisma.JsonArray,
+            input_tokens: usage.inputTokens,
+            output_tokens: usage.outputTokens,
+            total_tokens: usage.totalTokens,
+            reasoning_tokens: usage.reasoningTokens,
+            cached_input_tokens: usage.cachedInputTokens
           }
         })
       }

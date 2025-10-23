@@ -29,9 +29,35 @@ export interface AssistantOptions {
   searchMode?: 'openrouter'
 }
 
-export interface ToolCall {
-  name: string
-  id: string
+interface Usage {
+  inputTokens?: number
+  outputTokens?: number
+  totalTokens?: number
+  reasoningTokens?: number
+  cachedInputTokens?: number
+}
+interface ToolStep {
+  type: 'tool'
+  toolName: string
+  toolCallId: string
   input: any
   output: any
+  state?: string
+  errorText?: string
+}
+
+interface ReasonStep {
+  type: 'reasoning'
+  reasoning: string
+}
+
+interface TextStep {
+  type: 'text'
+  text: string
+}
+
+interface ChatStep {
+  usage?: Usage
+  finishReason?: 'stop' | 'tool-calls' | 'error'
+  parts: (TextStep | ReasonStep | ToolStep)[]
 }

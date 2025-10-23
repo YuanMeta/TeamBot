@@ -87,25 +87,28 @@ model Chat {
 }
 
 model Message {
-  id                String        @id @default(cuid())
-  content           String?
-  role              String // 'user' | 'assistant' | 'system'
-  userId            String
-  chatId            String
-  reasoning         String?
-  reasoningDuration Int?
-  context           Json?
-  height            Int?
-  usage             Json?
-  error             String?
-  tools             Json?
-  model             String?
-  terminated        Boolean       @default(false)
-  createdAt         DateTime      @default(now())
-  updatedAt         DateTime      @default(now())
-  user              User          @relation(fields: [userId], references: [id], onDelete: Cascade)
-  chat              Chat          @relation(fields: [chatId], references: [id], onDelete: Cascade)
-  files             MessageFile[]
+  id                  String        @id @default(cuid())
+  role                String // 'user' | 'assistant' | 'system'
+  userId              String
+  chatId              String
+  context             Json?
+  height              Int?
+  error               String?
+  model               String?
+  userPrompt          String?
+  reasoningDuration   Int?
+  steps               Json?
+  input_tokens        Int?
+  output_tokens       Int?
+  total_tokens        Int?
+  reasoning_tokens    Int?
+  cached_input_tokens Int?
+  terminated          Boolean       @default(false)
+  createdAt           DateTime      @default(now())
+  updatedAt           DateTime      @default(now())
+  user                User          @relation(fields: [userId], references: [id], onDelete: Cascade)
+  chat                Chat          @relation(fields: [chatId], references: [id], onDelete: Cascade)
+  files               MessageFile[]
 
   @@index([userId, chatId])
   @@map("messages")

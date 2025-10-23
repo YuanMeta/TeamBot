@@ -50,7 +50,9 @@ const Markdown = memo<MarkdownProps>(
 
     const memoComponents = useComponents()
 
-    const innerRehypePlugins = Array.isArray(rehypePlugins) ? rehypePlugins : [rehypePlugins]
+    const innerRehypePlugins = Array.isArray(rehypePlugins)
+      ? rehypePlugins
+      : [rehypePlugins]
 
     const memoRehypePlugins = useMemo(
       () =>
@@ -63,7 +65,9 @@ const Markdown = memo<MarkdownProps>(
       [allowHtml, enableLatex, ...innerRehypePlugins]
     )
 
-    const innerRemarkPlugins = Array.isArray(remarkPlugins) ? remarkPlugins : [remarkPlugins]
+    const innerRemarkPlugins = Array.isArray(remarkPlugins)
+      ? remarkPlugins
+      : [remarkPlugins]
     const innerRemarkPluginsAhead = Array.isArray(remarkPluginsAhead)
       ? remarkPluginsAhead
       : [remarkPluginsAhead]
@@ -77,13 +81,18 @@ const Markdown = memo<MarkdownProps>(
           isChatMode && remarkBreaks,
           ...innerRemarkPlugins
         ].filter(Boolean) as any,
-      [isChatMode, enableLatex, ...innerRemarkPluginsAhead, ...innerRemarkPlugins]
+      [
+        isChatMode,
+        enableLatex,
+        ...innerRemarkPluginsAhead,
+        ...innerRemarkPlugins
+      ]
     )
 
     return (
       <div
         className={`message-markdown w-full max-w-full`}
-        data-code-type="markdown"
+        data-code-type='markdown'
         onDoubleClick={onDoubleClick}
         style={style}
       >
