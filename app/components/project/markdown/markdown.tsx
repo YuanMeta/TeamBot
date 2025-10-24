@@ -6,10 +6,11 @@ import remarkBreaks from 'remark-breaks'
 import remarkGfm from 'remark-gfm'
 import remarkMath from 'remark-math'
 import type { Pluggable } from 'unified'
-
 import { rehypeKatexDir } from './plugins/katexDir'
 import { useComponents } from './components'
-
+import { escapeBrackets, escapeMhchem, fixMarkdownBold } from './utils'
+import rehypeSanitize from 'rehype-sanitize'
+import { defaultSchema } from 'hast-util-sanitize'
 export interface MarkdownProps {
   allowHtml?: boolean
   children: string
@@ -57,7 +58,8 @@ const Markdown = memo<MarkdownProps>(
     const memoRehypePlugins = useMemo(
       () =>
         [
-          allowHtml && rehypeRaw,
+          rehypeRaw,
+          [rehypeSanitize, { ...defaultSchema }],
           enableLatex && rehypeKatex,
           enableLatex && rehypeKatexDir,
           ...innerRehypePlugins
@@ -88,7 +90,6 @@ const Markdown = memo<MarkdownProps>(
         ...innerRemarkPlugins
       ]
     )
-
     return (
       <div
         className={`message-markdown w-full max-w-full`}
@@ -102,7 +103,8 @@ const Markdown = memo<MarkdownProps>(
           remarkPlugins={memoRemarkPlugins}
           {...rest}
         >
-          {children}
+          {fixMarkdownBold(escapeMhchem(escapeBrackets(children)))}
+          {/* {children} */}
         </ReactMarkdown>
       </div>
     )

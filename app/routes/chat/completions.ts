@@ -106,13 +106,13 @@ export async function action({ request }: Route.LoaderArgs) {
   const tools: Record<string, Tool> = {
     getUrlContent
   }
-  // const search = chat.assistant?.webSearch as SearchOptions
-  // if (search?.mode) {
-  //   const tool = createWebSearchTool(search)
-  //   if (tool) {
-  //     tools['webSearch'] = tool
-  //   }
-  // }
+  const search = chat.assistant?.webSearch as SearchOptions
+  if (search?.mode) {
+    const tool = createWebSearchTool(search)
+    if (tool) {
+      tools['webSearch'] = tool
+    }
+  }
   const client = createClient({
     mode: chat.assistant!.mode,
     apiKey: chat.assistant!.apiKey,
@@ -122,6 +122,10 @@ export async function action({ request }: Route.LoaderArgs) {
     model: client(chat.model!),
     messages: convertToModelMessages(uiMessages),
     stopWhen: stepCountIs(20),
+    system: `当你调用 "webSearch" 工具时，请严格遵守以下格式输出回答：
+1. 在使用某条搜索结果时，在对应句子后标注来源地址，如: [source](https://apple.com/markbook)。
+2. 如果某句话是你自己的知识（不是搜索结果），不要添加来源
+    `,
     tools,
     onFinish: async (data) => {
       // console.log('data', data.steps)

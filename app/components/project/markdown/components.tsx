@@ -2,12 +2,21 @@ import { useMemo } from 'react'
 import type { Components } from 'react-markdown'
 import { CodeLite } from './code/code-block'
 import { Checkbox } from '~/components/ui/checkbox'
+import { Badge } from '~/components/ui/badge'
+import { getDomain } from '~/lib/utils'
 
 export const useComponents = () => {
   return useMemo(
     () =>
       ({
         a: (props: any) => {
+          if (props.children === 'source') {
+            return (
+              <a className={'mx-1'} href={props.href} target={'_blank'}>
+                <Badge variant='outline'>{getDomain(props.href || '')}</Badge>
+              </a>
+            )
+          }
           return (
             <a
               {...props}
@@ -98,7 +107,7 @@ export const useComponents = () => {
           <code
             {...props}
             className={
-              'bg-sky-800/5 dark:bg-sky-200/5 relative rounded px-[0.3rem] py-[0.2rem] font-mono text-sm font-semibold'
+              'bg-neutral-200/70 dark:bg-neutral-700/80 relative rounded px-[0.3rem] py-[0.2rem] font-mono text-sm'
             }
           />
         ),
