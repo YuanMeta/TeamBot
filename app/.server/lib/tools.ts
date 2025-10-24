@@ -2,6 +2,8 @@ import { tool } from 'ai'
 import z from 'zod'
 import { htmlToMarkdown } from '~/lib/utils'
 import { getReadability } from './utils'
+import type { SearchOptions } from '~/types'
+import { tavily } from '@tavily/core'
 
 export const getUrlContent = tool({
   description:
@@ -21,3 +23,28 @@ export const getUrlContent = tool({
     }
   }
 })
+
+export const createWebSearchTool = (options: SearchOptions) => {
+  let execute: ((input: { query: string }) => any) | null = null
+  if (options.mode === 'tavily') {
+    const tavilyClient = tavily({
+      apiKey: options.apiKey ?? ''
+    })
+    execute = async ({ query }) => {
+      const response = await tavilyClient.search(query)
+      return response.results.map((result) => ({
+        title: result.title,
+        url: result.url,
+        summary: result.content,
+        score: result.score
+      }))
+    }
+  }
+  return tool({
+    description: 'Search the web for up-to-date information',
+    inputSchema: z.object({
+      query: z.string().min(1).max(100).describe('The search query')
+    }),
+    execute: execute ?? ((() => 'No search tool available') as any)
+  })
+}

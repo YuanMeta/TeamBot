@@ -3,7 +3,7 @@ import z from 'zod'
 import { procedure } from './core'
 import { checkLLmConnect } from '../lib/checkConnect'
 import { PasswordManager } from '../lib/password'
-import type { Prisma } from '@prisma/client'
+import { Prisma } from '@prisma/client'
 
 export const manageRouter = {
   checkConnect: procedure
@@ -26,7 +26,9 @@ export const manageRouter = {
         name: true,
         mode: true,
         models: true,
-        options: true
+        options: true,
+        webSearch: true,
+        prompt: true
       }
     })
   }),
@@ -44,7 +46,8 @@ export const manageRouter = {
         models: z.array(z.string()).min(1),
         apiKey: z.string().nullable(),
         baseUrl: z.string().nullable(),
-        options: z.record(z.string(), z.any())
+        options: z.record(z.string(), z.any()),
+        webSearch: z.record(z.string(), z.any()).nullish()
       })
     )
     .mutation(async ({ input, ctx }) => {
@@ -56,7 +59,9 @@ export const manageRouter = {
           models: input.models,
           apiKey: input.apiKey,
           baseUrl: input.baseUrl,
-          options: input.options
+          options: input.options,
+          webSearch:
+            input.webSearch === null ? Prisma.JsonNull : input.webSearch
         }
       })
     }),
@@ -69,7 +74,8 @@ export const manageRouter = {
         models: z.array(z.string()).min(1),
         apiKey: z.string().nullable(),
         baseUrl: z.string().nullable(),
-        options: z.record(z.string(), z.any())
+        options: z.record(z.string(), z.any()),
+        webSearch: z.record(z.string(), z.any()).optional()
       })
     )
     .mutation(async ({ input, ctx }) => {
@@ -80,7 +86,8 @@ export const manageRouter = {
           models: input.models,
           apiKey: input.apiKey,
           baseUrl: input.baseUrl,
-          options: input.options
+          options: input.options,
+          webSearch: input.webSearch
         }
       })
     }),

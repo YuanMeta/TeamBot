@@ -25,8 +25,11 @@ export interface ChatFile {
   size: number
 }
 
-export interface AssistantOptions {
-  searchMode?: 'openrouter'
+export interface SearchOptions {
+  mode?: 'openrouter' | 'disabled' | 'google' | 'exa' | 'tavily'
+  apiKey?: string
+  cseId?: string
+  auto?: boolean
 }
 
 interface Usage {

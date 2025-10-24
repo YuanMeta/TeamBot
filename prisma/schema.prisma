@@ -58,6 +58,7 @@ model Assistant {
   prompt    String?
   models    Json
   options   Json?
+  webSearch Json?
   createdAt DateTime @default(now())
   updatedAt DateTime @updatedAt
   chats     Chat[]

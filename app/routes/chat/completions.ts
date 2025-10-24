@@ -3,16 +3,17 @@ import {
   stepCountIs,
   streamText,
   type UIMessage,
-  type APICallError
+  type APICallError,
+  type Tool
 } from 'ai'
 import type { Route } from './+types/completions'
 import z from 'zod'
 import { TRPCError } from '@trpc/server'
 import { prisma } from '~/.server/lib/prisma'
-import type { MessagePart, Usage } from '~/types'
+import type { MessagePart, SearchOptions, Usage } from '~/types'
 import { createClient } from '~/.server/lib/checkConnect'
 import type { Prisma } from '@prisma/client'
-import { getUrlContent } from '~/.server/lib/tools'
+import { createWebSearchTool, getUrlContent } from '~/.server/lib/tools'
 
 const InputSchema = z.object({
   chatId: z.string(),
@@ -102,18 +103,26 @@ export async function action({ request }: Route.LoaderArgs) {
       }
     ]
   })
-
+  const tools: Record<string, Tool> = {
+    getUrlContent
+  }
+  const search = chat.assistant?.webSearch as SearchOptions
+  if (search?.mode) {
+    const tool = createWebSearchTool(search)
+    if (tool) {
+      tools['webSearch'] = tool
+    }
+  }
   const client = createClient({
     mode: chat.assistant!.mode,
     apiKey: chat.assistant!.apiKey,
     baseUrl: chat.assistant!.baseUrl
   })!
-
   const result = streamText({
     model: client(chat.model!),
     messages: convertToModelMessages(uiMessages),
     stopWhen: stepCountIs(20),
-    tools: { getUrlContent },
+    tools,
     onFinish: async (data) => {
       // console.log('data', data.steps)
       // console.log('request', JSON.stringify(data.request.body || null))

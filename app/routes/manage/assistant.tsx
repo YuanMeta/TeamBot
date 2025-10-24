@@ -88,7 +88,7 @@ export default observer(() => {
   })
   useEffect(() => {
     trpc.manage.getAssistants.query().then((res) => {
-      setState({ data: res })
+      setState({ data: res as unknown as Assistant[] })
     })
   }, [])
   const table = useReactTable({

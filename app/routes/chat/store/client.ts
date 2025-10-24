@@ -102,7 +102,7 @@ export class ChatClient {
                 break
               case 'tool-input-available':
                 if (parts[value.value.toolCallId]) {
-                  parts[value.value.toolCallId].input += value.value.input
+                  parts[value.value.toolCallId].input = value.value.input
                 }
                 break
               case 'tool-output-error':

@@ -65,7 +65,7 @@ export const checkLLmConnect = async (provider: {
       data: res.content
     }
   } catch (e: any) {
-    console.log('e', e, e.message)
+    console.log('e', e)
     throw new TRPCError({
       code: 'INTERNAL_SERVER_ERROR',
       message: e.message

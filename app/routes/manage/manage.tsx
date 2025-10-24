@@ -66,7 +66,7 @@ export default observer(() => {
         </SidebarContent>
       </Sidebar>
       <SidebarInset>
-        <main className={'flex flex-col flex-1'}>
+        <main className={'flex flex-col flex-1 max-h-screen'}>
           <div className={'flex items-center justify-between h-10 px-2'}>
             <div>
               <SidebarTrigger />

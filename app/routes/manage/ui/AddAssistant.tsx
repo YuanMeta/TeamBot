@@ -16,15 +16,19 @@ import {
   SelectValue
 } from '~/components/ui/select'
 import { ModelIcon } from '~/lib/ModelIcon'
-import { ChevronLeft } from 'lucide-react'
+import { ChevronLeft, WifiOff } from 'lucide-react'
 import { SelectFilter } from '~/components/ui/select-filter'
 import { isFormInValid } from '~/lib/utils'
 import { trpc } from '~/.client/trpc'
 import { useEffect } from 'react'
-import type { AssistantOptions, TrpcRequestError } from '~/types'
+import type { SearchOptions, TrpcRequestError } from '~/types'
 import { toast } from 'sonner'
 import { useLocalState } from '~/hooks/localState'
 import { Spinner } from '~/components/ui/spinner'
+import googleIcon from '~/assets/google.png'
+import exaIcon from '~/assets/exa.png'
+import tavilyIcon from '~/assets/tavily.png'
+import { Switch } from '~/components/ui/switch'
 
 export const AddAssistant = observer(
   (props: { open: boolean; onClose: () => void; id: string | null }) => {
@@ -38,7 +42,8 @@ export const AddAssistant = observer(
         models: [] as string[],
         apiKey: null as string | null,
         baseUrl: null as string | null,
-        options: {} as AssistantOptions
+        options: {} as Record<string, any>,
+        webSearch: {} as SearchOptions
       },
       onSubmit: async ({ value }) => {
         setState({ submitting: true })
@@ -55,7 +60,8 @@ export const AddAssistant = observer(
             name: value.name,
             apiKey: value.apiKey || null,
             baseUrl: value.baseUrl || null,
-            options: {}
+            options: {},
+            webSearch: value.webSearch
           }
           if (props.id) {
             await trpc.manage.updateAssistant.mutate({
@@ -87,14 +93,15 @@ export const AddAssistant = observer(
               models: res.models as string[],
               apiKey: res.apiKey,
               baseUrl: res.baseUrl,
-              options: {}
+              options: {},
+              webSearch: res.webSearch as unknown as SearchOptions
             })
           }
         })
       }
     }, [props.id])
     return (
-      <div className={'max-w-[500px] mx-auto pt-4'}>
+      <div className={'max-w-[500px] mx-auto py-4'}>
         <Button variant={'outline'} className={'mb-5'} onClick={props.onClose}>
           <ChevronLeft />
           返回
@@ -155,6 +162,7 @@ export const AddAssistant = observer(
               children={(field) => {
                 const isInvalid =
                   field.state.meta.isTouched && !field.state.meta.isValid
+
                 return (
                   <Field data-invalid={isInvalid}>
                     <FieldLabel htmlFor={field.name} required>
@@ -165,7 +173,16 @@ export const AddAssistant = observer(
                       onValueChange={(value) => {
                         field.setValue(value)
                         form.setFieldValue('models', [])
-
+                        if (value === 'openrouter') {
+                          form.setFieldValue('webSearch.mode', 'openrouter')
+                        } else {
+                          if (
+                            field.form.getFieldValue('webSearch.mode') ===
+                            'openrouter'
+                          ) {
+                            form.setFieldValue('webSearch.mode', undefined)
+                          }
+                        }
                         // form.setValue(
                         //   'options.searchMode',
                         //   value === 'openrouter' ? 'openrouter' : ''
@@ -213,7 +230,7 @@ export const AddAssistant = observer(
             <form.Field
               name='models'
               validators={{
-                onChange: ({ value }) => {
+                onSubmit: ({ value }) => {
                   if (!value.length) {
                     return { message: '请添加模型' }
                   }
@@ -297,7 +314,7 @@ export const AddAssistant = observer(
               }}
             />
             <form.Field
-              name='options.searchMode'
+              name='webSearch.mode'
               children={(field) => {
                 const isInvalid =
                   field.state.meta.isTouched && !field.state.meta.isValid
@@ -306,6 +323,7 @@ export const AddAssistant = observer(
                     <FieldLabel htmlFor={field.name}>网络搜索模式</FieldLabel>
                     <Select
                       value={field.state.value}
+                      defaultValue={'disabled'}
                       onValueChange={(value) => {
                         field.setValue(value as any)
                       }}
@@ -314,9 +332,38 @@ export const AddAssistant = observer(
                         <SelectValue placeholder='选择搜索模式' />
                       </SelectTrigger>
                       <SelectContent>
-                        <SelectItem value='openrouter'>
+                        <SelectItem
+                          value='openrouter'
+                          disabled={
+                            field.form.state.values.mode !== 'openrouter'
+                          }
+                        >
                           <ModelIcon mode='openrouter' size={20} />
                           OpenRouter
+                        </SelectItem>
+                        <SelectItem value={'tavily'}>
+                          <div className={'flex items-center gap-1.5'}>
+                            <img src={tavilyIcon} className={'size-4'} />
+                            Tavily
+                          </div>
+                        </SelectItem>
+                        <SelectItem value={'google'}>
+                          <div className={'flex items-center gap-1.5'}>
+                            <img src={googleIcon} className={'size-4'} />
+                            Google
+                          </div>
+                        </SelectItem>
+                        <SelectItem value={'exa'}>
+                          <div className={'flex items-center gap-1.5'}>
+                            <img src={exaIcon} className={'size-4'} />
+                            Exa
+                          </div>
+                        </SelectItem>
+                        <SelectItem value={'disabled'}>
+                          <div className={'flex items-center gap-1.5'}>
+                            <WifiOff size={20} />
+                            不使用搜索功能
+                          </div>
                         </SelectItem>
                       </SelectContent>
                     </Select>
@@ -324,6 +371,121 @@ export const AddAssistant = observer(
                       <FieldError errors={field.state.meta.errors} />
                     )}
                   </Field>
+                )
+              }}
+            />
+            <form.Subscribe
+              selector={(state) => [state.values.webSearch?.mode]}
+              children={([mode]) => {
+                if (mode === 'disabled' || !mode) {
+                  return null
+                }
+                return (
+                  <>
+                    <form.Field
+                      name='webSearch.apiKey'
+                      validators={{
+                        onSubmit: ({ value }) => {
+                          if (!value) {
+                            return { message: '请输入API Key' }
+                          }
+                          return undefined
+                        }
+                      }}
+                      children={(field) => {
+                        const isInvalid =
+                          field.state.meta.isTouched &&
+                          !field.state.meta.isValid
+                        return (
+                          <Field data-invalid={isInvalid}>
+                            <FieldLabel htmlFor={field.name} required>
+                              Api Key
+                            </FieldLabel>
+                            <Input
+                              maxLength={200}
+                              id={field.name}
+                              name={field.name}
+                              value={field.state.value}
+                              onBlur={field.handleBlur}
+                              onChange={(e) =>
+                                field.handleChange(e.target.value)
+                              }
+                              aria-invalid={isInvalid}
+                              placeholder='输入Api Key'
+                              autoComplete='off'
+                            />
+                            {isInvalid && (
+                              <FieldError errors={field.state.meta.errors} />
+                            )}
+                          </Field>
+                        )
+                      }}
+                    />
+                    {mode !== 'openrouter' && (
+                      <form.Field
+                        name='webSearch.auto'
+                        defaultValue={true}
+                        children={(field) => {
+                          return (
+                            <Field>
+                              <FieldLabel htmlFor={field.name} required>
+                                开启自动搜索
+                              </FieldLabel>
+                              <div>
+                                <Switch
+                                  checked={field.state.value}
+                                  onCheckedChange={(checked) => {
+                                    field.setValue(checked ? true : false)
+                                  }}
+                                />
+                              </div>
+                            </Field>
+                          )
+                        }}
+                      />
+                    )}
+                    {mode === 'google' && (
+                      <form.Field
+                        name='webSearch.cseId'
+                        validators={{
+                          onSubmit: ({ value }) => {
+                            if (!value) {
+                              return { message: '请输入CSEId' }
+                            }
+                            return undefined
+                          }
+                        }}
+                        children={(field) => {
+                          const isInvalid =
+                            field.state.meta.isTouched &&
+                            !field.state.meta.isValid
+                          return (
+                            <Field data-invalid={isInvalid}>
+                              <FieldLabel htmlFor={field.name} required>
+                                CSEId
+                              </FieldLabel>
+                              <Input
+                                maxLength={200}
+                                id={field.name}
+                                name={field.name}
+                                value={field.state.value}
+                                onBlur={field.handleBlur}
+                                onChange={(e) =>
+                                  field.handleChange(e.target.value)
+                                }
+                                aria-invalid={isInvalid}
+                                placeholder='输入CSEId'
+                                autoComplete='off'
+                              />
+                              {isInvalid && (
+                                <FieldError errors={field.state.meta.errors} />
+                              )}
+                            </Field>
+                          )
+                        }}
+                      />
+                    )}
+                  </>
                 )
               }}
             />
