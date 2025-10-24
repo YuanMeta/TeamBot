@@ -16,7 +16,13 @@ export const UrlTool = observer(({ tool }: { tool: ToolPart }) => {
     return <div className='shine-text'>正在获取url内容...</div>
   }
   return (
-    <Badge variant={'secondary'}>
+    <Badge
+      variant={'secondary'}
+      className={'cursor-pointer'}
+      onClick={() => {
+        window.open(tool.input.url)
+      }}
+    >
       {tool.state === 'completed' ? (
         <Check className={'text-emerald-600'} />
       ) : (

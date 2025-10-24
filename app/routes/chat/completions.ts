@@ -112,7 +112,7 @@ export async function action({ request }: Route.LoaderArgs) {
   const result = streamText({
     model: client(chat.model!),
     messages: convertToModelMessages(uiMessages),
-    stopWhen: stepCountIs(5),
+    stopWhen: stepCountIs(20),
     tools: { getUrlContent },
     onFinish: async (data) => {
       // console.log('data', data.steps)

@@ -100,6 +100,11 @@ export class ChatClient {
                   parts[value.value.toolCallId].state = 'error'
                 }
                 break
+              case 'tool-input-available':
+                if (parts[value.value.toolCallId]) {
+                  parts[value.value.toolCallId].input += value.value.input
+                }
+                break
               case 'tool-output-error':
                 if (parts[value.value.toolCallId]) {
                   parts[value.value.toolCallId].state = 'error'
