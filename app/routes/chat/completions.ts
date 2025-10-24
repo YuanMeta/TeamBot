@@ -106,13 +106,13 @@ export async function action({ request }: Route.LoaderArgs) {
   const tools: Record<string, Tool> = {
     getUrlContent
   }
-  const search = chat.assistant?.webSearch as SearchOptions
-  if (search?.mode) {
-    const tool = createWebSearchTool(search)
-    if (tool) {
-      tools['webSearch'] = tool
-    }
-  }
+  // const search = chat.assistant?.webSearch as SearchOptions
+  // if (search?.mode) {
+  //   const tool = createWebSearchTool(search)
+  //   if (tool) {
+  //     tools['webSearch'] = tool
+  //   }
+  // }
   const client = createClient({
     mode: chat.assistant!.mode,
     apiKey: chat.assistant!.apiKey,
@@ -166,7 +166,13 @@ export async function action({ request }: Route.LoaderArgs) {
               toolCallId: c.toolCallId,
               input: c.input,
               output: c.type === 'tool-result' ? c.output : undefined,
-              state: c.type === 'tool-result' ? 'completed' : 'error'
+              state: c.type === 'tool-result' ? 'completed' : 'error',
+              errorText:
+                c.type === 'tool-error'
+                  ? c.error instanceof Error
+                    ? c.error.message
+                    : 'Unknown error'
+                  : undefined
             })
           }
           if (c.type === 'reasoning' && c.text) {

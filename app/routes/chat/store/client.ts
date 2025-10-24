@@ -98,6 +98,8 @@ export class ChatClient {
               case 'tool-input-error':
                 if (parts[value.value.toolCallId]) {
                   parts[value.value.toolCallId].state = 'error'
+                  parts[value.value.toolCallId].errorText =
+                    value.value.errorText
                 }
                 break
               case 'tool-input-available':
@@ -108,6 +110,8 @@ export class ChatClient {
               case 'tool-output-error':
                 if (parts[value.value.toolCallId]) {
                   parts[value.value.toolCallId].state = 'error'
+                  parts[value.value.toolCallId].errorText =
+                    value.value.errorText
                 }
                 break
               case 'tool-input-delta':

@@ -12,15 +12,10 @@ export const getUrlContent = tool({
     url: z.string().describe('The url to fetch the content from')
   }),
   execute: async ({ url }) => {
-    try {
-      const res = await fetch(url).then((res) => res.text())
-      const content = getReadability(res, url)
-      const markdown = htmlToMarkdown(content?.content || '')
-      return content?.content ? markdown : 'Failed to retrieve page content'
-    } catch (error) {
-      console.error(error)
-      return 'Failed to retrieve page content'
-    }
+    const res = await fetch(url).then((res) => res.text())
+    const content = getReadability(res, url)
+    const markdown = htmlToMarkdown(content?.content || '')
+    return content?.content ? markdown : 'Failed to retrieve page content'
   }
 })
 

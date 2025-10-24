@@ -147,11 +147,11 @@
 
 /* Shine animation for reasoning component */
 .shine-text {
-  color: rgba(0, 0, 0, 0.5);
+  color: rgba(0, 0, 0, 0.45);
   background: linear-gradient(
     120deg,
     transparent 40%,
-    rgba(0, 0, 0, 0.7) 50%,
+    rgba(0, 0, 0, 0.6) 50%,
     transparent 60%
   );
   background-clip: text;
@@ -161,15 +161,16 @@
 }
 
 .dark .shine-text {
-  color: rgba(255, 255, 255, 0.45);
+  color: rgba(255, 255, 255, 0.5);
   background: linear-gradient(
     120deg,
     transparent 40%,
-    rgba(255, 255, 255, 0.6) 50%,
+    rgba(255, 255, 255, 0.7) 50%,
     transparent 60%
   );
   background-clip: text;
   -webkit-background-clip: text;
+  background-size: 200% 100%;
 }
 
 @keyframes shine {
