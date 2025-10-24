@@ -14,6 +14,7 @@ import { copyToClipboard } from '~/.client/copy'
 import { markdownToPureHtml } from '~/lib/mdToHtml'
 import { useLocalState } from '~/hooks/localState'
 import type { MessagePart } from '~/types'
+import { Button } from '~/components/ui/button'
 dayjs.extend(relativeTime)
 
 export const AiMessage = observer<{ msg: MessageData }>(({ msg }) => {
@@ -87,19 +88,15 @@ export const AiMessage = observer<{ msg: MessageData }>(({ msg }) => {
             </div>
           )}
           <div
-            className={`flex items-center dark:text-white/50 text-gray-500 text-[13px] ai-msg-actions h-8 pb-1 mt-2 gap-2`}
+            className={`flex items-center dark:text-white/60 text-neutral-500 text-[13px] ai-msg-actions h-8 pb-1 mt-2 gap-2`}
           >
-            <div
-              className={
-                'flex space-x-0.5 *:cursor-pointer *:w-6 *:h-6 *:flex *:items-center *:justify-center *:rounded-full'
-              }
-            >
-              <div className={'msg-action'}>
-                <RotateCcw size={14} />
-              </div>
-              <div className={'msg-action'} onClick={copy}>
-                {state.copied ? <Check size={14} /> : <Clipboard size={14} />}
-              </div>
+            <div className={'flex space-x-0.5 *:cursor-pointer'}>
+              <Button size={'icon-sm'} variant={'ghost'}>
+                <RotateCcw />
+              </Button>
+              <Button size={'icon-sm'} variant={'ghost'} onClick={copy}>
+                {state.copied ? <Check /> : <Clipboard />}
+              </Button>
             </div>
             <div>
               {msg.model}{' '}

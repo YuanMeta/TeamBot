@@ -160,15 +160,15 @@ export const UserMessage = observer<{ msg: MessageData }>(({ msg }) => {
         <div className={'flex w-full justify-end group'}>
           <div
             className={
-              'flex mr-2 pt-1 gap-1 *:cursor-pointer *:w-6 *:h-6 *:flex *:items-center *:justify-center *:rounded-full duration-150 opacity-0 group-hover:opacity-100 dark:text-gray-300 text-black/60'
+              'flex mr-2 pt-1 gap-1 *:cursor-pointer duration-150 opacity-0 group-hover:opacity-100 dark:text-white/60 text-neutral-500'
             }
           >
-            <div className={'msg-action'} onClick={copy}>
-              {state.copied ? <Check size={14} /> : <Copy size={14} />}
-            </div>
-            <div className={'msg-action'} onClick={startEditing}>
-              <Pencil size={14} />
-            </div>
+            <Button size={'icon-sm'} variant={'ghost'} onClick={copy}>
+              {state.copied ? <Check /> : <Copy />}
+            </Button>
+            <Button size={'icon-sm'} variant={'ghost'} onClick={startEditing}>
+              <Pencil />
+            </Button>
           </div>
           <div className={'chat-user-message px-4 py-2 max-w-[80%] leading-5'}>
             <div>{getUserPrompt(msg.parts as MessagePart[])}</div>

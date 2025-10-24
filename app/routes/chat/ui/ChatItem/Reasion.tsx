@@ -68,7 +68,7 @@ export const Thinking = memo<ThinkingProps>(
               animate='open'
               exit='collapsed'
               initial='collapsed'
-              className='will-change-[height,opacity] transform-gpu border-l-2 border-neutral-200 pl-4'
+              className='will-change-[height,opacity] transform-gpu border-l-2 border-neutral-200 dark:border-neutral-600 pl-4'
               style={{
                 overflow: 'hidden',
                 backfaceVisibility: 'hidden',
