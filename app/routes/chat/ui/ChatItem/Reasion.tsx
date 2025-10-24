@@ -24,11 +24,7 @@ export const Thinking = memo<ThinkingProps>(
 
     return (
       <div
-        className={`flex flex-col gap-2 w-fit py-1.5 px-3 rounded-md text-gray-500 transition-colors duration-200 transform-gpu ${
-          showDetail
-            ? 'bg-neutral-50 dark:bg-neutral-800'
-            : 'hover:bg-neutral-50 dark:hover:bg-neutral-800'
-        }`}
+        className={`flex flex-col gap-2 w-fit py-1 rounded-md text-gray-500 transition-colors duration-200 transform-gpu`}
         style={{
           ...style,
           fontSize: '0.9em',
@@ -37,7 +33,7 @@ export const Thinking = memo<ThinkingProps>(
         }}
       >
         <div
-          className='flex items-center justify-between cursor-default gap-1 select-none'
+          className='flex items-center cursor-default gap-1 select-none'
           onClick={() => {
             setShowDetail(!showDetail)
           }}
@@ -78,7 +74,7 @@ export const Thinking = memo<ThinkingProps>(
               animate='open'
               exit='collapsed'
               initial='collapsed'
-              className='will-change-[height,opacity] transform-gpu'
+              className='will-change-[height,opacity] transform-gpu border-l-2 border-neutral-200 pl-4'
               style={{
                 overflow: 'hidden',
                 backfaceVisibility: 'hidden',

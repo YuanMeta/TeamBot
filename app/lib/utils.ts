@@ -4,6 +4,8 @@ import { twMerge } from 'tailwind-merge'
 
 import * as gfm from 'turndown-plugin-gfm'
 import turndown from 'turndown'
+import { copyToClipboard } from '~/.client/copy'
+import { toast } from 'sonner'
 
 export function cn(...inputs: ClassValue[]) {
   return twMerge(clsx(inputs))
@@ -53,4 +55,11 @@ export const htmlToMarkdown = (html: string) => {
     }
   })
   return t.turndown(html).replace(/\\\[/g, '[').replace(/\\\]/g, ']')
+}
+
+export const copyAction = (text: string) => {
+  copyToClipboard(text)
+  toast.success('已复制到剪贴板', {
+    duration: 1500
+  })
 }

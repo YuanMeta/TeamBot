@@ -2,6 +2,7 @@ import { memo, useCallback } from 'react'
 import SyntaxHighlighter from '../code/SyntaxHighlighter'
 import { copyToClipboard } from '~/.client/copy'
 import { toast } from 'sonner'
+import { copyAction } from '~/lib/utils'
 
 export interface SnippetProps {
   /**
@@ -45,17 +46,13 @@ const Snippet = memo<SnippetProps>(
     ...rest
   }) => {
     const tirmedChildren = children.trim()
-    const copy = useCallback(() => {
-      copyToClipboard(tirmedChildren)
-      toast.success('已复制到剪贴板', {
-        duration: 1500
-      })
-    }, [tirmedChildren])
     return (
       <div
         {...rest}
         className={'inline-code flex items-center gap-2 cursor-default'}
-        onClick={copy}
+        onClick={() => {
+          copyAction(tirmedChildren)
+        }}
       >
         <SyntaxHighlighter language={language}>
           {[symbol, tirmedChildren].filter(Boolean).join(' ')}
