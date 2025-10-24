@@ -1,5 +1,5 @@
 import { AnimatePresence, motion } from 'framer-motion'
-import { AtomIcon, ChevronDown, ChevronRight, Copy, Check } from 'lucide-react'
+import { AtomIcon, ChevronRight } from 'lucide-react'
 import { memo, useEffect, useState } from 'react'
 import type { CSSProperties } from 'react'
 import { useTranslation } from 'react-i18next'
@@ -24,7 +24,7 @@ export const Thinking = memo<ThinkingProps>(
 
     return (
       <div
-        className={`flex flex-col gap-2 w-fit py-1 rounded-md text-gray-500 transition-colors duration-200 transform-gpu`}
+        className={`flex flex-col gap-2 w-fit py-1 rounded-md text-neutral-500 dark:text-neutral-400 transition-colors duration-200 transform-gpu`}
         style={{
           ...style,
           fontSize: '0.9em',
@@ -33,25 +33,19 @@ export const Thinking = memo<ThinkingProps>(
         }}
       >
         <div
-          className='flex items-center cursor-default gap-1 select-none'
+          className={`flex items-center cursor-default gap-1 select-none ${!thinking ? 'hover:text-neutral-700 dark:hover:text-neutral-200 duration-100' : ''}`}
           onClick={() => {
             setShowDetail(!showDetail)
           }}
         >
           {thinking ? (
             <div className={'flex items-center gap-1'}>
-              <AtomIcon
-                size={16}
-                className='text-gray-500 dark:text-gray-400'
-              />
+              <AtomIcon size={16} />
               <div className='shine-text'>深度思考中...</div>
             </div>
           ) : (
             <div className={'flex items-center gap-1'}>
-              <AtomIcon
-                size={16}
-                className='text-gray-500 dark:text-gray-400'
-              />
+              <AtomIcon size={16} />
               <div className={'flex'}>
                 {!duration
                   ? '已深度思考'
@@ -62,7 +56,7 @@ export const Thinking = memo<ThinkingProps>(
           <div className={'flex gap-1'}>
             <ChevronRight
               size={16}
-              className={`text-gray-500 dark:text-gray-400 ${showDetail ? 'rotate-90' : ''}`}
+              className={`${showDetail ? 'rotate-90' : ''}`}
             />
           </div>
         </div>
