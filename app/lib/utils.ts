@@ -63,3 +63,11 @@ export const copyAction = (text: string) => {
     duration: 1500
   })
 }
+
+export const getDomain = (url: string) => {
+  try {
+    return new URL(url).host || url
+  } catch (e) {
+    return url
+  }
+}

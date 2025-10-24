@@ -79,34 +79,6 @@ export const chatRouter = {
         return { chat, messages }
       })
     }),
-  getChatMessage: procedure
-    .input(
-      z.object({
-        chatId: z.string()
-      })
-    )
-    .query(async ({ ctx, input }) => {
-      return ctx.db.message.findMany({
-        where: {
-          chatId: input.chatId,
-          userId: ctx.userId
-        },
-        select: {
-          id: true,
-          chatId: true,
-          files: true,
-          context: true,
-          createdAt: true,
-          updatedAt: true,
-          height: true,
-          parts: true,
-          model: true,
-          error: true,
-          terminated: true,
-          role: true
-        }
-      })
-    }),
   getChats: procedure
     .input(
       z.object({
@@ -128,6 +100,47 @@ export const chatRouter = {
           title: true
         },
         orderBy: { lastChatTime: 'desc' }
+      })
+    }),
+  getChat: procedure
+    .input(
+      z.object({
+        id: z.string()
+      })
+    )
+    .query(async ({ ctx, input }) => {
+      return ctx.db.chat.findUnique({
+        where: { id: input.id, userId: ctx.userId },
+        select: {
+          model: true,
+          assistantId: true,
+          id: true,
+          lastChatTime: true,
+          title: true,
+          messages: {
+            select: {
+              id: true,
+              chatId: true,
+              files: {
+                select: {
+                  id: true,
+                  name: true,
+                  size: true,
+                  path: true
+                }
+              },
+              context: true,
+              parts: true,
+              createdAt: true,
+              updatedAt: true,
+              height: true,
+              model: true,
+              error: true,
+              terminated: true,
+              role: true
+            }
+          }
+        }
       })
     }),
   getMessages: procedure

@@ -1,15 +1,8 @@
-import { Check, ChevronRight, FileSearch2, Link, Search, X } from 'lucide-react'
+import { Check, ChevronRight, FileSearch2, Search, X } from 'lucide-react'
 import { observer } from 'mobx-react-lite'
 import { Badge } from '~/components/ui/badge'
+import { getDomain } from '~/lib/utils'
 import type { ToolPart } from '~/types'
-
-const getDomain = (url: string) => {
-  try {
-    return new URL(url).host || url
-  } catch (e) {
-    return url
-  }
-}
 
 export const UrlTool = observer(({ tool }: { tool: ToolPart }) => {
   if (tool.state === 'start') {

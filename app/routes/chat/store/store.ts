@@ -6,6 +6,7 @@ import type { Assistant, MessageFile } from '@prisma/client'
 import { Subject } from 'rxjs'
 import { ChatClient } from './client'
 import type { MessagePart } from '~/types'
+import { observable } from 'mobx'
 
 export interface MessageData {
   id?: string
@@ -83,12 +84,15 @@ const state = {
 }
 export class ChatStore extends StructStore<typeof state> {
   scrollToActiveMessage$ = new Subject<void>()
+  chatsMap = new Map<string, (typeof this.state.chats)[number]>()
   scrollToTop$ = new Subject<void>()
   transList$ = new Subject<void>()
   abortController: AbortController | null = null
   client = new ChatClient(this)
-  constructor() {
+  initChatId?: string
+  constructor(chatId?: string) {
     super(state)
+    this.initChatId = chatId
     if (isClient) {
       this.init()
     }
@@ -117,29 +121,41 @@ export class ChatStore extends StructStore<typeof state> {
       })
       .then((res) => {
         this.setState((state) => {
-          state.chats = [...state.chats, ...res]
+          const addChats = res.map((r) => observable(r))
+          state.chats.push(...addChats)
+          addChats.forEach((c) => this.chatsMap.set(c.id, c))
         })
       })
   }
-  selectChat(chat: typeof this.state.selectedChat) {
-    this.setState((state) => {
-      state.selectedChat = chat
-      if (chat?.messages) {
+  async selectChat(id: string) {
+    let chat = this.chatsMap.get(id)
+    if (!chat) {
+      const res = await trpc.chat.getChat.query({ id })
+      if (!res) return
+      chat = observable(res as unknown as any)
+      this.chatsMap.set(
+        id,
+        chat as unknown as (typeof this.state.chats)[number]
+      )
+    }
+    if (!chat?.messages) {
+      this.setState((state) => {
+        state.selectedChat = chat as unknown as typeof this.state.selectedChat
+      })
+      const messages = await trpc.chat.getMessages.query({
+        chatId: chat!.id
+      })
+      this.transList$.next()
+      this.setState((state) => {
+        state.messages = messages as unknown as MessageData[]
+        chat!.messages = state.messages
+      })
+    } else {
+      this.setState((state) => {
+        state.selectedChat = chat as any
         this.transList$.next()
-        state.messages = chat.messages
-      }
-    })
-    if (chat && !chat.messages) {
-      trpc.chat.getChatMessage
-        .query({
-          chatId: chat.id
-        })
-        .then((res) => {
-          this.transList$.next()
-          this.setState((state) => {
-            state.messages = res as unknown as MessageData[]
-          })
-        })
+        state.messages = chat.messages as unknown as MessageData[]
+      })
     }
   }
   async selectModel(assistantId: string, model: string) {

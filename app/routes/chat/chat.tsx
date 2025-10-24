@@ -1,13 +1,20 @@
 import { observer } from 'mobx-react-lite'
 import { ChatSidebar } from './ui/Sidebar'
 import { ChatStore, StoreContext } from './store/store'
-import { useMemo } from 'react'
+import { useEffect, useMemo } from 'react'
 import { ChatInput } from './ui/ChatInput/ChatInput'
 import { Header } from './ui/Header'
 import { AiMessageList } from './ui/MessageList'
+import { useParams } from 'react-router'
 
 export default observer(() => {
-  const store = useMemo(() => new ChatStore(), [])
+  let params = useParams()
+  const store = useMemo(() => new ChatStore(params.id as string), [])
+  useEffect(() => {
+    if (params.id && store.state.ready) {
+      store.selectChat(params.id as string)
+    }
+  }, [params.id, store.state.ready])
   return (
     <StoreContext value={store}>
       <div className={'flex h-screen'}>

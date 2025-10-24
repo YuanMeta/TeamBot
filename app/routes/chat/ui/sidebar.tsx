@@ -3,8 +3,11 @@ import { OpenAI } from '@lobehub/icons'
 import { BookMarked, PanelLeftClose, Search, SquarePen } from 'lucide-react'
 import { useStore } from '../store/store'
 import { Skeleton } from '~/components/ui/skeleton'
+import { useNavigate, useParams } from 'react-router'
 export const ChatSidebar = observer(() => {
   const store = useStore()
+  const params = useParams()
+  const navigate = useNavigate()
   return (
     <div className={'w-[260px] h-full border-r border-border bg-sidebar'}>
       <div className={'w-[260px] h-full flex flex-col'}>
@@ -43,9 +46,11 @@ export const ChatSidebar = observer(() => {
           <div className={'px-1.5'}>
             {store.state.chats.map((chat) => (
               <div
-                className={`sidebar-item px-2.5 ${store.state.selectedChat?.id === chat.id ? 'active' : ''}`}
+                className={`sidebar-item px-2.5 ${params.id === chat.id ? 'active' : ''}`}
                 key={chat.id}
-                onClick={() => store.selectChat(chat)}
+                onClick={() => {
+                  navigate(`/chat/${chat.id}`)
+                }}
               >
                 <span className={'truncate'}>{chat.title || '新对话'}</span>
               </div>
