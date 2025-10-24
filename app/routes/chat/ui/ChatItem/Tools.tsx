@@ -1,4 +1,4 @@
-import { Check, X } from 'lucide-react'
+import { Check, FileSearch2, Link, X } from 'lucide-react'
 import { observer } from 'mobx-react-lite'
 import { Badge } from '~/components/ui/badge'
 import type { ToolPart } from '~/types'
@@ -13,7 +13,14 @@ const getDomain = (url: string) => {
 
 export const UrlTool = observer(({ tool }: { tool: ToolPart }) => {
   if (tool.state === 'start') {
-    return <div className='shine-text'>正在获取url内容...</div>
+    return (
+      <div className='flex items-center gap-1'>
+        <FileSearch2
+          className={'size-4 text-neutral-500 dark:text-neutral-400'}
+        />
+        <span className={'shine-text'}>正在获取链接内容...</span>
+      </div>
+    )
   }
   return (
     <Badge

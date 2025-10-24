@@ -19,7 +19,7 @@ export const Header = observer(() => {
   return (
     <div
       className={
-        'h-[52px] flex items-center justify-between dark:border-b border-border px-3'
+        'h-[52px] flex items-center justify-between border-b border-border px-3'
       }
     >
       <div>
