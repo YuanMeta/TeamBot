@@ -11,7 +11,7 @@ export default observer(() => {
   let params = useParams()
   const store = useMemo(() => new ChatStore(params.id as string), [])
   useEffect(() => {
-    if (params.id && store.state.ready) {
+    if (store.state.ready) {
       store.selectChat(params.id as string)
     }
   }, [params.id, store.state.ready])

@@ -21,7 +21,12 @@ export const ChatSidebar = observer(() => {
             </div>
           </div>
           <div className={'px-2'}>
-            <div className={'sidebar-item'}>
+            <div
+              className={'sidebar-item'}
+              onClick={() => {
+                navigate('/chat')
+              }}
+            >
               <div className={'w-9 flex justify-center items-center'}>
                 <SquarePen className={'size-[18px]'} />
               </div>

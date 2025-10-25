@@ -127,7 +127,14 @@ export class ChatStore extends StructStore<typeof state> {
         })
       })
   }
-  async selectChat(id: string) {
+  async selectChat(id?: string) {
+    if (!id) {
+      this.setState((state) => {
+        state.selectedChat = null
+        state.messages = []
+      })
+      return
+    }
     let chat = this.chatsMap.get(id)
     if (!chat) {
       const res = await trpc.chat.getChat.query({ id })
