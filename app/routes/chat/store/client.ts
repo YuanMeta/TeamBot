@@ -204,7 +204,12 @@ export class ChatClient {
             // console.log('value', value.value)
           }
         }
-      } catch (e) {
+      } catch (e: any) {
+        if (e.name === 'AbortError') {
+          runInAction(() => {
+            aiMessage.terminated = true
+          })
+        }
         console.error(e)
       } finally {
         reader.releaseLock()

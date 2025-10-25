@@ -44,6 +44,10 @@ export async function action({ request }: Route.LoaderArgs) {
       message: 'Chat not found'
     })
   }
+  // const signal = request.signal
+  // signal.onabort = () => {
+  //   console.log('onabort1')
+  // }
   const messages = await prisma.message.findMany({
     where: {
       chatId: chat.id
@@ -122,11 +126,20 @@ export async function action({ request }: Route.LoaderArgs) {
     model: client(chat.model!),
     messages: convertToModelMessages(uiMessages),
     stopWhen: stepCountIs(20),
+    abortSignal: request.signal,
     system: `当你调用 "webSearch" 工具时，请严格遵守以下格式输出回答：
 1. 在使用某条搜索结果时，在对应句子后标注来源地址，如: [source](https://apple.com/markbook)。
 2. 如果某句话是你自己的知识（不是搜索结果），不要添加来源
     `,
     tools,
+    onAbort: async () => {
+      await prisma.message.update({
+        where: { id: assistantMessage.id },
+        data: {
+          terminated: true
+        }
+      })
+    },
     onFinish: async (data) => {
       // console.log('data', data.steps)
       // console.log('request', JSON.stringify(data.request.body || null))

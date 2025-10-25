@@ -13,11 +13,11 @@ export interface MessageContentProps {
   duration?: number
 }
 const MessageContent = observer<{ msg: MessageData }>(({ msg }) => {
-  if (!msg.parts?.length) return <BubblesLoading />
+  if (!msg.parts?.length && !msg.terminated) return <BubblesLoading />
   return (
     <div className={'relative max-w-full'}>
       <div className={'flex flex-col gap-2.5'}>
-        {msg.parts.map((p, index) => (
+        {msg.parts?.map((p, index) => (
           <div key={index}>
             {p.type === 'text' && (
               <Markdown

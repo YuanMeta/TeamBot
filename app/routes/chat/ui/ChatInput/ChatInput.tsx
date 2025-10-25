@@ -176,7 +176,6 @@ export const ChatInput = observer(() => {
                 onClick={() => store.stop()}
               >
                 {/* <SendHorizontal size={18} /> */}
-
                 <CircleStop size={18} />
               </Button>
             </div>
