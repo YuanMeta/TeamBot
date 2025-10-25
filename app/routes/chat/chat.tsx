@@ -5,16 +5,25 @@ import { useEffect, useMemo } from 'react'
 import { ChatInput } from './ui/ChatInput/ChatInput'
 import { Header } from './ui/Header'
 import { AiMessageList } from './ui/MessageList'
-import { useParams } from 'react-router'
+import { useNavigate, useParams } from 'react-router'
+import { useSubject } from '~/hooks/localState'
 
 export default observer(() => {
   let params = useParams()
   const store = useMemo(() => new ChatStore(params.id as string), [])
+  const navigate = useNavigate()
   useEffect(() => {
     if (store.state.ready) {
       store.selectChat(params.id as string)
     }
   }, [params.id, store.state.ready])
+  useSubject(
+    store.navigate$,
+    (path) => {
+      navigate(path)
+    },
+    [navigate]
+  )
   return (
     <StoreContext value={store}>
       <div className={'flex h-screen'}>

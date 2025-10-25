@@ -87,6 +87,7 @@ export class ChatStore extends StructStore<typeof state> {
   chatsMap = new Map<string, (typeof this.state.chats)[number]>()
   scrollToTop$ = new Subject<void>()
   transList$ = new Subject<void>()
+  navigate$ = new Subject<string>()
   abortController: AbortController | null = null
   client = new ChatClient(this)
   initChatId?: string
@@ -128,6 +129,7 @@ export class ChatStore extends StructStore<typeof state> {
       })
   }
   async selectChat(id?: string) {
+    if (this.state.selectedChat?.id === id) return
     if (!id) {
       this.setState((state) => {
         state.selectedChat = null
