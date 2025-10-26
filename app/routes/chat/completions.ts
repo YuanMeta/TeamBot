@@ -60,7 +60,7 @@ export async function action({ request }: Route.LoaderArgs) {
     },
     onFinish: async (data) => {
       // console.log('data', data.steps)
-      // console.log('request', JSON.stringify(data.request.body || null))
+      console.log('request', JSON.stringify(data.request.body || null))
       const steps: any[] = []
       const parts: MessagePart[] = []
       let usage: Usage = {

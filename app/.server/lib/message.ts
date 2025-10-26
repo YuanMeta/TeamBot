@@ -4,8 +4,9 @@ import { TRPCError } from '@trpc/server'
 import type { MessagePart } from '~/types'
 import type { Message } from '@prisma/client'
 import { createClient } from './checkConnect'
+import { findLast } from '~/lib/utils'
 
-let maxTokens = 2000
+let maxTokens = 20000
 export class MessageManager {
   static async compreTokena(data: {
     model: LanguageModel
@@ -36,7 +37,7 @@ Output only the summarized version of the conversation.`,
       maxOutputTokens: 1200,
       prompt: `${data.previousSummary ? `Previous summary:\n ${data.previousSummary}\n\n` : ''}Conversation:\n ${JSON.stringify(conversation)}`
     })
-    console.log('summary body', JSON.stringify(res.request.body))
+    console.log('summary body', res.request.body)
     return res.text
   }
 
@@ -80,20 +81,20 @@ Output only the summarized version of the conversation.`,
     const uiMessages: UIMessage[] = []
     if (messages.length > 2) {
       let history = messages.slice(0, -2)
-      const tokens = messages.reduce(
-        (tokens, msg) => tokens + (msg.total_tokens || 0),
-        0
-      )
-      if (tokens > maxTokens && messages.length > 2) {
+      const totalTokens =
+        findLast(history, (m) => m.role === 'assistant')?.total_tokens || 0
+      if (totalTokens > maxTokens && history.length >= 2) {
         let compreMessages = history.slice()
         if (
-          history.length > 4 &&
-          (history.reverse().find((m) => m.role === 'assistant')
+          history.length >= 6 &&
+          (history.slice(-4).find((m) => m.role === 'assistant')
             ?.total_tokens || 0) < maxTokens
         ) {
-          // 保留最后一轮对话
-          history = history.slice(-2)
-          compreMessages = compreMessages.slice(0, -2)
+          // 保留最后两轮对话
+          history = history.slice(-4)
+          compreMessages = compreMessages.slice(0, -4)
+        } else {
+          history = []
         }
         if (compreMessages.length) {
           summary = await this.compreTokena({
@@ -113,7 +114,7 @@ Output only the summarized version of the conversation.`,
           })
         }
       }
-      history.slice(0, -2).map((m) => {
+      history.map((m) => {
         const msg: UIMessage = {
           id: m.id,
           role: m.role as 'user' | 'assistant',
@@ -175,7 +176,7 @@ Output only the summarized version of the conversation.`,
       prompt += `This is a summary of the previous conversation: ${ctx.summary}`
     }
     if (ctx.tools?.['webSearch']) {
-      prompt += `\n\nWhen you call the "webSearch" tool, please follow the following format to output the answer:
+      prompt += `\n\nIf you need the latest information to answer user questions, you can choose to use "webSearch" tools. When you call the "webSearch" tool, please follow the following format to output the answer:
 When using a search result, mark the source address after the corresponding sentence, such as: [source](https://apple.com/mackbook)
 If a sentence is based on your own knowledge (not search results), do not add the source`
     }
