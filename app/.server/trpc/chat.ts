@@ -2,6 +2,7 @@ import type { TRPCRouterRecord } from '@trpc/server'
 import { procedure } from './core'
 import z from 'zod'
 import { type Message } from '@prisma/client'
+import dayjs from 'dayjs'
 export const chatRouter = {
   createChat: procedure
     .input(
@@ -21,6 +22,7 @@ export const chatRouter = {
       })
     )
     .mutation(async ({ input, ctx }) => {
+      const date = new Date()
       return await ctx.db.$transaction(async (t) => {
         const chat = await t.chat.create({
           data: {
@@ -63,7 +65,8 @@ export const chatRouter = {
                 type: 'text',
                 text: input.userPrompt
               }
-            ]
+            ],
+            createdAt: date
           },
           include: { files: true }
         })
@@ -71,7 +74,8 @@ export const chatRouter = {
           data: {
             chatId: chat.id,
             role: 'assistant',
-            userId: ctx.userId
+            userId: ctx.userId,
+            createdAt: dayjs(date).add(1, 'second').toDate()
           }
         })
         messages.push(userMessage)

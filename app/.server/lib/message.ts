@@ -1,9 +1,10 @@
-import { generateText, type LanguageModel, type UIMessage } from 'ai'
+import { generateText, type LanguageModel, type Tool, type UIMessage } from 'ai'
 import { prisma } from './prisma'
 import { TRPCError } from '@trpc/server'
 import type { MessagePart } from '~/types'
 import type { Message } from '@prisma/client'
 import { createClient } from './checkConnect'
+import dayjs from 'dayjs'
 
 let maxTokens = 5000
 export class MessageManager {
@@ -59,9 +60,10 @@ Output only the summarized version of the conversation.`,
       },
       skip: chat.messageOffset,
       orderBy: {
-        createdAt: 'desc'
+        createdAt: 'asc'
       }
     })
+
     if (!messages.length) {
       throw new TRPCError({
         code: 'BAD_REQUEST',
@@ -157,10 +159,26 @@ Output only the summarized version of the conversation.`,
       parts: [
         {
           type: 'text',
-          text: (userMessage.parts as MessagePart[])?.[0]?.text!
+          text: (userMessage.parts as MessagePart[])?.[0]?.text! || ''
         }
       ]
     })
-    return { uiMessages, summary, chat, client }
+    return { uiMessages, summary, chat, client, assistantMessage }
+  }
+
+  static getSystemPromp(ctx: {
+    summary?: string | null
+    tools?: Record<string, Tool>
+  }) {
+    let prompt = ''
+    if (ctx.summary) {
+      prompt += `This is a summary of the previous conversation: ${ctx.summary}`
+    }
+    if (ctx.tools?.['webSearch']) {
+      prompt += `\n\nWhen you call the "webSearch" tool, please follow the following format to output the answer:
+When using a search result, mark the source address after the corresponding sentence, such as: [source](https://apple.com/mackbook)
+If a sentence is based on your own knowledge (not search results), do not add the source`
+    }
+    return prompt ? prompt : undefined
   }
 }

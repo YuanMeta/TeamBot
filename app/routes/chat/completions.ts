@@ -2,7 +2,6 @@ import {
   convertToModelMessages,
   stepCountIs,
   streamText,
-  type UIMessage,
   type APICallError,
   type Tool
 } from 'ai'
@@ -11,9 +10,9 @@ import z from 'zod'
 import { TRPCError } from '@trpc/server'
 import { prisma } from '~/.server/lib/prisma'
 import type { MessagePart, SearchOptions, Usage } from '~/types'
-import { createClient } from '~/.server/lib/checkConnect'
 import type { Prisma } from '@prisma/client'
 import { createWebSearchTool, getUrlContent } from '~/.server/lib/tools'
+import { MessageManager } from '~/.server/lib/message'
 
 const InputSchema = z.object({
   chatId: z.string(),
@@ -31,82 +30,8 @@ export async function action({ request }: Route.LoaderArgs) {
       message: (e as Error).message
     })
   }
-  const chat = await prisma.chat.findUnique({
-    where: {
-      // 后续加入userId 条件
-      id: json.chatId
-    },
-    include: { assistant: true }
-  })
-  if (!chat) {
-    throw new TRPCError({
-      code: 'NOT_FOUND',
-      message: 'Chat not found'
-    })
-  }
-  // const signal = request.signal
-  // signal.onabort = () => {
-  //   console.log('onabort1')
-  // }
-  const messages = await prisma.message.findMany({
-    where: {
-      chatId: chat.id
-    },
-    skip: chat.messageOffset
-  })
-  const uiMessages: UIMessage[] = []
-  if (messages.length > 2) {
-    messages.slice(0, -2).map((m) => {
-      const msg: UIMessage = {
-        id: m.id,
-        role: m.role as 'user' | 'assistant',
-        parts: []
-      }
-      let parts = m.parts as unknown as MessagePart[]
-      for (let p of parts) {
-        if (p.type === 'text') {
-          msg.parts.push({
-            type: 'text',
-            text: p.text
-          })
-        }
-        if (p.type === 'tool') {
-          if (p.state === 'error') {
-            msg.parts.push({
-              type: 'dynamic-tool',
-              toolName: p.toolName,
-              toolCallId: p.toolCallId,
-              input: p.input,
-              output: undefined,
-              state: 'output-error',
-              errorText: p.errorText || ''
-            })
-          } else {
-            msg.parts.push({
-              type: 'dynamic-tool',
-              toolName: p.toolName,
-              toolCallId: p.toolCallId,
-              input: p.input,
-              output: p.output,
-              state: 'output-available'
-            })
-          }
-        }
-      }
-      uiMessages.push(msg)
-    })
-  }
-  const [userMessage, assistantMessage] = messages.slice(-2)
-  uiMessages.push({
-    id: userMessage.id,
-    role: 'user',
-    parts: [
-      {
-        type: 'text',
-        text: (userMessage.parts as MessagePart[])?.[0]?.text!
-      }
-    ]
-  })
+  const { uiMessages, summary, chat, client, assistantMessage } =
+    await MessageManager.getStreamMessage(json.chatId)
   const tools: Record<string, Tool> = {
     getUrlContent
   }
@@ -117,20 +42,13 @@ export async function action({ request }: Route.LoaderArgs) {
       tools['webSearch'] = tool
     }
   }
-  const client = createClient({
-    mode: chat.assistant!.mode,
-    apiKey: chat.assistant!.apiKey,
-    baseUrl: chat.assistant!.baseUrl
-  })!
+
   const result = streamText({
     model: client(chat.model!),
     messages: convertToModelMessages(uiMessages),
     stopWhen: stepCountIs(20),
     abortSignal: request.signal,
-    system: `当你调用 "webSearch" 工具时，请严格遵守以下格式输出回答：
-1. 在使用某条搜索结果时，在对应句子后标注来源地址，如: [source](https://apple.com/markbook)。
-2. 如果某句话是你自己的知识（不是搜索结果），不要添加来源
-    `,
+    system: MessageManager.getSystemPromp({ summary: summary, tools }),
     tools,
     onAbort: async () => {
       await prisma.message.update({
@@ -217,7 +135,7 @@ export async function action({ request }: Route.LoaderArgs) {
         })
       }
     },
-    onError: (error) => {
+    onError: (error: any) => {
       let err = error.error as APICallError
       console.log('request', err)
     }
