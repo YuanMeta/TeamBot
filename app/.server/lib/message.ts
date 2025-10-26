@@ -4,9 +4,8 @@ import { TRPCError } from '@trpc/server'
 import type { MessagePart } from '~/types'
 import type { Message } from '@prisma/client'
 import { createClient } from './checkConnect'
-import dayjs from 'dayjs'
 
-let maxTokens = 5000
+let maxTokens = 2000
 export class MessageManager {
   static async compreTokena(data: {
     model: LanguageModel
@@ -37,6 +36,7 @@ Output only the summarized version of the conversation.`,
       maxOutputTokens: 1200,
       prompt: `${data.previousSummary ? `Previous summary:\n ${data.previousSummary}\n\n` : ''}Conversation:\n ${JSON.stringify(conversation)}`
     })
+    console.log('summary body', JSON.stringify(res.request.body))
     return res.text
   }
 

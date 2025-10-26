@@ -57,14 +57,11 @@ export class ChatClient {
         state.messages[state.messages.length - 2].chatId = addRecord.chat.id
         state.messages[state.messages.length - 1].id = addRecord.messages[1].id
         state.messages[state.messages.length - 1].chatId = addRecord.chat.id
+        state.selectedChat!.messages = state.messages
       })
       this.store.navigate$.next(`/chat/${addRecord.chat.id}`)
       chat = this.store.state.selectedChat!
     }
-    runInAction(() => {
-      if (!chat.messages) chat.messages = []
-      chat.messages.push(userMessage, aiMessage)
-    })
     const res = await fetch('/chat/completions', {
       method: 'POST',
       headers: {

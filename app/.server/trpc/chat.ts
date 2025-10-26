@@ -219,6 +219,7 @@ export const chatRouter = {
       })
     )
     .mutation(async ({ input, ctx }) => {
+      let date = new Date()
       return ctx.db.$transaction(async (t) => {
         let messages: Message[] = []
         const userMessage = await t.message.create({
@@ -226,6 +227,7 @@ export const chatRouter = {
             chatId: input.chatId,
             role: 'user',
             userId: ctx.userId,
+            createdAt: date,
             parts: [
               {
                 type: 'text',
@@ -254,7 +256,8 @@ export const chatRouter = {
           data: {
             chatId: input.chatId,
             role: 'assistant',
-            userId: ctx.userId
+            userId: ctx.userId,
+            createdAt: dayjs(date).add(1, 'second').toDate()
           }
         })
         messages.push(userMessage)

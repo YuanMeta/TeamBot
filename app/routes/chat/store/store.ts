@@ -147,7 +147,7 @@ export class ChatStore extends StructStore<typeof state> {
         chat as unknown as (typeof this.state.chats)[number]
       )
     }
-    if (!chat?.messages) {
+    if (!chat?.messages?.length) {
       this.setState((state) => {
         state.selectedChat = chat as unknown as typeof this.state.selectedChat
       })
