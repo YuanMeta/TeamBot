@@ -93,7 +93,6 @@ model Message {
   userId              String
   chatId              String
   context             Json?
-  height              Int?
   error               String?
   model               String?
   reasoningDuration   Int?

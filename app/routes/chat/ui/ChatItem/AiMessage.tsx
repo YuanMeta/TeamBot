@@ -41,29 +41,11 @@ export const AiMessage = observer<{ msg: MessageData }>(({ msg }) => {
       setState({ copied: false })
     }, 1000)
   }, [])
-  useEffect(() => {
-    // const dom = ref.current
-    // if (dom && msg.content && !msg.height && (msg.error || msg.usage)) {
-    //   const content = dom.children[0] as HTMLElement
-    //   setTimeout(() => {
-    //     // store.rpc.updateMessage(msg.id, {
-    //     //   height: content.offsetHeight + 12
-    //     // })
-    //     runInAction(() => {
-    //       msg.height = content.offsetHeight + 8
-    //     })
-    //   }, 100)
-    // }
-  }, [msg.error])
   return (
     <div
       className={'px-1 pt-3 ai-message w-full'}
       data-msg-id={msg.id}
       ref={ref}
-      style={{
-        containIntrinsicHeight: msg.height ?? undefined,
-        contentVisibility: 'auto'
-      }}
     >
       <div className={'flex w-full ai-message-content group'}>
         <div className='flex-1 relative w-0'>

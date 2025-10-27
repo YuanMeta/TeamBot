@@ -85,7 +85,7 @@ export const AiMessageList = observer(() => {
       >
         <div
           ref={listRef}
-          className={`chat-list ${state.visible ? 'animate-show' : 'hidden'} ${store.state.pending ? 'pending' : ''}`}
+          className={`chat-list ${state.visible ? 'animate-show' : 'opacity-0'} ${store.state.pending ? 'pending' : ''}`}
         >
           {store.state.messages.map((m) => (
             <ChatItem key={m.tid || m.id} msg={m} />
