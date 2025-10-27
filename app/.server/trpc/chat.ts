@@ -137,7 +137,6 @@ export const chatRouter = {
               parts: true,
               createdAt: true,
               updatedAt: true,
-              height: true,
               model: true,
               error: true,
               terminated: true,
@@ -174,7 +173,6 @@ export const chatRouter = {
           parts: true,
           createdAt: true,
           updatedAt: true,
-          height: true,
           model: true,
           error: true,
           terminated: true,
@@ -270,7 +268,6 @@ export const chatRouter = {
       z.object({
         id: z.string(),
         data: z.object({
-          height: z.number().optional(),
           error: z.string().optional(),
           terminated: z.boolean().optional(),
           model: z.string().optional(),

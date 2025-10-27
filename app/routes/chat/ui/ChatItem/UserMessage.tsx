@@ -1,6 +1,6 @@
 import isHotkey from 'is-hotkey'
 import { Check, Copy, Pencil } from 'lucide-react'
-import { useCallback, useEffect, useRef } from 'react'
+import { useCallback, useRef } from 'react'
 import { observer } from 'mobx-react-lite'
 import { runInAction } from 'mobx'
 import { useTranslation } from 'react-i18next'
@@ -9,7 +9,6 @@ import { useTheme } from 'remix-themes'
 import { copyToClipboard } from '~/.client/copy'
 import { Textarea } from '~/components/ui/textarea'
 import { Button } from '~/components/ui/button'
-import { trpc } from '~/.client/trpc'
 import { useLocalState } from '~/hooks/localState'
 import { getUserPrompt } from '~/lib/chat'
 import type { MessagePart } from '~/types'
@@ -100,30 +99,10 @@ export const UserMessage = observer<{ msg: MessageData }>(({ msg }) => {
       })
     }
   }, [])
-  useEffect(() => {
-    const dom = ref.current
-    if (dom && !msg.height && msg.id) {
-      setTimeout(() => {
-        trpc.chat.updateMessage.mutate({
-          id: msg.id!,
-          data: {
-            height: dom.clientHeight
-          }
-        })
-        runInAction(() => {
-          msg.height = dom.clientHeight
-        })
-      }, 100)
-    }
-  }, [msg.id])
   return (
     <div
       className={'py-3 pl-10 flex flex-col items-end user-message'}
       ref={ref}
-      style={{
-        containIntrinsicHeight: msg.height || undefined,
-        contentVisibility: 'auto'
-      }}
     >
       {state.isEditing && (
         <div className={'w-[80%]'}>

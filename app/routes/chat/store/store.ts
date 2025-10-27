@@ -18,7 +18,6 @@ export interface MessageData {
   parts?: MessagePart[] | null
   reasoningDuration?: number | null
   context?: Record<string, any> | null
-  height?: number | null
   error?: string | null
   files?: MessageFile[]
   updatedAt: Date
