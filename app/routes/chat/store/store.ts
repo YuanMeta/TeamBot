@@ -88,12 +88,11 @@ export class ChatStore extends StructStore<typeof state> {
   scrollToTop$ = new Subject<void>()
   transList$ = new Subject<void>()
   navigate$ = new Subject<string>()
+  moveChatInput$ = new Subject<void>()
   abortController: AbortController | null = null
   client = new ChatClient(this)
-  initChatId?: string
-  constructor(chatId?: string) {
+  constructor() {
     super(state)
-    this.initChatId = chatId
     if (isClient) {
       this.init()
     }

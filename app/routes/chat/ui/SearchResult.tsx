@@ -1,4 +1,4 @@
-import { Search, X } from 'lucide-react'
+import { X } from 'lucide-react'
 import { observer } from 'mobx-react-lite'
 import { Button } from '~/components/ui/button'
 import { Separator } from '~/components/ui/separator'
@@ -49,7 +49,7 @@ export const SearchResult = observer(() => {
         </Button>
       </div>
       <div
-        className={`flex-1 h-0 px-2 py-2 pb-5 overflow-y-auto duration-150 ${state.show ? 'opacity-100' : 'opacity-0'}`}
+        className={`flex-1 h-0 px-2 py-2 pb-5 overflow-y-auto duration-400 ${state.show ? 'opacity-100' : 'opacity-0'}`}
       >
         {store.state.selectSearchResult?.map((s) => (
           <a

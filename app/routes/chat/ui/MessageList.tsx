@@ -92,17 +92,19 @@ export const AiMessageList = observer(() => {
           ))}
         </div>
       </div>
-      <div
-        onClick={() => {
-          scrollToBottom('smooth')
-        }}
-        className={`absolute left-1/2 -translate-x-1/2 p-0.5 bg-background z-10 bottom-4 rounded-full border opacity-0 dark:border-white/10 border-black/20 ${state.showScrollToBottom ? 'animate-show cursor-pointer' : 'pointer-events-none'}`}
-      >
-        <ChevronDown
-          size={16}
-          className={'dark:stroke-white/60 stroke-black/60'}
-        />
-      </div>
+      {!!store.state.messages.length && (
+        <div
+          onClick={() => {
+            scrollToBottom('smooth')
+          }}
+          className={`absolute left-1/2 -translate-x-1/2 p-0.5 bg-background z-10 bottom-4 rounded-full border opacity-0 dark:border-white/10 border-black/20 ${state.showScrollToBottom ? 'animate-show cursor-pointer' : 'pointer-events-none'}`}
+        >
+          <ChevronDown
+            size={16}
+            className={'dark:stroke-white/60 stroke-black/60'}
+          />
+        </div>
+      )}
     </div>
   )
 })

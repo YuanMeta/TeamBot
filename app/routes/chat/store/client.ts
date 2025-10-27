@@ -35,6 +35,9 @@ export class ChatClient {
     this.store.setState((state) => {
       state.messages.push(userMessage, aiMessage)
     })
+    setTimeout(() => {
+      this.store.moveChatInput$.next()
+    }, 30)
     if (chat) {
       const addRecord = await trpc.chat.createMessages.mutate({
         chatId: chat.id,
@@ -59,7 +62,9 @@ export class ChatClient {
         state.messages[state.messages.length - 1].chatId = addRecord.chat.id
         state.selectedChat!.messages = state.messages
       })
-      this.store.navigate$.next(`/chat/${addRecord.chat.id}`)
+      setTimeout(() => {
+        this.store.navigate$.next(`/chat/${addRecord.chat.id}`)
+      }, 200)
       chat = this.store.state.selectedChat!
     }
     setTimeout(() => {
