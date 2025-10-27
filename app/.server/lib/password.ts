@@ -1,7 +1,13 @@
 import crypto from 'crypto'
 import jwt from 'jsonwebtoken'
 
-const secret = 'teambot-0508'
+// 使用环境变量，提供默认值（仅开发环境）
+const secret = process.env.JWT_SECRET || 'teambot-0508'
+
+// 生产环境必须设置JWT_SECRET
+if (process.env.NODE_ENV === 'production' && !process.env.JWT_SECRET) {
+  throw new Error('JWT_SECRET environment variable must be set in production')
+}
 const pbkdf2Async = (
   password: string,
   salt: Buffer,

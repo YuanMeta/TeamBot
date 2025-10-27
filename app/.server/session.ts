@@ -24,5 +24,6 @@ export const userCookie = createCookie('user', {
   httpOnly: true,
   sameSite: 'lax',
   secure: isProduction,
-  maxAge: 604_800 // one week
+  maxAge: 604_800, // one week
+  secrets: [process.env.COOKIE_SECRET || 's3cr3t'] // 添加签名密钥
 })
