@@ -81,6 +81,7 @@ model Chat {
   assistant     Assistant? @relation(fields: [assistantId], references: [id])
   public        Boolean    @default(false)
   model         String?
+  deleted       Boolean    @default(false)
 
   @@index([userId])
   @@index([assistantId])

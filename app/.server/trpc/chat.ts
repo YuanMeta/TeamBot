@@ -92,7 +92,8 @@ export const chatRouter = {
     .query(async ({ ctx, input }) => {
       return ctx.db.chat.findMany({
         where: {
-          userId: ctx.userId
+          userId: ctx.userId,
+          deleted: false
         },
         skip: input.offset || 0,
         take: 50,
@@ -180,6 +181,18 @@ export const chatRouter = {
         }
       })
     }),
+  deleteChat: procedure
+    .input(
+      z.object({
+        id: z.string()
+      })
+    )
+    .mutation(async ({ input, ctx }) => {
+      return ctx.db.chat.update({
+        where: { id: input.id, userId: ctx.userId },
+        data: { deleted: true }
+      })
+    }),
   getAssistants: procedure.query(async ({ ctx }) => {
     const assistants = await ctx.db.assistant.findMany({
       select: {
@@ -260,6 +273,10 @@ export const chatRouter = {
         })
         messages.push(userMessage)
         messages.push(aiMessage)
+        await t.chat.update({
+          where: { id: input.chatId, userId: ctx.userId },
+          data: { lastChatTime: new Date() }
+        })
         return { messages }
       })
     }),

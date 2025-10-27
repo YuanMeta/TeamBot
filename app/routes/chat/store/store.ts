@@ -214,6 +214,16 @@ export class ChatStore extends StructStore<typeof state> {
       })
     }
   }
+  async deleteChat(id: string) {
+    if (this.state.selectedChat?.id === id) {
+      this.navigate$.next('/chat')
+    }
+    this.setState((state) => {
+      state.chats = state.chats.filter((c) => c.id !== id)
+    })
+    await trpc.chat.deleteChat.mutate({ id })
+    this.chatsMap.delete(id)
+  }
 }
 
 export const StoreContext = createContext<ChatStore>({} as any)
