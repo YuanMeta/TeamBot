@@ -1,5 +1,4 @@
 import { useCallback, useEffect, useLayoutEffect, useRef } from 'react'
-// import ChatItem from './ChatItem'
 import { ChevronDown } from 'lucide-react'
 import { observer } from 'mobx-react-lite'
 import ChatItem from './ChatItem'
@@ -32,13 +31,10 @@ export const AiMessageList = observer(() => {
   )
   const scrollToBottom = useCallback((behavior: 'auto' | 'smooth' = 'auto') => {
     if (scrollRef.current) {
-      const last =
-        listRef.current!.children[0]?.children[
-          listRef.current!.children[0]!.children.length - 1
-        ]
-      if (last) {
-        last.scrollIntoView({ behavior, block: 'end' })
-      }
+      const last = listRef.current?.children?.[
+        listRef.current?.children.length - 1
+      ] as HTMLElement
+      last.scrollIntoView({ behavior, block: 'end' })
     }
   }, [])
   const scroll = useCallback((e: React.UIEvent<HTMLDivElement>) => {
@@ -100,7 +96,7 @@ export const AiMessageList = observer(() => {
         onClick={() => {
           scrollToBottom('smooth')
         }}
-        className={`absolute left-1/2 -translate-x-1/2 p-0.5 bg-[var(--primary-bg-color)] z-10 bottom-4 rounded-full border dark:border-white/10 border-black/20 opacity-0 ${state.showScrollToBottom ? 'animate-show cursor-pointer' : 'pointer-events-none'}`}
+        className={`absolute left-1/2 -translate-x-1/2 p-0.5 bg-background z-10 bottom-4 rounded-full border opacity-0 dark:border-white/10 border-black/20 ${state.showScrollToBottom ? 'animate-show cursor-pointer' : 'pointer-events-none'}`}
       >
         <ChevronDown
           size={16}
