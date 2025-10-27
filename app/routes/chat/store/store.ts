@@ -5,7 +5,7 @@ import { isClient } from '~/lib/utils'
 import type { Assistant, MessageFile } from '@prisma/client'
 import { Subject } from 'rxjs'
 import { ChatClient } from './client'
-import type { MessagePart } from '~/types'
+import type { MessagePart, SearchResult } from '~/types'
 import { observable } from 'mobx'
 
 export interface MessageData {
@@ -38,6 +38,7 @@ const state = {
   assistants: [] as Assistant[],
   assistantMap: {} as Record<string, Assistant>,
   cacheModel: null as string | null,
+  selectSearchResult: null as null | SearchResult[],
   selectedChat: null as null | {
     id: string
     title: string

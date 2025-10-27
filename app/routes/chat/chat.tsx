@@ -7,6 +7,7 @@ import { Header } from './ui/Header'
 import { AiMessageList } from './ui/MessageList'
 import { useNavigate, useParams } from 'react-router'
 import { useSubject } from '~/hooks/localState'
+import { SearchResult } from './ui/SearchResult'
 
 export default observer(() => {
   let params = useParams()
@@ -42,6 +43,7 @@ export default observer(() => {
             AI 也可能会犯错。请核查重要信息。
           </div>
         </div>
+        <SearchResult />
       </div>
     </StoreContext>
   )

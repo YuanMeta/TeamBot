@@ -1,8 +1,16 @@
-import { Check, ChevronRight, FileSearch2, Search, X } from 'lucide-react'
+import {
+  Check,
+  ChevronRight,
+  Earth,
+  FileSearch2,
+  Search,
+  X
+} from 'lucide-react'
 import { observer } from 'mobx-react-lite'
 import { Badge } from '~/components/ui/badge'
 import { getDomain } from '~/lib/utils'
 import type { ToolPart } from '~/types'
+import { useStore } from '../../store/store'
 
 export const UrlTool = observer(({ tool }: { tool: ToolPart }) => {
   if (tool.state === 'start') {
@@ -36,6 +44,7 @@ export const UrlTool = observer(({ tool }: { tool: ToolPart }) => {
 })
 
 export const WebSearchTool = observer(({ tool }: { tool: ToolPart }) => {
+  const store = useStore()
   if (tool.state === 'start') {
     return (
       <div className='flex items-center gap-1'>
@@ -45,8 +54,17 @@ export const WebSearchTool = observer(({ tool }: { tool: ToolPart }) => {
     )
   }
   return (
-    <Badge variant={'secondary'} className={'cursor-pointer text-sm'}>
-      {tool.output?.length} 篇资料{' '}
+    <Badge
+      variant={'secondary'}
+      className={'cursor-pointer text-sm'}
+      onClick={() => {
+        store.setState((draft) => {
+          draft.selectSearchResult = tool.output
+        })
+      }}
+    >
+      <Earth />
+      {tool.output?.length} 个网页{' '}
       <ChevronRight className={'size-7'} strokeWidth={3} />
     </Badge>
   )

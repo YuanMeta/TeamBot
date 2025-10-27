@@ -17,11 +17,7 @@ import { Skeleton } from '~/components/ui/skeleton'
 export const Header = observer(() => {
   const store = useStore()
   return (
-    <div
-      className={
-        'h-[52px] flex items-center justify-between border-b border-border px-3'
-      }
-    >
+    <div className={'h-[52px] flex items-center justify-between px-3'}>
       <div>
         <DropdownMenu>
           <DropdownMenuTrigger autoFocus={false} asChild>

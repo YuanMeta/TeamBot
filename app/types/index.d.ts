@@ -61,3 +61,12 @@ interface TextPart {
 }
 
 export type MessagePart = TextStep | ReasonStep | ToolPart
+
+export interface SearchResult {
+  title: string
+  url: string
+  summary: string
+  score: number
+  date: string
+  favicon: string
+}

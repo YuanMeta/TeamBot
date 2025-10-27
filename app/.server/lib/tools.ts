@@ -26,12 +26,18 @@ export const createWebSearchTool = (options: SearchOptions) => {
       apiKey: options.apiKey ?? ''
     })
     execute = async ({ query }) => {
-      const response = await tavilyClient.search(query)
+      const response = await tavilyClient.search(query, {
+        topic: 'news',
+        includeFavicon: true
+      })
       return response.results.map((result) => ({
         title: result.title,
         url: result.url,
         summary: result.content,
-        score: result.score
+        score: result.score,
+        date: result.publishedDate,
+        // @ts-ignore
+        favicon: result.favicon
       }))
     }
   }
