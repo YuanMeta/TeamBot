@@ -23,7 +23,6 @@ export default observer(() => {
     setState({
       moveY: 0
     })
-    store.moveChatInput$.next()
   }, [params.id, store.state.ready])
   useSubject(
     store.navigate$,

@@ -29,6 +29,14 @@
   );
   pointer-events: none;
 }
+.chat-input-content {
+  @apply pb-2 w-full flex flex-col border border-border rounded-2xl max-w-[760px] mx-auto px-3 pt-3 bg-background;
+  box-shadow: 0 2px 4px 0 rgba(0, 0, 0, 0.05);
+}
+.dark .chat-input-content {
+  background: oklch(26.862% 0.00003 271.152);
+  box-shadow: 0 2px 6px 0 rgba(0, 0, 0, 0.2);
+}
 .chat-list {
   @apply text-neutral-950 dark:text-neutral-100;
   opacity: 0;

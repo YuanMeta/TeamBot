@@ -60,9 +60,7 @@ export const ChatInput = observer(() => {
   return (
     <div className={'chat-input w-full relative px-4'}>
       {/* <div className={'chat-input-mask'}></div> */}
-      <div
-        className={`pb-2 w-full flex flex-col border border-border rounded-2xl max-w-[760px] mx-auto px-3 pt-3`}
-      >
+      <div className={`chat-input-content`}>
         <div className={'overflow-y-auto h-0 flex-1 max-h-52'}>
           <div>
             {!!state.files.length && (
@@ -150,23 +148,6 @@ export const ChatInput = observer(() => {
         >
           <div className={'flex items-center gap-1'}>
             <FileChoose />
-            {/* <div className={'hover:bg-zinc-200/60 rounded-sm p-1'}>
-                <FilePlus size={18} />
-              </div> */}
-            {/* {store.state.manualSearch && (
-              <div
-                onClick={() => {
-                  if (store.state.assistant) {
-                    store.rpc.updateAssistantOptions(store.state.assistant?.id, {
-                      openSearch: !store.state.openSearch
-                    })
-                  }
-                }}
-                className={`chat-input-action p-1 ${store.state.openSearch ? 'active' : ''}`}
-              >
-                <Earth size={18} />
-              </div>
-            )} */}
           </div>
           <div className={'flex items-center justify-between'}>
             <div className={'flex items-center gap-3'}>
