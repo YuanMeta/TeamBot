@@ -3,10 +3,11 @@ import { prisma } from '../lib/prisma'
 import { ZodError } from 'zod'
 import superjson from 'superjson'
 
-export async function createTRPCContext(opts: { headers: Headers }) {
+export async function createTRPCContext({ request }: { request: Request }) {
   return {
     db: prisma,
-    userId: ''
+    userId: '',
+    request
   }
 }
 type Context = Awaited<ReturnType<typeof createTRPCContext>>

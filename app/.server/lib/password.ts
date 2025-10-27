@@ -1,5 +1,7 @@
 import crypto from 'crypto'
+import jwt from 'jsonwebtoken'
 
+const secret = 'teambot-0508'
 const pbkdf2Async = (
   password: string,
   salt: Buffer,
@@ -26,12 +28,34 @@ export class PasswordManager {
   }
 
   static async verifyPassword(password: string, storedHash: string) {
-    const [_, algorithm, iterationsStr, saltHex, originalHash] =
-      storedHash.split('$')
-    const iterations = parseInt(iterationsStr)
-    const salt = Buffer.from(saltHex, 'hex')
+    try {
+      const [_, algorithm, iterationsStr, saltHex, originalHash] =
+        storedHash.split('$')
+      const iterations = parseInt(iterationsStr)
+      const salt = Buffer.from(saltHex, 'hex')
 
-    const newHash = await pbkdf2Async(password, salt, iterations, 64, algorithm)
-    return newHash.toString('hex') === originalHash
+      const newHash = await pbkdf2Async(
+        password,
+        salt,
+        iterations,
+        64,
+        algorithm
+      )
+      return newHash.toString('hex') === originalHash
+    } catch (e) {
+      return false
+    }
+  }
+}
+
+export const generateToken = (data: { uid: string }) => {
+  return jwt.sign(data, secret, { expiresIn: '7d' })
+}
+
+export const verifyToken = (token: string) => {
+  try {
+    return jwt.verify(token, secret)
+  } catch {
+    return null
   }
 }

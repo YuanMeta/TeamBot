@@ -19,7 +19,7 @@ function handleRequest(args: LoaderFunctionArgs | ActionFunctionArgs) {
     router: appRouter,
     createContext: () =>
       createTRPCContext({
-        headers: args.request.headers
+        request: args.request
       })
   })
 }
