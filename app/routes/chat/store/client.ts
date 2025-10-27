@@ -62,6 +62,9 @@ export class ChatClient {
       this.store.navigate$.next(`/chat/${addRecord.chat.id}`)
       chat = this.store.state.selectedChat!
     }
+    setTimeout(() => {
+      this.store.scrollToActiveMessage$.next()
+    }, 16)
     const res = await fetch('/chat/completions', {
       method: 'POST',
       headers: {

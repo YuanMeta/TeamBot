@@ -22,7 +22,7 @@ export const AiMessageList = observer(() => {
   const scrollToChat = useCallback(
     (index: number, behavior: 'auto' | 'smooth' = 'auto') => {
       if (scrollRef.current) {
-        const target = listRef.current!.children[0]?.children[index - 1]
+        const target = listRef.current!.children?.[index - 1]
         if (target) {
           target.scrollIntoView({ behavior, block: 'start' })
         }
@@ -83,7 +83,7 @@ export const AiMessageList = observer(() => {
   return (
     <div className={'relative h-full'}>
       <div
-        className={`overflow-y-auto h-full pb-5 relative px-4`}
+        className={`overflow-y-auto h-full pb-10 relative px-4`}
         ref={scrollRef}
         onScroll={scroll}
       >
