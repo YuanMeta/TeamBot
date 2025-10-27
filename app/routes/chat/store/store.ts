@@ -32,8 +32,14 @@ const state = {
     model: string | null
     messages?: MessageData[]
   }[],
+  chatPending: {} as Record<
+    string,
+    {
+      pending: boolean
+      abortController?: AbortController
+    }
+  >,
   messages: [] as MessageData[],
-  pending: false,
   ready: false,
   assistants: [] as Assistant[],
   assistantMap: {} as Record<string, Assistant>,
@@ -47,6 +53,9 @@ const state = {
     model: string | null
     messages?: MessageData[]
   },
+  get pending() {
+    return this.chatPending[this.selectedChat?.id!]?.pending || false
+  },
   get assistant(): Assistant | null {
     if (this.selectedChat) {
       const as = this.assistantMap[this.selectedChat?.assistantId!]
@@ -54,7 +63,6 @@ const state = {
         return as
       }
     }
-    // const model = localStorage.getItem('last_assistant_model')
     if (this.cacheModel) {
       const [assistantId] = this.cacheModel.split(':')
       const as = this.assistantMap[assistantId]
@@ -72,7 +80,6 @@ const state = {
         return this.selectedChat.model
       }
     }
-    // const model = localStorage.getItem('last_assistant_model')
     if (this.cacheModel) {
       const [assistantId, modelName] = this.cacheModel.split(':')
       if (as?.id === assistantId && models?.includes(modelName)) {
@@ -186,21 +193,17 @@ export class ChatStore extends StructStore<typeof state> {
     })
   }
   async chat(data: { text: string }) {
-    this.setState((state) => (state.pending = true))
     try {
       await this.client.complete(data)
     } catch (e) {
       console.log('err', e)
-    } finally {
-      this.setState((state) => (state.pending = false))
     }
   }
-  async stop() {
-    if (this.state.selectedChat && this.state.pending) {
-      this.client.abortController?.abort()
-      this.client.abortController = null
+  async stop(chatId: string) {
+    const data = this.state.chatPending[chatId]
+    if (data?.pending) {
+      data.abortController?.abort()
       this.setState((state) => {
-        state.pending = false
         const aiMsg = state.messages[state.messages.length - 1]
         if (aiMsg) {
           aiMsg.terminated = true

@@ -135,19 +135,19 @@ export const ChatSidebar = observer(() => {
               }}
             >
               <div className={'w-9 flex justify-center items-center'}>
-                <SquarePen className={'size-[18px]'} />
+                <SquarePen className={'size-[17px]'} />
               </div>
               <span>新聊天</span>
             </div>
             <div className={'sidebar-item'}>
               <div className={'w-9 flex justify-center items-center'}>
-                <Search className={'size-[18px]'} />
+                <Search className={'size-[17px]'} />
               </div>
               <span>搜索聊天</span>
             </div>
             <div className={'sidebar-item'}>
               <div className={'w-9 flex justify-center items-center'}>
-                <BookMarked className={'size-[18px]'} />
+                <BookMarked className={'size-[17px]'} />
               </div>
               <span>文档库</span>
             </div>

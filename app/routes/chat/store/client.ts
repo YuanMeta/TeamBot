@@ -11,10 +11,9 @@ import type { MessagePart } from '~/types'
 import { observable, runInAction } from 'mobx'
 export class ChatClient {
   private generateTitleSet = new Set<string>()
-  abortController: AbortController | null = null
   constructor(private readonly store: ChatStore) {}
   async complete(data: { text: string; onFinish?: () => void }) {
-    this.abortController = new AbortController()
+    const abortController = new AbortController()
     const tChatId = nanoid()
     let chat = this.store.state.selectedChat
     const userMessage = observable<MessageData>({
@@ -32,12 +31,10 @@ export class ChatClient {
       model: this.store.state.model!,
       updatedAt: dayjs().add(1, 'second').toDate()
     })
+    this.store.moveChatInput$.next()
     this.store.setState((state) => {
       state.messages.push(userMessage, aiMessage)
     })
-    setTimeout(() => {
-      this.store.moveChatInput$.next()
-    }, 30)
     if (chat) {
       const addRecord = await trpc.chat.createMessages.mutate({
         chatId: chat.id,
@@ -70,12 +67,16 @@ export class ChatClient {
     setTimeout(() => {
       this.store.scrollToActiveMessage$.next()
     }, 16)
+    this.store.state.chatPending[chat.id!] = {
+      pending: true,
+      abortController
+    }
     const res = await fetch('/chat/completions', {
       method: 'POST',
       headers: {
         'Content-Type': 'application/json'
       },
-      signal: this.abortController.signal,
+      signal: abortController.signal,
       body: JSON.stringify({
         chatId: this.store.state.selectedChat?.id
       }),
@@ -217,6 +218,10 @@ export class ChatClient {
         }
         console.error(e)
       } finally {
+        this.store.state.chatPending[chat.id!] = {
+          pending: false,
+          abortController: undefined
+        }
         reader.releaseLock()
       }
     }

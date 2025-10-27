@@ -1,7 +1,7 @@
 import { observer } from 'mobx-react-lite'
 import { ChatSidebar } from './ui/Sidebar'
 import { ChatStore, StoreContext } from './store/store'
-import { useEffect, useLayoutEffect, useMemo, useState } from 'react'
+import { useLayoutEffect, useMemo } from 'react'
 import { ChatInput } from './ui/ChatInput/ChatInput'
 import { Header } from './ui/Header'
 import { AiMessageList } from './ui/MessageList'
@@ -11,7 +11,6 @@ import { SearchResult } from './ui/SearchResult'
 
 export default observer(() => {
   const [state, setState] = useLocalState({
-    transition: false,
     moveY: 0
   })
   let params = useParams()
@@ -24,6 +23,7 @@ export default observer(() => {
     setState({
       moveY: 0
     })
+    store.moveChatInput$.next()
   }, [params.id, store.state.ready])
   useSubject(
     store.navigate$,
@@ -34,7 +34,7 @@ export default observer(() => {
   )
   useSubject(store.moveChatInput$, () => {
     setState({
-      moveY: window.innerHeight / 2 - 8
+      moveY: window.innerHeight / 2
     })
   })
   if (!store.state.ready) return null
@@ -48,7 +48,7 @@ export default observer(() => {
             <AiMessageList />
           </div>
           <div
-            className={`${params.id ? '' : `absolute top-1/2 -mt-[120px] w-full ${state.moveY !== 0 ? 'duration-150' : ''}`}`}
+            className={`${params.id ? '' : `absolute top-1/2 -mt-[128px] w-full ${state.moveY !== 0 ? 'duration-150' : ''}`}`}
             style={{
               transform: `translateY(${state.moveY}px)`
             }}

@@ -1,4 +1,4 @@
-import { CircleStop, CircleX } from 'lucide-react'
+import { CircleStop, CircleX, SendHorizontal } from 'lucide-react'
 import { observer } from 'mobx-react-lite'
 import { useCallback, useEffect, useRef } from 'react'
 import { InputArea } from './InputArea'
@@ -170,14 +170,19 @@ export const ChatInput = observer(() => {
           </div>
           <div className={'flex items-center justify-between'}>
             <div className={'flex items-center gap-3'}>
-              <Button
-                size={'icon-sm'}
-                variant={'ghost'}
-                onClick={() => store.stop()}
-              >
-                {/* <SendHorizontal size={18} /> */}
-                <CircleStop size={18} />
-              </Button>
+              {store.state.pending ? (
+                <Button
+                  size={'icon-sm'}
+                  variant={'ghost'}
+                  onClick={() => store.stop(store.state.selectedChat?.id!)}
+                >
+                  <CircleStop size={18} />
+                </Button>
+              ) : (
+                <Button size={'icon-sm'} variant={'ghost'}>
+                  <SendHorizontal size={18} />
+                </Button>
+              )}
             </div>
           </div>
         </div>
