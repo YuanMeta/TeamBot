@@ -32,6 +32,7 @@ import {
   AlertDialogTitle
 } from '~/components/ui/alert-dialog'
 import { NavUser } from './SidebarFooter'
+import { Skeleton } from '~/components/ui/skeleton'
 
 const Item = observer(
   ({
@@ -154,9 +155,16 @@ export const ChatSidebar = observer(() => {
             </div>
           </div>
         </div>
-        <div className={'flex-1 h-0 py-2 overflow-auto'}>
+        <div className={'flex-1 h-0 pt-2 overflow-auto pb-5'}>
           <div className={'text-primary/60 text-sm pl-4 mb-2'}>聊天</div>
           <div className={'px-1.5'}>
+            {store.state.loadingChats && !store.state.chats.length && (
+              <div className={'px-2 space-y-2'}>
+                <Skeleton className='h-4 w-full' />
+                <Skeleton className='h-4 w-1/2' />
+                <Skeleton className='h-4 w-3/4' />
+              </div>
+            )}
             {store.state.chats.map((chat) => (
               <Item
                 item={chat}
@@ -173,7 +181,7 @@ export const ChatSidebar = observer(() => {
                 }}
               />
             ))}
-            {!store.state.chats.length && (
+            {!store.state.chats.length && !store.state.loadingChats && (
               <div className={'text-center text-primary/50 text-[13px] mt-5'}>
                 暂无聊天记录
               </div>
@@ -182,9 +190,8 @@ export const ChatSidebar = observer(() => {
         </div>
         <NavUser
           user={{
-            name: 'John Doe',
-            email: 'john.doe@example.com',
-            avatar: 'https://github.com/shadcn.png'
+            name: store.state.userInfo?.name || '',
+            email: store.state.userInfo?.email || ''
           }}
         />
       </div>

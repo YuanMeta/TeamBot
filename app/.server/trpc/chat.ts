@@ -318,5 +318,15 @@ export const chatRouter = {
         where: { id: input.id, userId: ctx.userId },
         data: input.data
       })
+    }),
+  getUserInfo: procedure.query(async ({ ctx }) => {
+    return ctx.db.user.findUnique({
+      where: { id: ctx.userId },
+      select: {
+        name: true,
+        email: true,
+        role: true
+      }
     })
+  })
 } satisfies TRPCRouterRecord
