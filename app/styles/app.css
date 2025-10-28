@@ -1,6 +1,7 @@
 @import 'tailwindcss';
 @import 'tw-animate-css';
 @import './chat.css';
+@import './login.css';
 @custom-variant dark (&:is(.dark *));
 
 @theme {
