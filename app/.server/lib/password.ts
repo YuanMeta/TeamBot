@@ -35,11 +35,11 @@ export class PasswordManager {
 
   static async verifyPassword(password: string, storedHash: string) {
     try {
-      const [_, algorithm, iterationsStr, saltHex, originalHash] =
+      const [prefix, iterationsStr, saltHex, originalHash] =
         storedHash.split('$')
       const iterations = parseInt(iterationsStr)
       const salt = Buffer.from(saltHex, 'hex')
-
+      const [_, algorithm] = prefix.split('_')
       const newHash = await pbkdf2Async(
         password,
         salt,

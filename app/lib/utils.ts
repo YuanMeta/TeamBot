@@ -83,3 +83,15 @@ export const findLast = <T>(
   }
   return null
 }
+
+export const getTrpcErrorMessage = (error: any) => {
+  let fieldErrors = error?.meta?.data?.zodError?.fieldErrors
+  if (fieldErrors) {
+    const keys = Object.keys(fieldErrors)
+    return `[${keys[0]}] ${fieldErrors[keys[0]][0]}`
+  }
+  if (error?.meta?.message) {
+    return error.meta?.message
+  }
+  return error?.message
+}

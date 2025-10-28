@@ -34,7 +34,6 @@ export const pbRouter = {
       })
     )
     .mutation(async ({ input, ctx }) => {
-      // 检查登录尝试次数限制
       const attemptKey = `login:${input.nameOrEmail}`
       const attempts = loginAttempts.get(attemptKey) || {
         count: 0,

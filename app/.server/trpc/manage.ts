@@ -115,10 +115,10 @@ export const manageRouter = {
     .input(
       z.object({
         userId: z.string(),
-        email: z.email(),
-        password: z.string().min(8).max(50),
-        name: z.string().min(1),
-        role: z.enum(['admin', 'user'])
+        email: z.email().optional(),
+        password: z.string().min(8).max(50).optional(),
+        name: z.string().min(1).optional(),
+        role: z.enum(['admin', 'user']).optional()
       })
     )
     .mutation(async ({ input, ctx }) => {
@@ -126,7 +126,9 @@ export const manageRouter = {
         where: { id: input.userId },
         data: {
           email: input.email,
-          password: await PasswordManager.hashPassword(input.password),
+          password: input.password
+            ? await PasswordManager.hashPassword(input.password)
+            : undefined,
           name: input.name,
           role: input.role
         }
