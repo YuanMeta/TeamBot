@@ -8,6 +8,7 @@ import {
   UserStar
 } from 'lucide-react'
 import { useNavigate } from 'react-router'
+import { Theme, useTheme } from 'remix-themes'
 import { Avatar, AvatarFallback } from '~/components/ui/avatar'
 import { Button } from '~/components/ui/button'
 import {
@@ -34,6 +35,7 @@ export function NavUser({
   }
 }) {
   const navigate = useNavigate()
+  const [theme, setTheme, meta] = useTheme()
   return (
     <DropdownMenu>
       <DropdownMenuTrigger asChild>
@@ -70,15 +72,30 @@ export function NavUser({
             </DropdownMenuSubTrigger>
             <DropdownMenuPortal>
               <DropdownMenuSubContent>
-                <DropdownMenuCheckboxItem checked={true}>
+                <DropdownMenuCheckboxItem
+                  checked={theme === 'light' && meta.definedBy === 'USER'}
+                  onClick={() => {
+                    setTheme(Theme.LIGHT)
+                  }}
+                >
                   <Sun />
                   明亮
                 </DropdownMenuCheckboxItem>
-                <DropdownMenuCheckboxItem>
+                <DropdownMenuCheckboxItem
+                  checked={theme === 'dark' && meta.definedBy === 'USER'}
+                  onClick={() => {
+                    setTheme(Theme.DARK)
+                  }}
+                >
                   <Moon />
                   暗黑
                 </DropdownMenuCheckboxItem>
-                <DropdownMenuCheckboxItem>
+                <DropdownMenuCheckboxItem
+                  checked={!theme || meta.definedBy === 'SYSTEM'}
+                  onClick={() => {
+                    setTheme(null)
+                  }}
+                >
                   <MonitorCog />
                   系统
                 </DropdownMenuCheckboxItem>
