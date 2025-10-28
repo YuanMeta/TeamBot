@@ -57,7 +57,7 @@ export const links: Route.LinksFunction = () => [
 export default function AppWithProviders() {
   const data = useLoaderData()
   return (
-    <ThemeProvider specifiedTheme={data.theme} themeAction='/set-theme'>
+    <ThemeProvider specifiedTheme={data.theme} themeAction='/api/set-theme'>
       <App />
     </ThemeProvider>
   )
