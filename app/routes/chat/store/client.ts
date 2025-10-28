@@ -67,10 +67,12 @@ export class ChatClient {
     setTimeout(() => {
       this.store.scrollToActiveMessage$.next()
     }, 16)
-    this.store.state.chatPending[chat.id!] = {
-      pending: true,
-      abortController
-    }
+    this.store.setState((state) => {
+      state.chatPending[chat.id!] = {
+        pending: true,
+        abortController
+      }
+    })
     const res = await fetch('/chat/completions', {
       method: 'POST',
       headers: {
@@ -202,6 +204,12 @@ export class ChatClient {
                     parts[value.value.id].completed = true
                   }
                   break
+                case 'error':
+                  const text = value.value.errorText
+                  runInAction(() => {
+                    aiMessage.error = text
+                  })
+                  break
                 case 'finish':
                   data.onFinish?.()
                   break
@@ -218,10 +226,12 @@ export class ChatClient {
         }
         console.error(e)
       } finally {
-        this.store.state.chatPending[chat.id!] = {
-          pending: false,
-          abortController: undefined
-        }
+        this.store.setState((state) => {
+          state.chatPending[chat.id!] = {
+            pending: false,
+            abortController: undefined
+          }
+        })
         reader.releaseLock()
       }
     }

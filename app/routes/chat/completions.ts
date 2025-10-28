@@ -60,7 +60,7 @@ export async function action({ request }: Route.LoaderArgs) {
     },
     onFinish: async (data) => {
       // console.log('data', data.steps)
-      console.log('request', JSON.stringify(data.request.body || null))
+      // console.log('request', JSON.stringify(data.request.body || null))
       const steps: any[] = []
       const parts: MessagePart[] = []
       let usage: Usage = {
@@ -135,8 +135,14 @@ export async function action({ request }: Route.LoaderArgs) {
         })
       }
     },
-    onError: (error: any) => {
+    onError: async (error: any) => {
       let err = error.error as APICallError
+      await prisma.message.update({
+        where: { id: assistantMessage.id },
+        data: {
+          error: err.message
+        }
+      })
       console.log('request', err)
     }
   })
