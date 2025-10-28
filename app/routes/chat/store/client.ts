@@ -31,7 +31,9 @@ export class ChatClient {
       model: this.store.state.model!,
       updatedAt: dayjs().add(1, 'second').toDate()
     })
-    this.store.moveChatInput$.next()
+    if (!chat) {
+      this.store.moveChatInput$.next()
+    }
     this.store.setState((state) => {
       state.messages.push(userMessage, aiMessage)
     })
@@ -43,6 +45,11 @@ export class ChatClient {
       this.store.setState((state) => {
         state.messages[state.messages.length - 2].id = addRecord.messages[0].id
         state.messages[state.messages.length - 1].id = addRecord.messages[1].id
+        const index = state.chats.findIndex((c) => c.id === chat?.id)
+        if (index !== -1) {
+          state.chats.splice(index, 1)
+          state.chats.unshift(chat!)
+        }
       })
     } else {
       const addRecord = await trpc.chat.createChat.mutate({

@@ -32,6 +32,7 @@ export default observer(() => {
     [navigate]
   )
   useSubject(store.moveChatInput$, () => {
+    if (store.state.selectedChat) return
     setState({
       moveY: window.innerHeight / 2
     })
@@ -39,7 +40,7 @@ export default observer(() => {
   if (!store.state.ready) return null
   return (
     <StoreContext value={store}>
-      <div className={'flex h-screen'}>
+      <div className={'flex h-screen overflow-hidden'}>
         <ChatSidebar />
         <div className={'flex flex-col flex-1 relative'}>
           <Header />

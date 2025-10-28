@@ -1,4 +1,4 @@
-import type { TRPCRouterRecord } from '@trpc/server'
+import { TRPCError, type TRPCRouterRecord } from '@trpc/server'
 import { procedure } from './core'
 import z from 'zod'
 import { type Message } from '@prisma/client'
@@ -231,6 +231,16 @@ export const chatRouter = {
     )
     .mutation(async ({ input, ctx }) => {
       let date = new Date()
+      const chat = await ctx.db.chat.findUnique({
+        where: { id: input.chatId, userId: ctx.userId },
+        select: { id: true }
+      })
+      if (!chat) {
+        throw new TRPCError({
+          code: 'NOT_FOUND',
+          message: 'Chat not found'
+        })
+      }
       return ctx.db.$transaction(async (t) => {
         let messages: Message[] = []
         const userMessage = await t.message.create({
