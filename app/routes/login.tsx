@@ -22,7 +22,23 @@ import { trpc } from '~/.client/trpc'
 import { toast } from 'sonner'
 import { getTrpcErrorMessage } from '~/lib/utils'
 import { useNavigate } from 'react-router'
+import { prisma } from '../.server/lib/prisma'
+import { PasswordManager } from '../.server/lib/password'
 
+export const loader = async () => {
+  const users = await prisma.user.count()
+  if (!users) {
+    await prisma.user.create({
+      data: {
+        email: 'teambot@teambot.com',
+        password: await PasswordManager.hashPassword('123456'),
+        name: 'TeamBot',
+        role: 'admin'
+      }
+    })
+  }
+  return null
+}
 export default observer(() => {
   const navigate = useNavigate()
   const form = useForm({

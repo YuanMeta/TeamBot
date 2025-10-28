@@ -10,7 +10,8 @@ const sessionStorage = createCookieSessionStorage({
     path: '/',
     httpOnly: true,
     sameSite: 'lax',
-    secrets: ['s3cr3t']
+    secrets: ['s3cr3t'],
+    secure: false
     // Set domain and secure only if in production
     // ...(isProduction
     //   ? { domain: 'your-production-domain.com', secure: true }
@@ -23,7 +24,7 @@ export const themeSessionResolver = createThemeSessionResolver(sessionStorage)
 export const userCookie = createCookie('user', {
   httpOnly: true,
   sameSite: 'lax',
-  secure: isProduction,
+  secure: false,
   maxAge: 604_800, // one week
   secrets: [process.env.COOKIE_SECRET || 's3cr3t'] // 添加签名密钥
 })
