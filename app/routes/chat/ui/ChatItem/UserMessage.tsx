@@ -67,20 +67,20 @@ export const UserMessage = observer<{ msg: MessageData }>(({ msg }) => {
 
   const update = useCallback(() => {
     if (state.inputText) {
-      setState({ isEditing: false })
-      const lastUserMsg =
-        store.state.messages?.[store.state.messages.length - 2]
-      store.setState((draft) => {
-        const remove = draft.messages!.slice(-2)!
-        // store.rpc.deleteMessages(remove.map((m) => m.id))
-        draft.messages = draft.messages!.slice(0, -2)
-      })
-      if (lastUserMsg) {
-        runInAction(() => {
-          lastUserMsg.parts = [{ type: 'text', text: state.inputText }]
-          lastUserMsg.context = []
-        })
-      }
+      // setState({ isEditing: false })
+      // const lastUserMsg =
+      //   store.state.messages?.[store.state.messages.length - 2]
+      // store.setState((draft) => {
+      //   const remove = draft.messages!.slice(-2)!
+      //   // store.rpc.deleteMessages(remove.map((m) => m.id))
+      //   draft.messages = draft.messages!.slice(0, -2)
+      // })
+      // if (lastUserMsg) {
+      //   runInAction(() => {
+      //     lastUserMsg.parts = [{ type: 'text', text: state.inputText }]
+      //     lastUserMsg.context = []
+      //   })
+      // }
       // store.chat.completion(state().inputText, undefined, lastUserMsg)
     }
   }, [state])

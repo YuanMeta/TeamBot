@@ -14,8 +14,6 @@ interface ThinkingProps {
 
 export const Thinking = memo<ThinkingProps>(
   ({ content, duration, thinking, style }) => {
-    const { t } = useTranslation()
-
     const [showDetail, setShowDetail] = useState(false)
 
     useEffect(() => {

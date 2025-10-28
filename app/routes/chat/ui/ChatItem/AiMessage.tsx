@@ -18,7 +18,6 @@ dayjs.extend(relativeTime)
 export const AiMessage = observer<{ msg: MessageData }>(({ msg }) => {
   const { t } = useTranslation()
   const ref = useRef<HTMLDivElement>(null)
-  const store = useStore()
   const [state, setState] = useLocalState({
     copied: false,
     isEditing: false
@@ -30,7 +29,7 @@ export const AiMessage = observer<{ msg: MessageData }>(({ msg }) => {
     let content = parts
       ?.slice()
       .reverse()
-      .find((s: MessagePart) => s.type === 'text')
+      .find((s: MessagePart) => s.type === 'text')?.text
     if (content) {
       copyToClipboard({
         html: await markdownToPureHtml(content),

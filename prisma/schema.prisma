@@ -98,11 +98,11 @@ model Message {
   model               String?
   reasoningDuration   Int?
   parts               Json?
-  input_tokens        Int?
-  output_tokens       Int?
-  total_tokens        Int?
-  reasoning_tokens    Int?
-  cached_input_tokens Int?
+  input_tokens        Int           @default(0)
+  output_tokens       Int           @default(0)
+  total_tokens        Int           @default(0)
+  reasoning_tokens    Int           @default(0)
+  cached_input_tokens Int           @default(0)
   steps               Json?
   terminated          Boolean       @default(false)
   createdAt           DateTime      @default(now())
