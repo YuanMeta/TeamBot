@@ -2,6 +2,7 @@ import { observer } from 'mobx-react-lite'
 import {
   $createLineBreakNode,
   $createParagraphNode,
+  $createTextNode,
   $getRoot,
   $getSelection,
   $isRangeSelection,
@@ -10,7 +11,7 @@ import {
   KEY_DOWN_COMMAND,
   type EditorState
 } from 'lexical'
-import { useEffect, type RefObject } from 'react'
+import { useEffect, useRef, type RefObject } from 'react'
 
 import { AutoFocusPlugin } from '@lexical/react/LexicalAutoFocusPlugin'
 import { LexicalComposer } from '@lexical/react/LexicalComposer'
@@ -19,6 +20,7 @@ import { ContentEditable } from '@lexical/react/LexicalContentEditable'
 import { HistoryPlugin } from '@lexical/react/LexicalHistoryPlugin'
 import { LexicalErrorBoundary } from '@lexical/react/LexicalErrorBoundary'
 import { useLexicalComposerContext } from '@lexical/react/LexicalComposerContext'
+import { OnChangePlugin as LexicalOnChangePlugin } from '@lexical/react/LexicalOnChangePlugin'
 import isHotkey from 'is-hotkey'
 const initialConfig = {
   namespace: 'ChatInput',
@@ -27,37 +29,11 @@ const initialConfig = {
     console.error(error)
   }
 }
-function ExposeFocusPlugin({
-  instance
-}: {
-  instance?: RefObject<{
-    focus?: () => void
-  }>
-}) {
+
+function KeyboardPlugin({ onSend }: { onSend: (text: string) => void }) {
   const [editor] = useLexicalComposerContext()
   useEffect(() => {
-    if (!instance || !instance.current) return
-    instance.current.focus = () => {
-      const root = editor.getRootElement()
-      if (root) {
-        root.focus()
-      } else {
-        // fallback
-        editor.focus()
-      }
-    }
-    return () => {
-      if (instance && instance.current) {
-        delete instance.current.focus
-      }
-    }
-  }, [editor, instance])
-  return null
-}
-function OnChangePlugin({ onSend }: { onSend: (text: string) => void }) {
-  const [editor] = useLexicalComposerContext()
-  useEffect(() => {
-    return editor.registerCommand(
+    const unregister = editor.registerCommand(
       KEY_DOWN_COMMAND,
       (e) => {
         if (isHotkey('enter', e)) {
@@ -87,31 +63,95 @@ function OnChangePlugin({ onSend }: { onSend: (text: string) => void }) {
       },
       COMMAND_PRIORITY_HIGH
     )
+    return () => {
+      unregister()
+    }
   }, [editor, onSend])
+  return null
+}
+
+function OnChangeValuePlugin({
+  onChange
+}: {
+  onChange: (text: string) => void
+}) {
+  const handleChange = (editorState: EditorState) => {
+    editorState.read(() => {
+      const root = $getRoot()
+      const text = root.getTextContent()
+      onChange(text)
+    })
+  }
+
+  return <LexicalOnChangePlugin onChange={handleChange} />
+}
+
+function SyncValuePlugin({ value }: { value: string }) {
+  const [editor] = useLexicalComposerContext()
+  const isInternalUpdate = useRef(false)
+
+  useEffect(() => {
+    if (isInternalUpdate.current) {
+      isInternalUpdate.current = false
+      return
+    }
+
+    editor.update(() => {
+      const root = $getRoot()
+      const currentText = root.getTextContent()
+
+      if (currentText !== value) {
+        root.clear()
+        if (value) {
+          const lines = value.split('\n')
+          const paragraph = $createParagraphNode()
+
+          lines.forEach((line, i) => {
+            if (i > 0) {
+              paragraph.append($createLineBreakNode())
+            }
+            if (line) {
+              paragraph.append($createTextNode(line))
+            }
+          })
+
+          root.append(paragraph)
+        } else {
+          root.append($createParagraphNode())
+        }
+      }
+    })
+  }, [editor, value])
+
   return null
 }
 
 export const InputArea = observer(
   ({
     onSend,
-    instance,
+    value,
+    onChange,
     onAddFile
   }: {
     onSend: (text: string) => void
-    instance?: RefObject<{
-      focus?: () => void
-    }>
+    value: string
+    onChange: (text: string) => void
     onAddFile: (file: File) => void
   }) => {
     return (
       <LexicalComposer initialConfig={initialConfig}>
-        <div className={'w-full h-full pt-1 pb-2 px-1 outline-none text-base relative'}>
+        <div
+          className={
+            'w-full h-full pt-1 pb-2 px-1 outline-none text-base relative'
+          }
+        >
           <PlainTextPlugin
             contentEditable={
               <ContentEditable
                 className={
                   'w-full h-full outline-none text-base relative text-black/90 dark:text-white/90'
                 }
+                id={'chat-input'}
                 spellCheck={false}
                 onPaste={(e) => {
                   const files = e.clipboardData.files
@@ -133,12 +173,9 @@ export const InputArea = observer(
             }
             ErrorBoundary={LexicalErrorBoundary}
           />
-          <OnChangePlugin
-            onSend={(text) => {
-              onSend(text)
-            }}
-          />
-          <ExposeFocusPlugin instance={instance} />
+          <KeyboardPlugin onSend={onSend} />
+          <OnChangeValuePlugin onChange={onChange} />
+          <SyncValuePlugin value={value} />
         </div>
         <HistoryPlugin />
         <AutoFocusPlugin />

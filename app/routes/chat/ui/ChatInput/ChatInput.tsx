@@ -10,16 +10,15 @@ export const ChatInput = observer(() => {
   const store = useStore()
   const [state, setState] = useLocalState({
     files: [] as File[],
-    images: [] as File[]
+    images: [] as File[],
+    prompt: ''
   })
-  const instance = useRef<{
-    focus?: () => void
-  }>({})
-  const onSend = useCallback(async (text: string) => {
-    if (!text || store.state.pending) return
+  const onSend = useCallback(async () => {
+    if (!state.prompt || store.state.pending) return
     store.chat({
-      text: text
+      text: state.prompt
     })
+    setState({ prompt: '' })
     // let files: MessageFile[] = []
     // let images: MessageFile[] = []
     // for (let f of state.files) {
@@ -60,7 +59,12 @@ export const ChatInput = observer(() => {
   return (
     <div className={'chat-input w-full relative px-4'}>
       {/* <div className={'chat-input-mask'}></div> */}
-      <div className={`chat-input-content`}>
+      <div
+        className={`chat-input-content`}
+        onClick={() => {
+          document.querySelector<HTMLDivElement>('#chat-input')?.focus()
+        }}
+      >
         <div className={'overflow-y-auto h-0 flex-1 max-h-52'}>
           <div>
             {!!state.files.length && (
@@ -136,7 +140,10 @@ export const ChatInput = observer(() => {
           <div>
             <InputArea
               onSend={onSend}
-              instance={instance}
+              value={state.prompt}
+              onChange={(text) => {
+                setState({ prompt: text })
+              }}
               onAddFile={onAddFile}
             />
           </div>
@@ -155,12 +162,22 @@ export const ChatInput = observer(() => {
                 <Button
                   size={'icon-sm'}
                   variant={'ghost'}
-                  onClick={() => store.stop(store.state.selectedChat?.id!)}
+                  onClick={(e) => {
+                    e.stopPropagation()
+                    store.stop(store.state.selectedChat?.id!)
+                  }}
                 >
                   <CircleStop size={18} />
                 </Button>
               ) : (
-                <Button size={'icon-sm'} variant={'ghost'}>
+                <Button
+                  size={'icon-sm'}
+                  variant={'ghost'}
+                  onClick={(e) => {
+                    e.stopPropagation()
+                    setState({ prompt: '' })
+                  }}
+                >
                   <SendHorizontal size={18} />
                 </Button>
               )}

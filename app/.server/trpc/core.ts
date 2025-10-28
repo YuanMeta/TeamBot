@@ -6,17 +6,9 @@ import { userCookie } from '../session'
 import { verifyToken } from '../lib/password'
 
 export async function createTRPCContext({ request }: { request: Request }) {
-  const token = await userCookie.parse(request.headers.get('Cookie') || '')
-  if (!token) {
-    throw new TRPCError({ code: 'UNAUTHORIZED' })
-  }
-  const data = verifyToken(token)
-  if (!data) {
-    throw new TRPCError({ code: 'UNAUTHORIZED' })
-  }
   return {
     db: prisma,
-    userId: data.uid,
+    userId: null as null | string,
     request
   }
 }
@@ -37,13 +29,18 @@ export const createCallerFactory = t.createCallerFactory
 export const createTRPCRouter = t.router
 export const publicProcedure = t.procedure
 
-export const procedure = t.procedure.use(({ ctx, next }) => {
-  // if (!ctx.user?.id) {
-  //   throw new TRPCError({ code: 'UNAUTHORIZED' })
-  // }
+export const procedure = t.procedure.use(async ({ ctx, next }) => {
+  const token = await userCookie.parse(ctx.request.headers.get('Cookie') || '')
+  if (!token) {
+    throw new TRPCError({ code: 'UNAUTHORIZED' })
+  }
+  const data = verifyToken(token)
+  if (!data) {
+    throw new TRPCError({ code: 'UNAUTHORIZED' })
+  }
   return next({
     ctx: {
-      userId: ctx.userId
+      userId: data.uid
     }
   })
 })

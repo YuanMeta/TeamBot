@@ -1,7 +1,7 @@
 module.exports = {
   apps: [
     {
-      name: 'team-chat',
+      name: 'team-bot',
       script: 'npm',
       args: 'start',
       cwd: './',

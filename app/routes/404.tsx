@@ -2,8 +2,6 @@ import type { Route } from './+types/404'
 
 export function loader({ request }: Route.LoaderArgs) {
   const url = new URL(request.url)
-
-  // 对于 Chrome DevTools 和其他特殊请求，返回空响应
   if (
     url.pathname.includes('/.well-known/') ||
     url.pathname.includes('favicon.ico') ||

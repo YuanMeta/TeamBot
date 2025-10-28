@@ -76,6 +76,11 @@ export const AiMessageList = observer(() => {
       })
     }, 50)
   })
+  useEffect(() => {
+    setState({
+      showScrollToBottom: false
+    })
+  }, [store.state.selectedChat?.id])
   return (
     <div className={'relative h-full'}>
       <div

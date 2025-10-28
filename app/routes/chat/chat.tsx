@@ -52,14 +52,14 @@ export default observer(() => {
               transform: `translateY(${state.moveY}px)`
             }}
           >
-            {!store.state.messages.length && (
+            {!params.id && !store.state.messages.length && (
               <div className={'text-center text-xl font-medium mb-6'}>
                 今天有什么可以帮到你？
               </div>
             )}
 
             <ChatInput />
-            {!!store.state.messages.length && (
+            {(!!store.state.messages.length || !!params.id) && (
               <div
                 className={
                   'h-8 flex items-center justify-center text-xs text-primary/50'
