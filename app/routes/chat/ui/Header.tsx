@@ -66,7 +66,7 @@ export const Header = observer(() => {
         </DropdownMenu>
       </div>
 
-      <div>
+      <div className={'flex gap-1'}>
         <Button variant={'ghost'}>
           <SquareArrowOutUpRight />
           共享

@@ -31,6 +31,7 @@ import {
   AlertDialogHeader,
   AlertDialogTitle
 } from '~/components/ui/alert-dialog'
+import { NavUser } from './SidebarFooter'
 
 const Item = observer(
   ({
@@ -179,6 +180,13 @@ export const ChatSidebar = observer(() => {
             )}
           </div>
         </div>
+        <NavUser
+          user={{
+            name: 'John Doe',
+            email: 'john.doe@example.com',
+            avatar: 'https://github.com/shadcn.png'
+          }}
+        />
       </div>
       <AlertDialog
         open={state.showDeleteDialog}

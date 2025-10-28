@@ -45,9 +45,14 @@ export default observer(() => {
         })
         if (res.ok) {
           navigate('/chat', { replace: true })
+        } else {
+          const text = await res.text()
+          if (text) {
+            toast.error(text)
+          }
         }
       } catch (e: any) {
-        toast.error(getTrpcErrorMessage(e))
+        toast.error(e.message || '未知错误')
       }
     }
   })

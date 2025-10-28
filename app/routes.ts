@@ -9,6 +9,7 @@ export default [
   route('chat/:id?', 'routes/chat/chat.tsx'),
   route('login', 'routes/login.tsx'),
   route('api/api-login', 'routes/api/api-login.ts'),
+  route('api/logout', 'routes/api/logout.ts'),
   route('manage', 'routes/manage/manage.tsx', [
     index('routes/manage/index.tsx'),
     {

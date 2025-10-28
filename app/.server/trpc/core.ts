@@ -6,11 +6,11 @@ import { userCookie } from '../session'
 import { verifyToken } from '../lib/password'
 
 export async function createTRPCContext({ request }: { request: Request }) {
-  const cookie = await userCookie.parse(request.headers.get('Cookie') || '')
-  if (!cookie?.token) {
+  const token = await userCookie.parse(request.headers.get('Cookie') || '')
+  if (!token) {
     throw new TRPCError({ code: 'UNAUTHORIZED' })
   }
-  const data = verifyToken(cookie.token)
+  const data = verifyToken(token)
   if (!data) {
     throw new TRPCError({ code: 'UNAUTHORIZED' })
   }

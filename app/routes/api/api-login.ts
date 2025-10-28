@@ -36,10 +36,7 @@ export async function action({ request }: Route.LoaderArgs) {
   try {
     InputSchema.parse(input)
   } catch (e) {
-    throw new TRPCError({
-      code: 'BAD_REQUEST',
-      message: (e as Error).message
-    })
+    throw new Response((e as Error).message, { status: 400 })
   }
   const attemptKey = `login:${input.nameOrEmail}`
   const attempts = loginAttempts.get(attemptKey) || {
@@ -51,9 +48,8 @@ export async function action({ request }: Route.LoaderArgs) {
     const remainingMinutes = Math.ceil(
       (attempts.lockedUntil - Date.now()) / 60000
     )
-    throw new TRPCError({
-      code: 'TOO_MANY_REQUESTS',
-      message: `账户已被锁定，请在 ${remainingMinutes} 分钟后重试`
+    throw new Response(`账户已被锁定，请在 ${remainingMinutes} 分钟后重试`, {
+      status: 429
     })
   }
 
@@ -68,28 +64,19 @@ export async function action({ request }: Route.LoaderArgs) {
     select: { id: true, password: true, deleted: true }
   })
 
-  const invalidCredentialsError = new TRPCError({
-    code: 'UNAUTHORIZED',
-    message: '用户名或密码错误'
-  })
-
   if (!user) {
     recordFailedAttempt(attemptKey)
-    throw invalidCredentialsError
+    throw new Response(`用户名或密码错误`, {
+      status: 429
+    })
   }
 
   if (user.deleted) {
-    throw new TRPCError({
-      code: 'FORBIDDEN',
-      message: '该账户已被禁用'
-    })
+    throw new Response('该账户已被禁用', { status: 401 })
   }
 
   if (!user.password) {
-    throw new TRPCError({
-      code: 'BAD_REQUEST',
-      message: '该账户未设置密码，请联系管理员'
-    })
+    throw new Response('该账户未设置密码，请联系管理员', { status: 401 })
   }
 
   const isPasswordValid = await PasswordManager.verifyPassword(
@@ -99,16 +86,20 @@ export async function action({ request }: Route.LoaderArgs) {
 
   if (!isPasswordValid) {
     recordFailedAttempt(attemptKey)
-    throw invalidCredentialsError
+    throw new Response('用户名或密码错误', { status: 401 })
   }
 
   // 登录成功，清除失败记录
   loginAttempts.delete(attemptKey)
-
   const token = generateToken({ uid: user.id })
-  return redirect('/chat', {
-    headers: {
-      'Set-Cookie': await userCookie.serialize({ token })
+  return Response.json(
+    {
+      success: true
+    },
+    {
+      headers: {
+        'Set-Cookie': await userCookie.serialize(token)
+      }
     }
-  })
+  )
 }
