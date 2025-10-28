@@ -118,7 +118,7 @@ export const manageRouter = {
         email: z.email().optional(),
         password: z.string().min(8).max(50).optional(),
         name: z.string().min(1).optional(),
-        role: z.enum(['admin', 'user']).optional()
+        role: z.enum(['admin', 'member']).optional()
       })
     )
     .mutation(async ({ input, ctx }) => {
@@ -134,6 +134,18 @@ export const manageRouter = {
         }
       })
     }),
+  getMember: procedure.input(z.string()).query(async ({ input, ctx }) => {
+    return ctx.db.user.findUnique({
+      where: { id: input },
+      select: {
+        id: true,
+        email: true,
+        avatar: true,
+        name: true,
+        role: true
+      }
+    })
+  }),
   getMembers: procedure
     .input(
       z.object({

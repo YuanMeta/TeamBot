@@ -60,9 +60,10 @@ export default observer(() => {
                 size='icon-sm'
                 aria-label='Submit'
                 onClick={() => {
-                  // setState({
-                  //   selectedProviderId: data.id
-                  // })
+                  setState({
+                    selectedMemberId: data.id,
+                    openAddMember: true
+                  })
                 }}
               >
                 <PencilLine className={'size-3'} />
@@ -111,7 +112,7 @@ export default observer(() => {
           <div>
             <Button
               onClick={() => {
-                setState({ openAddMember: true })
+                setState({ openAddMember: true, selectedMemberId: null })
               }}
             >
               <Plus />
@@ -178,6 +179,7 @@ export default observer(() => {
         <AddMember
           open={state.openAddMember}
           onUpdate={() => getMembers()}
+          id={state.selectedMemberId || undefined}
           onClose={() => setState({ openAddMember: false })}
         />
       </div>

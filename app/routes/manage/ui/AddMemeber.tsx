@@ -27,7 +27,12 @@ import { useLocalState } from '~/hooks/localState'
 import { sleep } from '~/lib/utils'
 
 export const AddMember = observer(
-  (props: { open: boolean; onClose: () => void; onUpdate: () => void }) => {
+  (props: {
+    open: boolean
+    id?: string
+    onClose: () => void
+    onUpdate: () => void
+  }) => {
     const form = useForm({
       defaultValues: {
         name: '',
@@ -37,12 +42,22 @@ export const AddMember = observer(
         role: 'member'
       },
       onSubmit: async ({ value }) => {
-        await trpc.manage.createMember.mutate({
-          email: value.email || undefined,
-          password: value.passowrd,
-          name: value.name,
-          role: value.role as 'admin' | 'member'
-        })
+        if (props.id) {
+          await trpc.manage.updateMember.mutate({
+            userId: props.id,
+            email: value.email || undefined,
+            password: value.passowrd,
+            name: value.name,
+            role: value.role as 'admin' | 'member'
+          })
+        } else {
+          await trpc.manage.createMember.mutate({
+            email: value.email || undefined,
+            password: value.passowrd,
+            name: value.name,
+            role: value.role as 'admin' | 'member'
+          })
+        }
         props.onUpdate()
         props.onClose()
       }
@@ -50,8 +65,21 @@ export const AddMember = observer(
     useEffect(() => {
       if (props.open) {
         form.reset()
+        if (props.id) {
+          trpc.manage.getMember.query(props.id).then((res) => {
+            if (res) {
+              form.reset({
+                email: res.email || '',
+                name: res.name || '',
+                role: res.role as 'admin' | 'member',
+                passowrd: '',
+                rePassword: ''
+              })
+            }
+          })
+        }
       }
-    }, [props.open])
+    }, [props.open, props.id])
     return (
       <Dialog
         open={props.open}
@@ -176,6 +204,7 @@ export const AddMember = observer(
                   name={'passowrd'}
                   validators={{
                     onSubmit: ({ value }) => {
+                      if (!value && !!props.id) return undefined
                       const schema = z.string().min(6).max(30)
                       try {
                         schema.parse(value)
@@ -190,7 +219,7 @@ export const AddMember = observer(
                       field.state.meta.isTouched && !field.state.meta.isValid
                     return (
                       <Field data-invalid={isInvalid}>
-                        <FieldLabel htmlFor={field.name} required>
+                        <FieldLabel htmlFor={field.name} required={!props.id}>
                           密码
                         </FieldLabel>
                         <Input
@@ -215,6 +244,7 @@ export const AddMember = observer(
                 <form.Field
                   validators={{
                     onSubmit: ({ value, fieldApi }) => {
+                      if (!value && !!props.id) return undefined
                       const schema = z.string().min(6).max(30)
                       try {
                         schema.parse(value)
@@ -234,7 +264,7 @@ export const AddMember = observer(
                       field.state.meta.isTouched && !field.state.meta.isValid
                     return (
                       <Field data-invalid={isInvalid}>
-                        <FieldLabel htmlFor={field.name} required>
+                        <FieldLabel htmlFor={field.name} required={!props.id}>
                           重复密码
                         </FieldLabel>
                         <Input

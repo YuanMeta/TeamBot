@@ -6,12 +6,10 @@ import {
 } from './core'
 import { manageRouter } from './manage'
 import { chatRouter } from './chat'
-import { pbRouter } from './pb'
 
 export const appRouter = createTRPCRouter({
   manage: manageRouter,
-  chat: chatRouter,
-  pb: pbRouter
+  chat: chatRouter
 })
 
 export type AppRouter = typeof appRouter

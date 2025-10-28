@@ -21,8 +21,10 @@ import { ModelIcon } from '~/lib/ModelIcon'
 import { trpc } from '~/.client/trpc'
 import { toast } from 'sonner'
 import { getTrpcErrorMessage } from '~/lib/utils'
+import { useNavigate } from 'react-router'
 
 export default observer(() => {
+  const navigate = useNavigate()
   const form = useForm({
     defaultValues: {
       nameOrEmail: '',
@@ -31,11 +33,19 @@ export default observer(() => {
     onSubmit: async ({ value }) => {
       console.log(value)
       try {
-        const res = await trpc.pb.login.mutate({
-          nameOrEmail: value.nameOrEmail,
-          password: value.password
+        const res = await fetch('/api/api-login', {
+          method: 'POST',
+          body: JSON.stringify({
+            nameOrEmail: value.nameOrEmail,
+            password: value.password
+          }),
+          headers: {
+            'Content-Type': 'application/json'
+          }
         })
-        console.log('res', res)
+        if (res.ok) {
+          navigate('/chat', { replace: true })
+        }
       } catch (e: any) {
         toast.error(getTrpcErrorMessage(e))
       }
