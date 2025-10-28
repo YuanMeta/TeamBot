@@ -121,9 +121,9 @@ export default observer(() => {
                         if (!value) {
                           return { message: '请输入密码' }
                         }
-                        // if (value.length < 6) {
-                        //   return { message: '请输入6位以上的密码' }
-                        // }
+                        if (value.length < 6) {
+                          return { message: '请输入6位以上的密码' }
+                        }
                         return undefined
                       }
                     }}

@@ -1,6 +1,7 @@
 import SuperJSON from 'superjson'
 import { createTRPCClient, httpBatchLink, TRPCClientError } from '@trpc/client'
 import type { AppRouter } from '~/.server/trpc/router'
+import type { ChatStore } from '~/routes/chat/store/store'
 export const trpc = createTRPCClient<AppRouter>({
   links: [
     httpBatchLink({
@@ -11,6 +12,10 @@ export const trpc = createTRPCClient<AppRouter>({
           ...options,
           credentials: 'include'
         }).then(async (res) => {
+          if (res.status === 401) {
+            location.replace('/login')
+            return res
+          }
           const data = await res.json()
           const error = data instanceof Array ? data?.[0].error : data?.error
           if (error || !res.ok) {

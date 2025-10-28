@@ -2,11 +2,21 @@ import { initTRPC, TRPCError } from '@trpc/server'
 import { prisma } from '../lib/prisma'
 import { ZodError } from 'zod'
 import superjson from 'superjson'
+import { userCookie } from '../session'
+import { verifyToken } from '../lib/password'
 
 export async function createTRPCContext({ request }: { request: Request }) {
+  const cookie = await userCookie.parse(request.headers.get('Cookie') || '')
+  if (!cookie?.token) {
+    throw new TRPCError({ code: 'UNAUTHORIZED' })
+  }
+  const data = verifyToken(cookie.token)
+  if (!data) {
+    throw new TRPCError({ code: 'UNAUTHORIZED' })
+  }
   return {
     db: prisma,
-    userId: '',
+    userId: data.uid,
     request
   }
 }
@@ -33,7 +43,7 @@ export const procedure = t.procedure.use(({ ctx, next }) => {
   // }
   return next({
     ctx: {
-      userId: 'cmgxhfthr00002uqbk9gb47d2'
+      userId: ctx.userId
     }
   })
 })

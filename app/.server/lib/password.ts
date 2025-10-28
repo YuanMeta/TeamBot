@@ -60,7 +60,7 @@ export const generateToken = (data: { uid: string }) => {
 
 export const verifyToken = (token: string) => {
   try {
-    return jwt.verify(token, secret)
+    return jwt.verify(token, secret) as { uid: string }
   } catch {
     return null
   }
