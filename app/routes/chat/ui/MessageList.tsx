@@ -84,7 +84,7 @@ export const AiMessageList = observer(() => {
   return (
     <div className={'relative h-full'}>
       <div
-        className={`overflow-y-auto h-full pb-10 relative px-4`}
+        className={`overflow-y-auto h-full pb-10 relative px-10`}
         ref={scrollRef}
         onScroll={scroll}
       >

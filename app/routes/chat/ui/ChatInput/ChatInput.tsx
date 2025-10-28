@@ -57,7 +57,7 @@ export const ChatInput = observer(() => {
     // })
   }, [])
   return (
-    <div className={'chat-input w-full relative px-4'}>
+    <div className={'chat-input w-full relative px-8'}>
       {/* <div className={'chat-input-mask'}></div> */}
       <div
         className={`chat-input-content`}
