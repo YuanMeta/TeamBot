@@ -51,10 +51,10 @@ export async function action({ request }: Route.LoaderArgs) {
       parts: [{ type: 'text', text: json.aiResponse }]
     }
   ]
+
   const result = streamText({
     model: client(chat.model!),
     system: `You are a conversational assistant and you need to summarize the user's conversation into a title of 10 words or less., The summary needs to maintain the original language.`,
-    maxOutputTokens: 20,
     messages: convertToModelMessages(messages),
     onFinish: async (data) => {
       if (data.finishReason === 'stop') {

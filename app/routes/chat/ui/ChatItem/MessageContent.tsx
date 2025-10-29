@@ -34,7 +34,8 @@ const MessageContent = observer<{ msg: MessageData }>(({ msg }) => {
                 {p.toolName === 'webSearch' && <WebSearchTool tool={p} />}
               </div>
             )}
-            {p.type === 'reasoning' && (
+
+            {p.type === 'reasoning' && (!p.completed || !!p.reasoning) && (
               <Reasoning
                 content={p.reasoning}
                 duration={msg.reasoningDuration}

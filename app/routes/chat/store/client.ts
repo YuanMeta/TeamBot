@@ -9,6 +9,7 @@ import {
 } from 'ai'
 import type { MessagePart } from '~/types'
 import { observable, runInAction } from 'mobx'
+import { findLast } from '../../../lib/utils'
 export class ChatClient {
   private generateTitleSet = new Set<string>()
   constructor(private readonly store: ChatStore) {}
@@ -108,9 +109,10 @@ export class ChatClient {
                 chatId: chat.id,
                 userPrompt: data.text,
                 aiResponse:
-                  (chat.messages?.[
-                    chat.messages.length - 1
-                  ].parts?.reverse()?.[0].text as string) || ''
+                  findLast(
+                    chat.messages?.[chat.messages.length - 1].parts!,
+                    (item) => item.type === 'text'
+                  )?.text || ''
               })
             }
             break

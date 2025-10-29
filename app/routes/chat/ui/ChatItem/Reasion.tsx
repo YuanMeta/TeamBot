@@ -17,7 +17,7 @@ export const Thinking = memo<ThinkingProps>(
     const [showDetail, setShowDetail] = useState(false)
 
     useEffect(() => {
-      setShowDetail(!!thinking)
+      setShowDetail(!!thinking && !!content)
     }, [thinking])
 
     return (
@@ -33,7 +33,9 @@ export const Thinking = memo<ThinkingProps>(
         <div
           className={`flex items-center cursor-default gap-1 select-none ${!thinking ? 'hover:text-neutral-700 dark:hover:text-neutral-200 duration-100' : ''}`}
           onClick={() => {
-            setShowDetail(!showDetail)
+            if (content) {
+              setShowDetail(!showDetail)
+            }
           }}
         >
           {thinking ? (
@@ -51,12 +53,14 @@ export const Thinking = memo<ThinkingProps>(
               </div>
             </div>
           )}
-          <div className={'flex gap-1'}>
-            <ChevronRight
-              size={16}
-              className={`${showDetail ? 'rotate-90' : ''}`}
-            />
-          </div>
+          {!!content && (
+            <div className={'flex gap-1'}>
+              <ChevronRight
+                size={16}
+                className={`${showDetail ? 'rotate-90' : ''}`}
+              />
+            </div>
+          )}
         </div>
 
         <AnimatePresence mode='wait' initial={false}>
