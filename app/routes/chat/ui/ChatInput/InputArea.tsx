@@ -163,10 +163,10 @@ export const InputArea = observer(
                 placeholder={
                   <div
                     className={
-                      'absolute top-1 left-1.5 text-black/50 dark:text-white/50 pointer-events-none'
+                      'absolute top-1 left-1 text-black/50 dark:text-white/50 pointer-events-none'
                     }
                   >
-                    Ask me anything...
+                    询问任何问题，或使用 '/' 快速插入
                   </div>
                 }
               />

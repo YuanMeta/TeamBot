@@ -39,22 +39,25 @@ export function NavUser({
     <DropdownMenu>
       <DropdownMenuTrigger asChild>
         <div className={'w-full px-2 justify-center flex py-2 border-t'}>
-          <Button variant={'ghost'} className='w-full flex-1 px-3'>
-            <Avatar className='h-7 w-7 rounded-lg grayscale'>
-              <AvatarFallback className='rounded-lg'>
-                <UserRound />
-              </AvatarFallback>
-            </Avatar>
-            <div className='grid flex-1 text-left text-sm leading-tight'>
-              <span className='truncate font-medium'>{user.name}</span>
-              {!!user.email && (
-                <span className='text-muted-foreground truncate text-xs'>
-                  {user.email}
-                </span>
-              )}
+          <div className='w-full flex-1 px-2 flex items-center justify-between py-1 rounded-md dark:hover:bg-accent/40 duration-150 hover:bg-accent-foreground/5 cursor-pointer'>
+            <div className={'flex items-center gap-2'}>
+              <Avatar className='h-7 w-7 rounded-lg grayscale'>
+                <AvatarFallback className='rounded-lg'>
+                  <UserRound className={'size-4'} />
+                </AvatarFallback>
+              </Avatar>
+              <div className='grid flex-1 text-left text-sm leading-tight'>
+                <span className='truncate font-medium'>{user.name}</span>
+                {!!user.email && (
+                  <span className='text-muted-foreground truncate text-xs'>
+                    {user.email}
+                  </span>
+                )}
+              </div>
             </div>
-            <EllipsisVertical />
-          </Button>
+
+            <EllipsisVertical className={'size-4'} />
+          </div>
         </div>
       </DropdownMenuTrigger>
       <DropdownMenuContent
