@@ -13,6 +13,7 @@ import type { MessagePart, SearchOptions, Usage } from '~/types'
 import type { Prisma } from '@prisma/client'
 import { createWebSearchTool, getUrlContent } from '~/.server/lib/tools'
 import { MessageManager } from '~/.server/lib/message'
+import { getUserId } from '~/.server/session'
 
 const InputSchema = z.object({
   chatId: z.string(),
@@ -22,6 +23,10 @@ const InputSchema = z.object({
 
 export async function action({ request }: Route.LoaderArgs) {
   const json: z.infer<typeof InputSchema> = await request.json()
+  const uid = await getUserId(request)
+  if (!uid) {
+    return new Response('Unauthorized', { status: 401 })
+  }
   try {
     InputSchema.parse(json)
   } catch (e) {
@@ -31,7 +36,7 @@ export async function action({ request }: Route.LoaderArgs) {
     })
   }
   const { uiMessages, summary, chat, client, assistantMessage } =
-    await MessageManager.getStreamMessage(json.chatId)
+    await MessageManager.getStreamMessage(json.chatId, uid)
   const tools: Record<string, Tool> = {
     getUrlContent
   }
@@ -130,7 +135,8 @@ export async function action({ request }: Route.LoaderArgs) {
             output_tokens: usage.outputTokens,
             total_tokens: usage.totalTokens,
             reasoning_tokens: usage.reasoningTokens,
-            cached_input_tokens: usage.cachedInputTokens
+            cached_input_tokens: usage.cachedInputTokens,
+            model: chat.model
           }
         })
       }

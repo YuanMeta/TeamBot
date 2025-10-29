@@ -10,7 +10,6 @@ import {
 import { useNavigate } from 'react-router'
 import { Theme, useTheme } from 'remix-themes'
 import { Avatar, AvatarFallback } from '~/components/ui/avatar'
-import { Button } from '~/components/ui/button'
 import {
   DropdownMenu,
   DropdownMenuCheckboxItem,

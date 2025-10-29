@@ -41,11 +41,12 @@ Output only the summarized version of the conversation.`,
     return res.text
   }
 
-  static async getStreamMessage(chatId: string) {
+  static async getStreamMessage(chatId: string, userId: string) {
     const chat = await prisma.chat.findUnique({
       where: {
         // 后续加入userId 条件
-        id: chatId
+        id: chatId,
+        userId: userId
       },
       include: { assistant: true }
     })
