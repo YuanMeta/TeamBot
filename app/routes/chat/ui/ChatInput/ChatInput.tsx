@@ -1,4 +1,4 @@
-import { CircleStop, CircleX, SendHorizontal } from 'lucide-react'
+import { CircleStop, CircleX, Earth, SendHorizontal } from 'lucide-react'
 import { observer } from 'mobx-react-lite'
 import { useCallback, useEffect, useRef } from 'react'
 import { InputArea } from './InputArea'
@@ -6,12 +6,19 @@ import { useStore } from '../../store/store'
 import { useLocalState } from '~/hooks/localState'
 import { FileChoose } from './FileChoose'
 import { Button } from '~/components/ui/button'
+import { Badge } from '~/components/ui/badge'
+import {
+  Tooltip,
+  TooltipContent,
+  TooltipTrigger
+} from '~/components/ui/tooltip'
 export const ChatInput = observer(() => {
   const store = useStore()
   const [state, setState] = useLocalState({
     files: [] as File[],
     images: [] as File[],
-    prompt: ''
+    prompt: '',
+    webSearch: false
   })
   const onSend = useCallback(async () => {
     if (!state.prompt || store.state.pending) return
@@ -58,7 +65,6 @@ export const ChatInput = observer(() => {
   }, [])
   return (
     <div className={'chat-input w-full relative px-8'}>
-      {/* <div className={'chat-input-mask'}></div> */}
       <div
         className={`chat-input-content`}
         onClick={() => {
@@ -150,11 +156,26 @@ export const ChatInput = observer(() => {
         </div>
         <div
           className={
-            'flex items-center justify-between text-neutral-500 pt-2.5'
+            'flex items-center justify-between text-secondary-foreground/80 pt-2.5'
           }
         >
-          <div className={'flex items-center gap-1'}>
+          <div className={'flex items-center gap-1.5'}>
             <FileChoose />
+            <Tooltip delayDuration={500}>
+              <TooltipTrigger asChild>
+                <Button
+                  size={'icon-sm'}
+                  variant={`${state.webSearch ? 'secondary' : 'ghost'}`}
+                >
+                  <Earth size={16} />
+                </Button>
+              </TooltipTrigger>
+              <TooltipContent>
+                <p>
+                  助手将根据提问自主决定是否进行网络搜索，您也可以手动启用网络搜索。
+                </p>
+              </TooltipContent>
+            </Tooltip>
           </div>
           <div className={'flex items-center justify-between'}>
             <div className={'flex items-center gap-3'}>
