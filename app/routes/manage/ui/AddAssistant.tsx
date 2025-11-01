@@ -58,10 +58,10 @@ export const AddAssistant = observer(
             mode: value.mode,
             models: value.models,
             name: value.name,
-            apiKey: value.apiKey || null,
-            baseUrl: value.baseUrl || null,
+            api_key: value.apiKey || null,
+            base_url: value.baseUrl || null,
             options: {},
-            webSearch: value.webSearch
+            web_search: value.webSearch
           }
           if (props.id) {
             await trpc.manage.updateAssistant.mutate({
@@ -91,10 +91,10 @@ export const AddAssistant = observer(
               mode: res.mode,
               name: res.name,
               models: res.models as string[],
-              apiKey: res.apiKey,
-              baseUrl: res.baseUrl,
+              apiKey: res.api_key,
+              baseUrl: res.base_url,
               options: {},
-              webSearch: res.webSearch as unknown as SearchOptions
+              webSearch: res.web_search as unknown as SearchOptions
             })
           }
         })

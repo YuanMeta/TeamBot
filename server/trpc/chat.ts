@@ -2,7 +2,8 @@ import { TRPCError, type TRPCRouterRecord } from '@trpc/server'
 import { procedure } from './core'
 import z from 'zod'
 import dayjs from 'dayjs'
-import { getMessagesWithFiles } from '../lib/table'
+import { parseAssistant } from 'server/lib/table'
+// import { getMessagesWithFiles } from '../lib/table'
 export const chatRouter = {
   createChat: procedure
     .input(
@@ -137,13 +138,13 @@ export const chatRouter = {
       }
 
       // 使用辅助函数查询 messages 并关联 files
-      const messages = await getMessagesWithFiles(ctx.db, {
-        chat_id: chat[0].id
-      })
+      // const messages = await getMessagesWithFiles(ctx.db, {
+      //   chat_id: chat[0].id
+      // })
 
       return {
         ...chat[0],
-        messages
+        messages: []
       }
     }),
   getMessages: procedure
@@ -153,10 +154,11 @@ export const chatRouter = {
       })
     )
     .query(async ({ ctx, input }) => {
-      return getMessagesWithFiles(ctx.db, {
-        chat_id: input.chatId,
-        user_id: ctx.userId
-      })
+      // return getMessagesWithFiles(ctx.db, {
+      //   chat_id: input.chatId,
+      //   user_id: ctx.userId
+      // })
+      return []
     }),
   deleteChat: procedure
     .input(
@@ -177,12 +179,10 @@ export const chatRouter = {
       .select('id', 'name', 'mode', 'models', 'options')
 
     return assistants.map((a) => {
-      const op = a.options as { searchMode?: string }
+      const data = parseAssistant(a as any)
       return {
-        ...a,
-        options: {
-          searchMode: op?.searchMode
-        }
+        ...data,
+        options: data.options?.searchMode
       }
     })
   }),

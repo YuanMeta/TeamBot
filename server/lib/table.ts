@@ -33,38 +33,6 @@ export type MessageWithFiles = TableMessage & {
   }>
 }
 
-/**
- * 查询 messages 并关联 files
- * 类似 Prisma 的 include 功能
- */
-export async function getMessagesWithFiles(
-  db: Knex,
-  where: Partial<TableMessage>
-): Promise<MessageWithFiles[]> {
-  // 1. 查询 messages - 查询所有字段
-  const messages = await db('messages')
-    .where(where)
-    .select('*')
-    .orderBy('created_at', 'asc')
-
-  if (messages.length === 0) {
-    return []
-  }
-
-  // 2. 查询所有相关的 files
-  const messageIds = messages.map((m) => m.id)
-  const files = await db('message_files')
-    .whereIn('message_id', messageIds)
-    .select('id', 'message_id', 'name', 'path', 'size')
-
-  // 3. 组装数据
-  return messages.map((message) => ({
-    ...message,
-    files: files
-      .filter((file) => file.message_id === message.id)
-      .map(({ message_id, ...rest }) => rest)
-  }))
-}
 export const tableSchema = async (db: Knex) => {
   if (!(await db.schema.hasTable('users'))) {
     await db.schema.createTable('users', (table) => {
@@ -185,5 +153,29 @@ export const tableSchema = async (db: Knex) => {
       name: 'TeamBot',
       role: 'admin'
     })
+  }
+}
+
+export const parseAssistant = (assistant: TableAssistant): TableAssistant => {
+  return {
+    ...assistant,
+    models: assistant.models ? JSON.parse(assistant.models as any) : [],
+    options: assistant.options ? JSON.parse(assistant.options as any) : {},
+    web_search: assistant.web_search
+      ? JSON.parse(assistant.web_search as any)
+      : {}
+  }
+}
+
+export const transformAssistant = (assistant: TableAssistant) => {
+  return {
+    ...assistant,
+    models: assistant.models ? (JSON.stringify(assistant.models) as any) : null,
+    options: assistant.options
+      ? (JSON.stringify(assistant.options) as any)
+      : null,
+    web_search: assistant.web_search
+      ? (JSON.stringify(assistant.web_search) as any)
+      : null
   }
 }

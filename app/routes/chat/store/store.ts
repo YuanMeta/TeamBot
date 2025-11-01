@@ -27,8 +27,8 @@ const state = {
   chats: [] as {
     id: string
     title: string
-    lastChatTime: Date
-    assistantId: string | null
+    last_chat_time: Date
+    assistant_id: string | null
     model: string | null
     messages?: MessageData[]
   }[],
@@ -114,7 +114,7 @@ export class ChatStore extends StructStore<typeof state> {
     this.state.cacheModel = localStorage.getItem('last_assistant_model')
     await this.loadAssistants()
     await trpc.chat.getUserInfo.query().then((res) => {
-      this.setState((state) => (state.userInfo = res))
+      this.setState((state) => (state.userInfo = res || null))
     })
     this.setState((state) => (state.ready = true))
     await this.loadChats()
@@ -139,8 +139,8 @@ export class ChatStore extends StructStore<typeof state> {
       .then((res) => {
         this.setState((state) => {
           const addChats = res.map((r) => observable(r))
-          state.chats.push(...addChats)
-          addChats.forEach((c) => this.chatsMap.set(c.id, c))
+          state.chats.push(...(addChats as any))
+          addChats.forEach((c: any) => this.chatsMap.set(c.id, c))
         })
       })
       .finally(() => {

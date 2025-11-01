@@ -6,6 +6,7 @@ import * as gfm from 'turndown-plugin-gfm'
 import turndown from 'turndown'
 import { copyToClipboard } from '~/.client/copy'
 import { toast } from 'sonner'
+import { customAlphabet } from 'nanoid'
 
 export function cn(...inputs: ClassValue[]) {
   return twMerge(clsx(inputs))
@@ -95,3 +96,9 @@ export const getTrpcErrorMessage = (error: any) => {
   }
   return error?.message
 }
+
+const nanoid = customAlphabet(
+  '0123456789abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ',
+  21
+)
+export const cid = () => nanoid()

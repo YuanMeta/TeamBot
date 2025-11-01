@@ -5,6 +5,8 @@ import { checkLLmConnect } from '../lib/checkConnect'
 import { PasswordManager } from '../lib/password'
 import { Prisma } from '@prisma/client'
 import { kdb } from '../lib/knex'
+import { tid } from 'server/lib/utils'
+import { parseAssistant, transformAssistant } from 'server/lib/table'
 
 export const manageRouter = {
   checkConnect: procedure
@@ -20,10 +22,16 @@ export const manageRouter = {
       return checkLLmConnect(input)
     }),
   getAssistants: procedure.query(async ({ ctx }) => {
-    return ctx.db('assistants').select('*').orderBy('created_at', 'desc')
+    return (
+      await ctx.db('assistants').select('*').orderBy('created_at', 'desc')
+    ).map((r) => {
+      return parseAssistant(r)
+    })
   }),
   getAssistant: procedure.input(z.string()).query(async ({ input, ctx }) => {
-    return ctx.db('assistants').where({ id: input }).first()
+    const record = await ctx.db('assistants').where({ id: input }).first()
+    if (!record) return null
+    return parseAssistant(record)
   }),
   updateAssistant: procedure
     .input(
@@ -32,51 +40,34 @@ export const manageRouter = {
         name: z.string().min(1),
         mode: z.string().min(1),
         models: z.array(z.string()).min(1),
-        apiKey: z.string().nullable(),
-        baseUrl: z.string().nullable(),
+        api_key: z.string().nullable(),
+        base_url: z.string().nullable(),
         options: z.record(z.string(), z.any()),
-        webSearch: z.record(z.string(), z.any()).nullish()
+        web_search: z.record(z.string(), z.any()).nullish()
       })
     )
     .mutation(async ({ input, ctx }) => {
       return ctx
         .db('assistants')
         .where({ id: input.id })
-        .update({
-          name: input.name,
-          mode: input.mode,
-          models: input.models,
-          api_key: input.apiKey,
-          base_url: input.baseUrl,
-          options: input.options,
-          web_search:
-            input.webSearch === null ? Prisma.JsonNull : input.webSearch
-        })
+        .update(transformAssistant(input as any))
     }),
   createAssistant: procedure
     .input(
       z.object({
-        id: z.string().optional(),
         name: z.string().min(1),
         mode: z.string().min(1),
         models: z.array(z.string()).min(1),
-        apiKey: z.string().nullable(),
-        baseUrl: z.string().nullable(),
+        api_key: z.string().nullable(),
+        base_url: z.string().nullable(),
         options: z.record(z.string(), z.any()),
-        webSearch: z.record(z.string(), z.any()).optional()
+        web_search: z.record(z.string(), z.any()).optional()
       })
     )
     .mutation(async ({ input, ctx }) => {
       return ctx.db('assistants').insert({
-        name: input.name,
-        mode: input.mode,
-        models: input.models ? (JSON.stringify(input.models) as any) : null,
-        api_key: input.apiKey,
-        base_url: input.baseUrl,
-        options: input.options ? (JSON.stringify(input.options) as any) : null,
-        web_search: input.webSearch
-          ? (JSON.stringify(input.webSearch) as any)
-          : null
+        ...transformAssistant(input as any),
+        id: tid()
       })
     }),
   createMember: procedure
@@ -90,6 +81,7 @@ export const manageRouter = {
     )
     .mutation(async ({ input, ctx }) => {
       return ctx.db('users').insert({
+        id: tid(),
         email: input.email,
         password: await PasswordManager.hashPassword(input.password),
         name: input.name,
