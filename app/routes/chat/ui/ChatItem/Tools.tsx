@@ -9,7 +9,7 @@ import {
 import { observer } from 'mobx-react-lite'
 import { Badge } from '~/components/ui/badge'
 import { getDomain } from '~/lib/utils'
-import type { ToolPart } from '~/types'
+import type { ToolPart } from 'types'
 import { useStore } from '../../store/store'
 
 export const UrlTool = observer(({ tool }: { tool: ToolPart }) => {

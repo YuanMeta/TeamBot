@@ -11,7 +11,7 @@ import { Textarea } from '~/components/ui/textarea'
 import { Button } from '~/components/ui/button'
 import { useLocalState } from '~/hooks/localState'
 import { getUserPrompt } from '~/lib/chat'
-import type { MessagePart } from '~/types'
+import type { MessagePart } from 'types'
 const fileTypeIconMap = [
   [/\.pdf$/i, 'pdf', '#F54838'],
   [/\.docx$/i, 'doc', '#0078D4'],

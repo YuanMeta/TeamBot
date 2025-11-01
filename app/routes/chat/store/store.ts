@@ -5,7 +5,7 @@ import { isClient } from '~/lib/utils'
 import type { Assistant, MessageFile } from '@prisma/client'
 import { Subject } from 'rxjs'
 import { ChatClient } from './client'
-import type { MessagePart, SearchResult } from '~/types'
+import type { MessagePart, SearchResult } from 'types'
 import { observable } from 'mobx'
 
 export interface MessageData {

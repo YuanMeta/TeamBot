@@ -1,0 +1,67 @@
+import crypto from 'crypto'
+import jwt from 'jsonwebtoken'
+
+// 使用环境变量，提供默认值（仅开发环境）
+const secret = process.env.JWT_SECRET || 'teambot-0508'
+
+// 生产环境必须设置JWT_SECRET
+if (process.env.NODE_ENV === 'production' && !process.env.JWT_SECRET) {
+  throw new Error('JWT_SECRET environment variable must be set in production')
+}
+const pbkdf2Async = (
+  password: string,
+  salt: Buffer,
+  iterations: number,
+  keylen: number,
+  algorithm: string
+) =>
+  new Promise<Buffer>((resolve, reject): void => {
+    crypto.pbkdf2(password, salt, iterations, keylen, algorithm, (err, key) => {
+      err ? reject(err) : resolve(key)
+    })
+  })
+
+export class PasswordManager {
+  static async hashPassword(
+    password: string,
+    saltLength = 32,
+    iterations = 100000
+  ) {
+    const salt = crypto.randomBytes(saltLength)
+    const hash = await pbkdf2Async(password, salt, iterations, 64, 'sha256')
+
+    return `pbkdf2_sha256$${iterations}$${salt.toString('hex')}$${hash.toString('hex')}`
+  }
+
+  static async verifyPassword(password: string, storedHash: string) {
+    try {
+      const [prefix, iterationsStr, saltHex, originalHash] =
+        storedHash.split('$')
+      const iterations = parseInt(iterationsStr)
+      const salt = Buffer.from(saltHex, 'hex')
+      const [_, algorithm] = prefix.split('_')
+      const newHash = await pbkdf2Async(
+        password,
+        salt,
+        iterations,
+        64,
+        algorithm
+      )
+      return newHash.toString('hex') === originalHash
+    } catch (e) {
+      return false
+    }
+  }
+}
+
+export const generateToken = (data: { uid: string }) => {
+  return jwt.sign(data, secret, { expiresIn: '7d' })
+}
+
+export const verifyToken = (token: string) => {
+  try {
+    return jwt.verify(token, secret) as { uid: string }
+  } catch {
+    return null
+  }
+}

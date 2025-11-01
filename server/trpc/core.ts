@@ -1,20 +1,23 @@
 import { initTRPC, TRPCError } from '@trpc/server'
-import { prisma } from '../lib/prisma'
-import { ZodError } from 'zod'
+import z, { ZodError } from 'zod'
 import superjson from 'superjson'
 import { userCookie } from '../session'
 import { verifyToken } from '../lib/password'
 import { kdb } from '../lib/knex'
+import * as trpcExpress from '@trpc/server/adapters/express'
 
-export async function createTRPCContext({ request }: { request: Request }) {
+export const createContext = async ({
+  req
+}: trpcExpress.CreateExpressContextOptions) => {
   const db = await kdb()
   return {
     db,
     userId: null as null | string,
-    request
+    req
   }
 }
-type Context = Awaited<ReturnType<typeof createTRPCContext>>
+
+type Context = Awaited<ReturnType<typeof createContext>>
 
 const t = initTRPC.context<Context>().create({
   transformer: superjson,
@@ -22,7 +25,8 @@ const t = initTRPC.context<Context>().create({
     ...shape,
     data: {
       ...shape.data,
-      zodError: error.cause instanceof ZodError ? error.cause.flatten() : null
+      zodError:
+        error.cause instanceof ZodError ? z.treeifyError(error.cause) : null
     }
   })
 })
@@ -32,7 +36,7 @@ export const createTRPCRouter = t.router
 export const publicProcedure = t.procedure
 
 export const procedure = t.procedure.use(async ({ ctx, next }) => {
-  const token = await userCookie.parse(ctx.request.headers.get('Cookie') || '')
+  const token = await userCookie.parse(ctx.req.headers.cookie || '')
   if (!token) {
     throw new TRPCError({ code: 'UNAUTHORIZED' })
   }

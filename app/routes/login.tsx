@@ -49,7 +49,7 @@ export default observer(() => {
     onSubmit: async ({ value }) => {
       console.log(value)
       try {
-        const res = await fetch('/api/api-login', {
+        const res = await fetch('/login', {
           method: 'POST',
           body: JSON.stringify({
             nameOrEmail: value.nameOrEmail,

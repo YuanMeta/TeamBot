@@ -7,7 +7,7 @@ import {
   uiMessageChunkSchema,
   type UIMessageChunk
 } from 'ai'
-import type { MessagePart } from '~/types'
+import type { MessagePart } from 'types'
 import { observable, runInAction } from 'mobx'
 import { findLast } from '../../../lib/utils'
 export class ChatClient {

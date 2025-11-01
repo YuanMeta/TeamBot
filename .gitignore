@@ -19,3 +19,6 @@ test-client.ts
 deploy.config.cjs
 deploy.zip
 deploy.cjs
+db.sqlite
+.env.dev
+server/db/*

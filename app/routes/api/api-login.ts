@@ -1,10 +1,8 @@
 import z from 'zod'
 import type { Route } from './+types/api-login'
-import { TRPCError } from '@trpc/server'
-import { prisma } from '~/.server/lib/prisma'
 import { generateToken, PasswordManager } from '~/.server/lib/password'
 import { userCookie } from '~/.server/session'
-import { redirect } from 'react-router'
+import { kdb } from '~/.server/lib/knex'
 
 // 防暴力破解：登录尝试记录
 const loginAttempts = new Map<string, { count: number; lockedUntil: number }>()
@@ -56,14 +54,11 @@ export async function action({ request }: Route.LoaderArgs) {
   if (attempts.lockedUntil > 0 && attempts.lockedUntil <= Date.now()) {
     loginAttempts.delete(attemptKey)
   }
-
-  const user = await prisma.user.findFirst({
-    where: {
-      OR: [{ email: input.nameOrEmail }, { name: input.nameOrEmail }]
-    },
-    select: { id: true, password: true, deleted: true }
-  })
-
+  const db = await kdb()
+  const user = await db('users')
+    .where({ name: input.nameOrEmail })
+    .orWhere({ email: input.nameOrEmail })
+    .first()
   if (!user) {
     recordFailedAttempt(attemptKey)
     throw new Response(`用户名或密码错误`, {
