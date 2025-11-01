@@ -1,6 +1,5 @@
 import dayjs from 'dayjs'
 import type { ChatStore, MessageData } from './store'
-import { nanoid } from 'nanoid'
 import { trpc } from '~/.client/trpc'
 import {
   parseJsonEventStream,
@@ -9,16 +8,16 @@ import {
 } from 'ai'
 import type { MessagePart } from 'types'
 import { observable, runInAction } from 'mobx'
-import { findLast } from '../../../lib/utils'
+import { cid, findLast } from '../../../lib/utils'
 export class ChatClient {
   private generateTitleSet = new Set<string>()
   constructor(private readonly store: ChatStore) {}
   async complete(data: { text: string; onFinish?: () => void }) {
     const abortController = new AbortController()
-    const tChatId = nanoid()
+    const tChatId = cid()
     let chat = this.store.state.selectedChat
     const userMessage = observable<MessageData>({
-      tid: nanoid(),
+      id: cid(),
       chatId: this.store.state.selectedChat?.id || tChatId,
       parts: [{ type: 'text', text: data.text }],
       role: 'user',
@@ -26,7 +25,7 @@ export class ChatClient {
       updatedAt: dayjs().toDate()
     })
     const aiMessage = observable<MessageData>({
-      tid: nanoid(),
+      id: cid(),
       chatId: this.store.state.selectedChat?.id || tChatId,
       role: 'assistant',
       model: this.store.state.model!,
@@ -39,13 +38,11 @@ export class ChatClient {
       state.messages.push(userMessage, aiMessage)
     })
     if (chat) {
-      const addRecord = await trpc.chat.createMessages.mutate({
+      await trpc.chat.createMessages.mutate({
         chatId: chat.id,
         userPrompt: data.text
       })
       this.store.setState((state) => {
-        state.messages[state.messages.length - 2].id = addRecord.messages[0].id
-        state.messages[state.messages.length - 1].id = addRecord.messages[1].id
         const index = state.chats.findIndex((c) => c.id === chat?.id)
         if (index !== -1) {
           state.chats.splice(index, 1)
@@ -54,16 +51,16 @@ export class ChatClient {
       })
     } else {
       const addRecord = await trpc.chat.createChat.mutate({
+        userMessageId: userMessage.id!,
+        assistantMessageId: aiMessage.id!,
         assistantId: this.store.state.assistant!.id,
         model: this.store.state.model!,
         userPrompt: data.text
       })
       this.store.setState((state) => {
-        state.chats.unshift(addRecord.chat)
+        state.chats.unshift(addRecord.chat as any)
         state.selectedChat = state.chats[0]
-        state.messages[state.messages.length - 2].id = addRecord.messages[0].id
         state.messages[state.messages.length - 2].chatId = addRecord.chat.id
-        state.messages[state.messages.length - 1].id = addRecord.messages[1].id
         state.messages[state.messages.length - 1].chatId = addRecord.chat.id
         state.selectedChat!.messages = state.messages
       })
@@ -81,7 +78,7 @@ export class ChatClient {
         abortController
       }
     })
-    const res = await fetch('/chat/completions', {
+    const res = await fetch('/api/completions', {
       method: 'POST',
       headers: {
         'Content-Type': 'application/json'
@@ -232,6 +229,8 @@ export class ChatClient {
           runInAction(() => {
             aiMessage.terminated = true
           })
+        } else {
+          // update
         }
         console.error(e)
       } finally {

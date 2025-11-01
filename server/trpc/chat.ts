@@ -3,11 +3,14 @@ import { procedure } from './core'
 import z from 'zod'
 import dayjs from 'dayjs'
 import { parseAssistant } from 'server/lib/table'
+import { tid } from 'server/lib/utils'
 // import { getMessagesWithFiles } from '../lib/table'
 export const chatRouter = {
   createChat: procedure
     .input(
       z.object({
+        userMessageId: z.string().min(1),
+        assistantMessageId: z.string().min(1),
         assistantId: z.string().min(1),
         model: z.string().optional(),
         files: z
@@ -27,6 +30,7 @@ export const chatRouter = {
       return await ctx.db.transaction(async (trx) => {
         const chat = await trx('chats')
           .insert({
+            id: tid(),
             assistant_id: input.assistantId,
             user_id: ctx.userId,
             title: '',
@@ -43,14 +47,15 @@ export const chatRouter = {
           ])
         const userMessage = await trx('messages')
           .insert({
+            id: input.userMessageId,
             chat_id: chat[0].id,
             role: 'user',
-            parts: [
+            parts: JSON.stringify([
               {
                 type: 'text',
                 text: input.userPrompt
               }
-            ],
+            ]) as any,
             user_id: ctx.userId,
             created_at: date
           })
@@ -82,6 +87,7 @@ export const chatRouter = {
 
         const assistantMessage = await trx('messages')
           .insert({
+            id: input.assistantMessageId,
             chat_id: chat[0].id,
             role: 'assistant',
             user_id: ctx.userId,
@@ -94,7 +100,7 @@ export const chatRouter = {
           { ...assistantMessage[0], files: [] }
         ]
 
-        return { chat, messages }
+        return { chat: chat[0], messages }
       })
     }),
   getChats: procedure

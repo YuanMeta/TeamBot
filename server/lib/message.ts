@@ -5,6 +5,7 @@ import type { MessagePart } from 'types'
 import type { Message } from '@prisma/client'
 import { createClient } from './checkConnect'
 import { findLast } from '~/lib/utils'
+import type { Knex } from 'knex'
 
 let maxTokens = 20000
 export class MessageManager {
@@ -41,7 +42,14 @@ Output only the summarized version of the conversation.`,
     return res.text
   }
 
-  static async getStreamMessage(chatId: string, userId: string) {
+  static async getStreamMessage(
+    db: Knex,
+    data: {
+      chatId: string
+      userId: string
+    }
+  ) {
+    const { chatId, userId } = data
     const chat = await prisma.chat.findUnique({
       where: {
         // 后续加入userId 条件

@@ -10,7 +10,6 @@ import { observable } from 'mobx'
 
 export interface MessageData {
   id?: string
-  tid?: string
   chatId: string
   role: 'user' | 'assistant' | 'system'
   model?: string
@@ -54,8 +53,8 @@ const state = {
   selectedChat: null as null | {
     id: string
     title: string
-    lastChatTime: Date
-    assistantId: string | null
+    last_chat_time: Date
+    assistant_id: string | null
     model: string | null
     messages?: MessageData[]
   },
@@ -64,7 +63,7 @@ const state = {
   },
   get assistant(): Assistant | null {
     if (this.selectedChat) {
-      const as = this.assistantMap[this.selectedChat?.assistantId!]
+      const as = this.assistantMap[this.selectedChat?.assistant_id!]
       if (as) {
         return as
       }
@@ -189,7 +188,7 @@ export class ChatStore extends StructStore<typeof state> {
   async selectModel(assistantId: string, model: string) {
     if (this.state.selectedChat) {
       this.setState((state) => {
-        state.selectedChat!.assistantId = assistantId
+        state.selectedChat!.assistant_id = assistantId
         state.selectedChat!.model = model
       })
       trpc.chat.updateChat.mutate({

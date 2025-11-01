@@ -7,6 +7,8 @@ import { createContext } from './trpc/core'
 import { kdb } from './lib/knex'
 import { registerRoutes } from './routes/api'
 import type { Knex } from 'knex'
+import { TRPCError } from '@trpc/server'
+import { getHTTPStatusCodeFromError } from '@trpc/server/http'
 
 declare module 'react-router' {
   interface AppLoadContext {
@@ -41,4 +43,21 @@ app.use(
       }
     }
   })
+)
+
+app.use(
+  (
+    err: any,
+    req: express.Request,
+    res: express.Response,
+    next: express.NextFunction
+  ) => {
+    console.error(err)
+    if (err instanceof TRPCError) {
+      const httpCode = getHTTPStatusCodeFromError(err)
+      res.status(httpCode).json({ message: err.message })
+      return
+    }
+    res.status(500).json({ error: err })
+  }
 )

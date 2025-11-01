@@ -3,6 +3,7 @@ import type { Knex } from 'knex'
 import z from 'zod'
 import { generateToken, PasswordManager } from '../lib/password'
 import { userCookie } from '../session'
+import { completions } from './completions'
 
 // 防暴力破解：登录尝试记录
 const loginAttempts = new Map<string, { count: number; lockedUntil: number }>()
@@ -24,16 +25,16 @@ function recordFailedAttempt(key: string) {
   }, LOCK_DURATION)
 }
 
-const InputSchema = z.object({
+const LoginInputSchema = z.object({
   nameOrEmail: z.string().min(1),
   password: z.string().min(6)
 })
 
 export const registerRoutes = (app: Express, db: Knex) => {
-  app.post('/login', async (req, res) => {
+  app.post('/api/login', async (req, res) => {
     const input: { nameOrEmail: string; password: string } = req.body
     try {
-      InputSchema.parse(input)
+      LoginInputSchema.parse(input)
     } catch (e) {
       throw new Response((e as Error).message, { status: 400 })
     }
@@ -91,5 +92,19 @@ export const registerRoutes = (app: Express, db: Knex) => {
     res.json({
       success: true
     })
+  })
+
+  app.post('/api/logout', async (req, res) => {
+    const clearedCookie = await userCookie.serialize('', {
+      maxAge: 0
+    })
+    res.setHeader('Set-Cookie', clearedCookie)
+    res.json({
+      success: true
+    })
+  })
+
+  app.post('/api/completions', async (req, res) => {
+    await completions(req, res, db)
   })
 }
