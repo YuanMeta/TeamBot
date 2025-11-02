@@ -8,6 +8,8 @@ declare module 'knex/types/tables' {
     chats: TableChat
     messages: TableMessage
     message_files: TableMessageFile
+    tools: TableTool
+    assistant_tools: TableAssistantTool
   }
 }
 
@@ -31,6 +33,14 @@ export interface TableIdp {
   updated_at: string
 }
 
+export interface TableRelationIdp {
+  id: string
+  user_id: string
+  idp_id: string
+  created_at: string
+  updated_at: string
+}
+
 export interface TableAssistant {
   id: string
   name: string
@@ -39,7 +49,6 @@ export interface TableAssistant {
   base_url: string | null
   prompt: string | null
   models: string[]
-  web_search: Record<string, any>
   options: Record<string, any>
   created_at: string
   updated_at: string
@@ -58,14 +67,6 @@ export interface TableChat {
   created_at: string
   updated_at: string
   last_chat_time: string
-}
-
-export interface TableRelationIdp {
-  id: string
-  user_id: string
-  idp_id: string
-  created_at: string
-  updated_at: string
 }
 
 export interface TableMessage {
@@ -98,4 +99,21 @@ export interface TableMessageFile {
   size: number
   origin: 'file'
   created_at: string
+}
+
+export interface TableTool {
+  id: string
+  name: string
+  icon?: string
+  description: string
+  type: 'web_search' | 'http'
+  params: Record<string, any>
+  created_at: string
+  updated_at: string
+}
+
+export interface TableAssistantTool {
+  id: string
+  assistant_id: string
+  tool_id: string
 }

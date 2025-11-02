@@ -1,7 +1,6 @@
 import type { Knex } from 'knex'
 import { isJsonObject, tid } from './utils'
 import { PasswordManager } from './password'
-import type { TableAssistant, TableMessage } from 'types/table'
 export const tableSchema = async (db: Knex) => {
   if (!(await db.schema.hasTable('users'))) {
     await db.schema.createTable('users', (table) => {
@@ -47,7 +46,6 @@ export const tableSchema = async (db: Knex) => {
       table.string('prompt').nullable()
       table.json('models').notNullable()
       table.json('options').nullable()
-      table.json('web_search').notNullable()
       table.timestamp('created_at').defaultTo(db.fn.now())
       table.timestamp('updated_at').defaultTo(db.fn.now())
     })
@@ -113,6 +111,30 @@ export const tableSchema = async (db: Knex) => {
       table.index('message_id')
     })
   }
+  if (!(await db.schema.hasTable('tools'))) {
+    await db.schema.createTable('tools', (table) => {
+      table.string('id').primary()
+      table.string('name').notNullable()
+      table.string('description').notNullable()
+      table.string('type').notNullable()
+      table.json('params').notNullable()
+      table.timestamp('created_at').defaultTo(db.fn.now())
+      table.timestamp('updated_at').defaultTo(db.fn.now())
+    })
+  }
+  if (!(await db.schema.hasTable('assistant_tools'))) {
+    await db.schema.createTable('assistant_tools', (table) => {
+      table.string('id').primary()
+      table.string('assistant_id').notNullable()
+      table.string('tool_id').notNullable()
+      table.foreign('assistant_id').references('id').inTable('assistants')
+      table.foreign('tool_id').references('id').inTable('tools')
+      table.unique(['assistant_id', 'tool_id'])
+      table.index('assistant_id')
+      table.index('tool_id')
+    })
+  }
+
   const user = await db('users').first()
   if (!user) {
     await db('users').insert({
