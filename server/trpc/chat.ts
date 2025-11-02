@@ -4,7 +4,7 @@ import z from 'zod'
 import dayjs from 'dayjs'
 import { tid } from 'server/lib/utils'
 import type { TableChat } from 'types/table'
-import { parseRecord } from 'server/lib/table'
+import { insertRecord, parseRecord } from 'server/lib/table'
 import { getMessagesWithFiles } from './query'
 // import { getMessagesWithFiles } from '../lib/table'
 export const chatRouter = {
@@ -294,23 +294,16 @@ export const chatRouter = {
           terminated: z.boolean().optional(),
           model: z.string().optional(),
           context: z.record(z.string(), z.any()).optional(),
-          userPrompt: z.string().optional()
+          userPrompt: z.string().optional(),
+          parts: z.array(z.record(z.string(), z.any())).optional()
         })
       })
     )
     .mutation(({ ctx, input }) => {
-      const updateData: Record<string, any> = {}
-      if (input.data.error !== undefined) updateData.error = input.data.error
-      if (input.data.terminated !== undefined)
-        updateData.terminated = input.data.terminated
-      if (input.data.model !== undefined) updateData.model = input.data.model
-      if (input.data.context !== undefined)
-        updateData.context = input.data.context
-
       return ctx
         .db('messages')
         .where({ id: input.id, user_id: ctx.userId })
-        .update(updateData)
+        .update(insertRecord(input.data))
         .returning('*')
     }),
   updateChat: procedure

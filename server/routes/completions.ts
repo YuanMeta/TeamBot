@@ -35,7 +35,7 @@ export const completions = async (req: Request, res: Response, db: Knex) => {
       message: (e as Error).message
     })
   }
-  const { uiMessages, summary, chat, client, assistantMessage } =
+  const { uiMessages, summary, chat, client, assistantMessage, assistant } =
     await MessageManager.getStreamMessage(db, {
       chatId: json.chatId,
       userId: uid
@@ -43,7 +43,7 @@ export const completions = async (req: Request, res: Response, db: Knex) => {
   const tools: Record<string, Tool> = {
     getUrlContent
   }
-  const search = chat.assistant?.webSearch as SearchOptions
+  const search = assistant.web_search as SearchOptions
   if (search?.mode) {
     const tool = createWebSearchTool(search)
     if (tool) {
@@ -51,10 +51,11 @@ export const completions = async (req: Request, res: Response, db: Knex) => {
     }
   }
   const controller = new AbortController()
-  req.once('close', () => {
-    console.log('client close...')
+
+  res.once('close', () => {
     controller.abort()
   })
+  let text = ''
   const result = streamText({
     model: client(chat.model!),
     messages: convertToModelMessages(uiMessages),
@@ -63,9 +64,14 @@ export const completions = async (req: Request, res: Response, db: Knex) => {
     system: MessageManager.getSystemPromp({ summary: summary, tools }),
     tools,
     onAbort: async () => {
-      db('messages').where('id', assistantMessage.id).update({
+      await db('messages').where('id', assistantMessage.id).update({
         terminated: true
       })
+    },
+    onChunk: (data) => {
+      if (data.chunk.type === 'text-delta' && data.chunk.text) {
+        text += data.chunk.text
+      }
     },
     onFinish: async (data) => {
       // console.log('data', data.steps)
@@ -130,7 +136,7 @@ export const completions = async (req: Request, res: Response, db: Knex) => {
         steps.push(step)
       }
       if (parts.length) {
-        db('messages')
+        await db('messages')
           .where('id', assistantMessage.id)
           .update({
             parts: JSON.stringify(parts) as any,

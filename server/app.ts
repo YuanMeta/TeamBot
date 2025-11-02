@@ -33,7 +33,6 @@ app.use(
   })
 )
 
-// React Router handler 作为兜底，放在最后
 app.use(
   createRequestHandler({
     build: () => import('virtual:react-router/server-build'),

@@ -13,6 +13,8 @@ export class ChatClient {
   private generateTitleSet = new Set<string>()
   constructor(private readonly store: ChatStore) {}
   async complete(data: { text: string; onFinish?: () => void }) {
+    console.log('text', data)
+
     const abortController = new AbortController()
     const tChatId = cid()
     let chat = this.store.state.selectedChat
@@ -181,12 +183,12 @@ export class ChatClient {
                     ) {
                       const content = text.match(/^[\s\S]*(?=\n[^\n]*$)/)
                       if (content?.[0]?.length && content[0].length > 100) {
-                        this.streamTitle({
-                          chat: chat,
-                          chatId: chat.id,
-                          userPrompt: data.text,
-                          aiResponse: content[0]
-                        })
+                        // this.streamTitle({
+                        //   chat: chat,
+                        //   chatId: chat.id,
+                        //   userPrompt: data.text,
+                        //   aiResponse: content[0]
+                        // })
                       }
                     }
                   }

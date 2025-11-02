@@ -222,7 +222,8 @@ export class ChatStore extends StructStore<typeof state> {
           trpc.chat.updateMessage.mutate({
             id: aiMsg.id!,
             data: {
-              terminated: true
+              terminated: true,
+              parts: aiMsg.parts || undefined
             }
           })
         }

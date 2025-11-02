@@ -69,6 +69,7 @@ Output only the summarized version of the conversation.`,
       .orderBy('created_at', 'asc')
       .offset(chat.message_offset)
       .select('*')
+    messages = messages.map((m) => parseRecord(m))
     if (!messages.length) {
       throw new TRPCError({
         code: 'BAD_REQUEST',
@@ -164,7 +165,7 @@ Output only the summarized version of the conversation.`,
         }
       ]
     })
-    return { uiMessages, summary, chat, client, assistantMessage }
+    return { uiMessages, summary, chat, client, assistantMessage, assistant }
   }
 
   static getSystemPromp(ctx: {
