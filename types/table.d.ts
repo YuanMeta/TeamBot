@@ -1,3 +1,16 @@
+import type { Knex } from 'knex'
+declare module 'knex/types/tables' {
+  interface Tables {
+    users: TableUser
+    idps: TableIdp
+    relation_idps: TableRelationIdp
+    assistants: TableAssistant
+    chats: TableChat
+    messages: TableMessage
+    message_files: TableMessageFile
+  }
+}
+
 export interface TableUser {
   id: string
   email: string | null

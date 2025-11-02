@@ -17,3 +17,24 @@ const nanoid = customAlphabet(
   21
 )
 export const tid = () => nanoid()
+
+export const isJsonObject = (obj: any) => {
+  if (typeof obj !== 'object' || obj === null) {
+    return false
+  }
+
+  if (Array.isArray(obj)) {
+    return true
+  }
+
+  if (
+    obj instanceof Date ||
+    obj instanceof RegExp ||
+    obj instanceof Map ||
+    obj instanceof Set
+  ) {
+    return false
+  }
+
+  return true
+}

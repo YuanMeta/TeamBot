@@ -6,7 +6,7 @@ import { PasswordManager } from '../lib/password'
 import { Prisma } from '@prisma/client'
 import { kdb } from '../lib/knex'
 import { tid } from 'server/lib/utils'
-import { parseAssistant, transformAssistant } from 'server/lib/table'
+import { insertRecord, parseRecord } from 'server/lib/table'
 
 export const manageRouter = {
   checkConnect: procedure
@@ -25,32 +25,34 @@ export const manageRouter = {
     return (
       await ctx.db('assistants').select('*').orderBy('created_at', 'desc')
     ).map((r) => {
-      return parseAssistant(r)
+      return parseRecord(r)
     })
   }),
   getAssistant: procedure.input(z.string()).query(async ({ input, ctx }) => {
     const record = await ctx.db('assistants').where({ id: input }).first()
     if (!record) return null
-    return parseAssistant(record)
+    return parseRecord(record)
   }),
   updateAssistant: procedure
     .input(
       z.object({
         id: z.string().min(1),
-        name: z.string().min(1),
-        mode: z.string().min(1),
-        models: z.array(z.string()).min(1),
-        api_key: z.string().nullable(),
-        base_url: z.string().nullable(),
-        options: z.record(z.string(), z.any()),
-        web_search: z.record(z.string(), z.any()).nullish()
+        data: z.object({
+          name: z.string().min(1),
+          mode: z.string().min(1),
+          models: z.array(z.string()).min(1),
+          api_key: z.string().nullable(),
+          base_url: z.string().nullable(),
+          options: z.record(z.string(), z.any()),
+          web_search: z.record(z.string(), z.any())
+        })
       })
     )
     .mutation(async ({ input, ctx }) => {
       return ctx
         .db('assistants')
         .where({ id: input.id })
-        .update(transformAssistant(input as any))
+        .update(insertRecord(input.data))
     }),
   createAssistant: procedure
     .input(
@@ -66,7 +68,7 @@ export const manageRouter = {
     )
     .mutation(async ({ input, ctx }) => {
       return ctx.db('assistants').insert({
-        ...transformAssistant(input as any),
+        ...insertRecord(input as any),
         id: tid()
       })
     }),

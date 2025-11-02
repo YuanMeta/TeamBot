@@ -1,38 +1,7 @@
 import type { Knex } from 'knex'
-import { tid } from './utils'
+import { isJsonObject, tid } from './utils'
 import { PasswordManager } from './password'
-import type {
-  TableAssistant,
-  TableChat,
-  TableIdp,
-  TableMessage,
-  TableMessageFile,
-  TableRelationIdp,
-  TableUser
-} from 'types/table'
-
-declare module 'knex/types/tables' {
-  interface Tables {
-    users: TableUser
-    idps: TableIdp
-    relation_idps: TableRelationIdp
-    assistants: TableAssistant
-    chats: TableChat
-    messages: TableMessage
-    message_files: TableMessageFile
-  }
-}
-
-// 辅助类型：带关联 files 的 Message
-export type MessageWithFiles = TableMessage & {
-  files: Array<{
-    id: string
-    name: string
-    path: string
-    size: number
-  }>
-}
-
+import type { TableAssistant, TableMessage } from 'types/table'
 export const tableSchema = async (db: Knex) => {
   if (!(await db.schema.hasTable('users'))) {
     await db.schema.createTable('users', (table) => {
@@ -156,26 +125,32 @@ export const tableSchema = async (db: Knex) => {
   }
 }
 
-export const parseAssistant = (assistant: TableAssistant): TableAssistant => {
-  return {
-    ...assistant,
-    models: assistant.models ? JSON.parse(assistant.models as any) : [],
-    options: assistant.options ? JSON.parse(assistant.options as any) : {},
-    web_search: assistant.web_search
-      ? JSON.parse(assistant.web_search as any)
-      : {}
-  }
+export const insertRecord = <T extends Record<string, any>>(data: T): T => {
+  return Object.keys(data).reduce((acc, key) => {
+    if (isJsonObject(data[key])) {
+      acc[key] = JSON.stringify(data[key])
+    } else {
+      acc[key] = data[key]
+    }
+    return acc
+  }, {} as any)
 }
 
-export const transformAssistant = (assistant: TableAssistant) => {
-  return {
-    ...assistant,
-    models: assistant.models ? (JSON.stringify(assistant.models) as any) : null,
-    options: assistant.options
-      ? (JSON.stringify(assistant.options) as any)
-      : null,
-    web_search: assistant.web_search
-      ? (JSON.stringify(assistant.web_search) as any)
-      : null
-  }
+export const parseRecord = <T extends Record<string, any>>(data: T): T => {
+  return Object.keys(data).reduce((acc, key) => {
+    let value = data[key]
+    if (
+      typeof value === 'string' &&
+      (value.startsWith('{') || value.startsWith('['))
+    ) {
+      try {
+        acc[key] = JSON.parse(value)
+      } catch (e) {
+        acc[key] = value
+      }
+    } else {
+      acc[key] = value
+    }
+    return acc
+  }, {} as any)
 }

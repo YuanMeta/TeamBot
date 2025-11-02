@@ -1,20 +1,40 @@
 {
   "version": "0.2.0",
-
   "configurations": [
     {
-      "command": "pnpm dev",
-      "name": "app",
+      "type": "node",
       "request": "launch",
-      "type": "node-terminal",
-      "cwd": "${workspaceFolder}"
+      "name": "Server: React Router + Express",
+      "cwd": "/Users/huangjie/team-chat/app",
+      "runtimeExecutable": "node",
+      "runtimeArgs": [
+        "--inspect-brk",
+        "--enable-source-maps",
+        "/Users/huangjie/team-chat/app/server.js"
+      ],
+      "env": {
+        "NODE_ENV": "development"
+      },
+      "envFile": "/Users/huangjie/team-chat/app/.env.dev",
+      "console": "integratedTerminal",
+      "autoAttachChildProcesses": true,
+      "skipFiles": [
+        "<node_internals>/**",
+        "/Users/huangjie/team-chat/app/node_modules/**"
+      ]
     },
     {
-      "name": "Attach by Process ID",
-      "processId": "${command:PickProcess}",
-      "request": "attach",
-      "skipFiles": ["<node_internals>/**"],
-      "type": "node"
+      "type": "chrome",
+      "request": "launch",
+      "name": "Client: Chrome",
+      "url": "http://localhost:5173",
+      "webRoot": "${workspaceFolder}"
+    }
+  ],
+  "compounds": [
+    {
+      "name": "Full Stack Dev",
+      "configurations": ["Server: React Router + Express", "Client: Chrome"]
     }
   ]
 }

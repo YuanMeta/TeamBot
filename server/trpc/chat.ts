@@ -2,8 +2,10 @@ import { TRPCError, type TRPCRouterRecord } from '@trpc/server'
 import { procedure } from './core'
 import z from 'zod'
 import dayjs from 'dayjs'
-import { parseAssistant } from 'server/lib/table'
 import { tid } from 'server/lib/utils'
+import type { TableChat } from 'types/table'
+import { parseRecord } from 'server/lib/table'
+import { getMessagesWithFiles } from './query'
 // import { getMessagesWithFiles } from '../lib/table'
 export const chatRouter = {
   createChat: procedure
@@ -27,6 +29,7 @@ export const chatRouter = {
     )
     .mutation(async ({ input, ctx }) => {
       const date = new Date()
+      ctx.db('users').select
       return await ctx.db.transaction(async (trx) => {
         const chat = await trx('chats')
           .insert({
@@ -128,6 +131,11 @@ export const chatRouter = {
       })
     )
     .query(async ({ ctx, input }) => {
+      const messages = await getMessagesWithFiles(ctx.db, {
+        chatId: input.id,
+        userId: ctx.userId,
+        page: 1
+      })
       const chat = await ctx
         .db('chats')
         .where({
@@ -142,15 +150,9 @@ export const chatRouter = {
           message: 'Chat not found'
         })
       }
-
-      // 使用辅助函数查询 messages 并关联 files
-      // const messages = await getMessagesWithFiles(ctx.db, {
-      //   chat_id: chat[0].id
-      // })
-
       return {
         ...chat[0],
-        messages: []
+        messages: messages
       }
     }),
   getMessages: procedure
@@ -160,11 +162,11 @@ export const chatRouter = {
       })
     )
     .query(async ({ ctx, input }) => {
-      // return getMessagesWithFiles(ctx.db, {
-      //   chat_id: input.chatId,
-      //   user_id: ctx.userId
-      // })
-      return []
+      return getMessagesWithFiles(ctx.db, {
+        chatId: input.chatId,
+        userId: ctx.userId,
+        page: 1
+      })
     }),
   deleteChat: procedure
     .input(
@@ -183,9 +185,8 @@ export const chatRouter = {
     const assistants = await ctx
       .db('assistants')
       .select('id', 'name', 'mode', 'models', 'options')
-
     return assistants.map((a) => {
-      const data = parseAssistant(a as any)
+      const data = parseRecord(a as any)
       return {
         ...data,
         options: data.options?.searchMode

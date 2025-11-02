@@ -1,17 +1,17 @@
 import { generateText, type LanguageModel, type Tool, type UIMessage } from 'ai'
-import { prisma } from './prisma'
 import { TRPCError } from '@trpc/server'
 import type { MessagePart } from 'types'
-import type { Message } from '@prisma/client'
 import { createClient } from './checkConnect'
 import { findLast } from '~/lib/utils'
 import type { Knex } from 'knex'
+import { parseRecord } from './table'
+import type { TableMessage } from 'types/table'
 
 let maxTokens = 20000
 export class MessageManager {
   static async compreTokena(data: {
     model: LanguageModel
-    messages: Message[]
+    messages: TableMessage[]
     previousSummary?: string | null
   }) {
     const conversation = data.messages.map((m) => {
@@ -35,10 +35,9 @@ Your task:
 - If there is a previous summary, combine the previous summary with the current conversation content.
 
 Output only the summarized version of the conversation.`,
-      maxOutputTokens: 1200,
+      maxOutputTokens: 2000,
       prompt: `${data.previousSummary ? `Previous summary:\n ${data.previousSummary}\n\n` : ''}Conversation:\n ${JSON.stringify(conversation)}`
     })
-    console.log('summary body', res.request.body)
     return res.text
   }
 
@@ -50,40 +49,37 @@ Output only the summarized version of the conversation.`,
     }
   ) {
     const { chatId, userId } = data
-    const chat = await prisma.chat.findUnique({
-      where: {
-        // 后续加入userId 条件
+    const chat = await db('chats')
+      .where({
         id: chatId,
-        userId: userId
-      },
-      include: { assistant: true }
-    })
+        user_id: userId
+      })
+      .first()
     if (!chat) {
       throw new TRPCError({
         code: 'NOT_FOUND',
         message: 'Chat not found'
       })
     }
-    let messages = await prisma.message.findMany({
-      where: {
-        chatId: chat.id
-      },
-      skip: chat.messageOffset,
-      orderBy: {
-        createdAt: 'asc'
-      }
-    })
-
+    let assistant = await db('assistants')
+      .where({ id: chat.assistant_id })
+      .first()
+    let messages = await db('messages')
+      .where({ chat_id: chatId, user_id: userId })
+      .orderBy('created_at', 'asc')
+      .offset(chat.message_offset)
+      .select('*')
     if (!messages.length) {
       throw new TRPCError({
         code: 'BAD_REQUEST',
         message: 'No messages found'
       })
     }
+    assistant = parseRecord(assistant!)
     const client = createClient({
-      mode: chat.assistant!.mode,
-      apiKey: chat.assistant!.apiKey,
-      baseUrl: chat.assistant!.baseUrl
+      mode: assistant.mode,
+      apiKey: assistant.api_key,
+      baseUrl: assistant.base_url
     })!
     let summary = chat.summary
     const [userMessage, assistantMessage] = messages.slice(-2)
@@ -112,15 +108,10 @@ Output only the summarized version of the conversation.`,
             previousSummary: summary
           })
           chat.summary = summary
-          await prisma.chat.update({
-            where: { id: chat.id },
-            data: {
-              summary,
-              messageOffset: {
-                increment: compreMessages.length
-              }
-            }
-          })
+          await db('chats')
+            .where({ id: chat.id })
+            .update({ summary })
+            .increment('message_offset', compreMessages.length)
         }
       }
       history.map((m) => {
