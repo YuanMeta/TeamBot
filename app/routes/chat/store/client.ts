@@ -183,12 +183,12 @@ export class ChatClient {
                     ) {
                       const content = text.match(/^[\s\S]*(?=\n[^\n]*$)/)
                       if (content?.[0]?.length && content[0].length > 100) {
-                        // this.streamTitle({
-                        //   chat: chat,
-                        //   chatId: chat.id,
-                        //   userPrompt: data.text,
-                        //   aiResponse: content[0]
-                        // })
+                        this.streamTitle({
+                          chat: chat,
+                          chatId: chat.id,
+                          userPrompt: data.text,
+                          aiResponse: content[0]
+                        })
                       }
                     }
                   }
@@ -231,8 +231,6 @@ export class ChatClient {
           runInAction(() => {
             aiMessage.terminated = true
           })
-        } else {
-          // update
         }
         console.error(e)
       } finally {
@@ -263,7 +261,7 @@ export class ChatClient {
   }) {
     if (this.generateTitleSet.has(data.chatId)) return
     this.generateTitleSet.add(data.chatId)
-    const res = await fetch('/chat/title', {
+    const res = await fetch('/api/title', {
       method: 'POST',
       headers: {
         'Content-Type': 'application/json'

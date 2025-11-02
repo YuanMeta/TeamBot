@@ -4,6 +4,10 @@ import z from 'zod'
 import { generateToken, PasswordManager } from '../lib/password'
 import { userCookie } from '../session'
 import { completions } from './completions'
+import { TRPCError } from '@trpc/server'
+import { createClient } from 'server/lib/checkConnect'
+import { tid } from 'server/lib/utils'
+import { convertToModelMessages, streamText, type UIMessage } from 'ai'
 
 // 防暴力破解：登录尝试记录
 const loginAttempts = new Map<string, { count: number; lockedUntil: number }>()
@@ -106,5 +110,64 @@ export const registerRoutes = (app: Express, db: Knex) => {
 
   app.post('/api/completions', async (req, res) => {
     await completions(req, res, db)
+  })
+
+  app.post('/api/title', async (req, res) => {
+    const InputSchema = z.object({
+      chatId: z.string(),
+      userPrompt: z.string(),
+      aiResponse: z.string()
+    })
+    const json: z.infer<typeof InputSchema> = req.body
+    try {
+      InputSchema.parse(json)
+    } catch (e) {
+      throw new TRPCError({
+        code: 'BAD_REQUEST',
+        message: (e as Error).message
+      })
+    }
+    const chat = await db('chats').where('id', json.chatId).first()
+    if (!chat) {
+      throw new TRPCError({
+        code: 'NOT_FOUND',
+        message: 'Chat not found'
+      })
+    }
+    const assistant = await db('assistants')
+      .where('id', chat.assistant_id)
+      .first()
+    const client = createClient({
+      mode: assistant!.mode,
+      apiKey: assistant!.api_key,
+      baseUrl: assistant!.base_url
+    })!
+    const messages: UIMessage[] = [
+      {
+        id: tid(),
+        role: 'user',
+        parts: [{ type: 'text', text: json.userPrompt }]
+      },
+      {
+        id: tid(),
+        role: 'assistant',
+        parts: [{ type: 'text', text: json.aiResponse }]
+      }
+    ]
+
+    const result = streamText({
+      model: client(chat.model!),
+      system: `You are a conversational assistant and you need to summarize the user's conversation into a title of 10 words or less., The summary needs to maintain the original language.`,
+      messages: convertToModelMessages(messages),
+      onFinish: async (data) => {
+        if (data.finishReason === 'stop') {
+          let text = data.content.find((c) => c.type === 'text')?.text
+          if (text) {
+            await db('chats').where({ id: json.chatId }).update({ title: text })
+          }
+        }
+      }
+    })
+    result.pipeUIMessageStreamToResponse(res)
   })
 }

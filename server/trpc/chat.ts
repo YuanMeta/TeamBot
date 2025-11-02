@@ -6,7 +6,6 @@ import { tid } from 'server/lib/utils'
 import type { TableChat } from 'types/table'
 import { insertRecord, parseRecord } from 'server/lib/table'
 import { getMessagesWithFiles } from './query'
-// import { getMessagesWithFiles } from '../lib/table'
 export const chatRouter = {
   createChat: procedure
     .input(
@@ -304,7 +303,7 @@ export const chatRouter = {
         .db('messages')
         .where({ id: input.id, user_id: ctx.userId })
         .update(insertRecord(input.data))
-        .returning('*')
+        .returning('id')
     }),
   updateChat: procedure
     .input(
@@ -325,7 +324,7 @@ export const chatRouter = {
         .db('chats')
         .where({ id: input.id, user_id: ctx.userId })
         .update(input.data)
-        .returning('*')
+        .returning('id')
     }),
   getUserInfo: procedure.query(async ({ ctx }) => {
     return ctx
