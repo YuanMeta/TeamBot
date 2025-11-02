@@ -118,6 +118,7 @@ export const tableSchema = async (db: Knex) => {
       table.string('description').notNullable()
       table.string('type').notNullable()
       table.json('params').notNullable()
+      table.boolean('auto').notNullable().defaultTo(true)
       table.timestamp('created_at').defaultTo(db.fn.now())
       table.timestamp('updated_at').defaultTo(db.fn.now())
     })
@@ -158,9 +159,15 @@ export const insertRecord = <T extends Record<string, any>>(data: T): T => {
   }, {} as any)
 }
 
-export const parseRecord = <T extends Record<string, any>>(data: T): T => {
+export const parseRecord = <T extends Record<string, any>>(
+  data: T,
+  boolFields?: string[]
+): T => {
   return Object.keys(data).reduce((acc, key) => {
     let value = data[key]
+    if (boolFields?.includes(key) && typeof value === 'number') {
+      value = value === 1
+    }
     if (
       typeof value === 'string' &&
       (value.startsWith('{') || value.startsWith('['))

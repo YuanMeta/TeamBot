@@ -24,7 +24,6 @@ import { Label } from '~/components/ui/label'
 import { RadioGroup, RadioGroupItem } from '~/components/ui/radio-group'
 import { Spinner } from '~/components/ui/spinner'
 import { useLocalState } from '~/hooks/localState'
-import { sleep } from '~/lib/utils'
 
 export const AddMember = observer(
   (props: {

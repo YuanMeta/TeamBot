@@ -54,3 +54,27 @@ export const procedure = t.procedure.use(async ({ ctx, next }) => {
     }
   })
 })
+
+export const adminProcedure = t.procedure.use(async ({ ctx, next }) => {
+  const token = await userCookie.parse(ctx.req.headers.cookie || '')
+  if (!token) {
+    throw new TRPCError({ code: 'UNAUTHORIZED' })
+  }
+  const data = verifyToken(token)
+  if (!data) {
+    throw new TRPCError({ code: 'UNAUTHORIZED' })
+  }
+  const user = await ctx
+    .db('users')
+    .where({ id: data.uid })
+    .select('id', 'role', 'deleted')
+    .first()
+  if (!user || user.role !== 'admin' || user.deleted) {
+    throw new TRPCError({ code: 'UNAUTHORIZED' })
+  }
+  return next({
+    ctx: {
+      userId: data.uid
+    }
+  })
+})

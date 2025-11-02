@@ -20,6 +20,7 @@ import {
 export interface SelectFilterOption {
   value: string
   label: string
+  render?: React.ReactNode
   disabled?: boolean
 }
 
@@ -238,7 +239,11 @@ function SelectFilter({
                           : 'opacity-0'
                       )}
                     />
-                    <span className='flex-1 truncate'>{option.label}</span>
+                    {option.render ? (
+                      <div className={'flex-1'}>{option.render}</div>
+                    ) : (
+                      <span className='flex-1 truncate'>{option.label}</span>
+                    )}
                   </CommandItem>
                 ))}
               </CommandGroup>

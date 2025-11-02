@@ -1,15 +1,13 @@
 import type { TRPCRouterRecord } from '@trpc/server'
 import z from 'zod'
-import { procedure } from './core'
 import { checkLLmConnect } from '../lib/checkConnect'
 import { PasswordManager } from '../lib/password'
-import { Prisma } from '@prisma/client'
 import { kdb } from '../lib/knex'
 import { tid } from 'server/lib/utils'
 import { insertRecord, parseRecord } from 'server/lib/table'
-
+import { adminProcedure } from './core'
 export const manageRouter = {
-  checkConnect: procedure
+  checkConnect: adminProcedure
     .input(
       z.object({
         mode: z.string().min(1),
@@ -21,58 +19,89 @@ export const manageRouter = {
     .mutation(async ({ input }) => {
       return checkLLmConnect(input)
     }),
-  getAssistants: procedure.query(async ({ ctx }) => {
+  getAssistants: adminProcedure.query(async ({ ctx }) => {
     return (
       await ctx.db('assistants').select('*').orderBy('created_at', 'desc')
     ).map((r) => {
       return parseRecord(r)
     })
   }),
-  getAssistant: procedure.input(z.string()).query(async ({ input, ctx }) => {
-    const record = await ctx.db('assistants').where({ id: input }).first()
-    if (!record) return null
-    return parseRecord(record)
-  }),
-  updateAssistant: procedure
+  getAssistant: adminProcedure
+    .input(z.string())
+    .query(async ({ input, ctx }) => {
+      const record = await ctx.db('assistants').where({ id: input }).first()
+      if (!record) return null
+      const tools = await ctx
+        .db('assistant_tools')
+        .where({ assistant_id: input })
+        .select('tool_id')
+      return {
+        ...parseRecord(record),
+        tools: tools.map((t) => t.tool_id)
+      }
+    }),
+  updateAssistant: adminProcedure
     .input(
       z.object({
         id: z.string().min(1),
+        tools: z.string().array(),
         data: z.object({
           name: z.string().min(1),
           mode: z.string().min(1),
           models: z.array(z.string()).min(1),
           api_key: z.string().nullable(),
           base_url: z.string().nullable(),
-          options: z.record(z.string(), z.any()),
-          web_search: z.record(z.string(), z.any())
+          options: z.record(z.string(), z.any())
         })
       })
     )
     .mutation(async ({ input, ctx }) => {
-      return ctx
-        .db('assistants')
-        .where({ id: input.id })
-        .update(insertRecord(input.data))
+      await ctx.db.transaction(async (trx) => {
+        await trx('assistants')
+          .where({ id: input.id })
+          .update(insertRecord(input.data))
+        await trx('assistant_tools').where({ assistant_id: input.id }).delete()
+        await trx('assistant_tools').insert(
+          input.tools.map((tool) => ({
+            assistant_id: input.id,
+            tool_id: tool
+          }))
+        )
+      })
+      return { success: true }
     }),
-  createAssistant: procedure
+  createAssistant: adminProcedure
     .input(
       z.object({
-        name: z.string().min(1),
-        mode: z.string().min(1),
-        models: z.array(z.string()).min(1),
-        api_key: z.string().nullable(),
-        base_url: z.string().nullable(),
-        options: z.record(z.string(), z.any()),
-        web_search: z.record(z.string(), z.any()).optional()
+        tools: z.string().array(),
+        data: z.object({
+          name: z.string().min(1),
+          mode: z.string().min(1),
+          models: z.array(z.string()).min(1),
+          api_key: z.string().nullable(),
+          base_url: z.string().nullable(),
+          options: z.record(z.string(), z.any())
+        })
       })
     )
     .mutation(async ({ input, ctx }) => {
-      return ctx.db('assistants').insert({
-        ...insertRecord(input as any),
-        id: tid()
+      await ctx.db.transaction(async (trx) => {
+        const [assistant] = await trx('assistants')
+          .insert({
+            ...insertRecord(input.data),
+            id: tid()
+          })
+          .returning('id')
+        await trx('assistant_tools').insert(
+          input.tools.map((tool) => ({
+            assistant_id: assistant.id,
+            tool_id: tool
+          }))
+        )
       })
+      return { success: true }
     }),
-  createMember: procedure
+  createMember: adminProcedure
     .input(
       z.object({
         email: z.email().optional(),
@@ -90,7 +119,7 @@ export const manageRouter = {
         role: input.role
       })
     }),
-  updateMember: procedure
+  updateMember: adminProcedure
     .input(
       z.object({
         userId: z.string(),
@@ -113,14 +142,14 @@ export const manageRouter = {
           role: input.role
         })
     }),
-  getMember: procedure.input(z.string()).query(async ({ input, ctx }) => {
+  getMember: adminProcedure.input(z.string()).query(async ({ input, ctx }) => {
     return ctx
       .db('users')
       .where({ id: input })
-      .select('id', 'email', 'avatar', 'role', 'created_at', 'deleted')
+      .select('id', 'email', 'avatar', 'name', 'role', 'created_at', 'deleted')
       .first()
   }),
-  getMembers: procedure
+  getMembers: adminProcedure
     .input(
       z.object({
         page: z.number(),
@@ -144,9 +173,9 @@ export const manageRouter = {
         .offset((input.page - 1) * input.pageSize)
         .limit(input.pageSize)
       const total = await baseQuery.clone().count('id', { as: 'total' })
-      return { members, total: total[0].total }
+      return { members, total: total[0].total as number }
     }),
-  deleteMember: procedure
+  deleteMember: adminProcedure
     .input(
       z.object({
         memberId: z.string(),
@@ -179,5 +208,69 @@ export const manageRouter = {
           deleted: true
         })
       }
-    })
+    }),
+  createTool: adminProcedure
+    .input(
+      z.object({
+        name: z.string().min(1),
+        description: z.string().min(1),
+        type: z.enum(['web_search', 'http']),
+        auto: z.boolean(),
+        params: z.record(z.string(), z.any())
+      })
+    )
+    .mutation(async ({ input, ctx }) => {
+      return ctx.db('tools').insert({
+        ...insertRecord(input as any),
+        id: tid()
+      })
+    }),
+  updateTool: adminProcedure
+    .input(
+      z.object({
+        id: z.string().min(1),
+        data: z.object({
+          name: z.string().min(1).optional(),
+          description: z.string().min(1).optional(),
+          auto: z.boolean().optional(),
+          type: z.enum(['web_search', 'http']).optional(),
+          params: z.record(z.string(), z.any()).optional()
+        })
+      })
+    )
+    .mutation(async ({ input, ctx }) => {
+      return ctx
+        .db('tools')
+        .where({ id: input.id })
+        .update(insertRecord(input.data as any))
+    }),
+  getTools: adminProcedure
+    .input(
+      z.object({
+        page: z.number(),
+        pageSize: z.number()
+      })
+    )
+    .query(async ({ input, ctx }) => {
+      const tools = (
+        await ctx
+          .db('tools')
+          .offset((input.page - 1) * input.pageSize)
+          .limit(input.pageSize)
+          .select('*')
+          .orderBy('created_at', 'desc')
+      ).map((r) => {
+        return parseRecord(r, ['auto'])
+      })
+      const total = await ctx.db('tools').count('id', { as: 'total' })
+      return { tools, total: total[0].total as number }
+    }),
+  getTool: adminProcedure.input(z.string()).query(async ({ input, ctx }) => {
+    const record = await ctx
+      .db('tools')
+      .where({ id: input })
+      .select('*')
+      .first()
+    return record ? parseRecord(record, ['auto']) : null
+  })
 } satisfies TRPCRouterRecord

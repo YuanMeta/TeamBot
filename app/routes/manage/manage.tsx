@@ -1,4 +1,10 @@
-import { BotMessageSquare, Waypoints, Users, CircleGauge } from 'lucide-react'
+import {
+  BotMessageSquare,
+  Waypoints,
+  Users,
+  CircleGauge,
+  Wrench
+} from 'lucide-react'
 import { NavLink, Outlet, useLocation } from 'react-router'
 import {
   SidebarGroup,
@@ -18,14 +24,9 @@ import { observer } from 'mobx-react-lite'
 // Menu items.
 const items = [
   {
-    title: '助手',
+    title: 'AI助手',
     url: '/manage/assistant',
     icon: BotMessageSquare
-  },
-  {
-    title: 'SSO',
-    url: '/manage/sso',
-    icon: Waypoints
   },
   {
     title: '成员',
@@ -33,9 +34,19 @@ const items = [
     icon: Users
   },
   {
-    title: '用量',
+    title: '模型工具',
+    url: '/manage/tool',
+    icon: Wrench
+  },
+  {
+    title: '模型用量',
     url: '/manage/usage',
     icon: CircleGauge
+  },
+  {
+    title: 'SSO',
+    url: '/manage/sso',
+    icon: Waypoints
   }
 ]
 

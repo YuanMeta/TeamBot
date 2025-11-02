@@ -108,6 +108,8 @@ export interface TableTool {
   description: string
   type: 'web_search' | 'http'
   params: Record<string, any>
+  url?: string
+  auto: boolean
   created_at: string
   updated_at: string
 }

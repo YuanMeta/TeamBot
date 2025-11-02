@@ -6,6 +6,7 @@ import { cva, type VariantProps } from 'class-variance-authority'
 import { cn } from '~/lib/utils'
 import { Label } from '~/components/ui/label'
 import { Separator } from '~/components/ui/separator'
+import { TextHelp } from '../project/text-help'
 
 function FieldSet({ className, ...props }: React.ComponentProps<'fieldset'>) {
   return (
@@ -110,7 +111,7 @@ function FieldContent({ className, ...props }: React.ComponentProps<'div'>) {
 function FieldLabel({
   className,
   ...props
-}: React.ComponentProps<typeof Label> & { required?: boolean }) {
+}: React.ComponentProps<typeof Label> & { required?: boolean; help?: string }) {
   return (
     <Label
       data-slot='field-label'
@@ -124,6 +125,7 @@ function FieldLabel({
     >
       {props.children}
       {props.required && <span className={'text-red-500'}>*</span>}
+      {props.help && <TextHelp text={props.help} />}
     </Label>
   )
 }

@@ -20,33 +20,35 @@ import { useLocalState } from '~/hooks/localState'
 import { useCallback, useEffect, useMemo } from 'react'
 import { trpc } from '~/.client/trpc'
 import { Pagination } from '~/components/project/pagination'
-import { AddMember } from './ui/AddMemeber'
-import type { TableUser } from 'types/table'
+import type { TableTool } from 'types/table'
+import { AddTool } from './ui/AddTool'
+import { Badge } from '~/components/ui/badge'
+import { TextHelp } from '~/components/project/text-help'
 
 export default observer(() => {
-  const columns: ColumnDef<TableUser>[] = useMemo(() => {
+  const columns: ColumnDef<TableTool>[] = useMemo(() => {
     return [
       {
         accessorKey: 'name',
-        header: '成员名',
+        header: '名称',
+        cell: ({ row }) => <div>{row.getValue('name')}</div>
+      },
+      {
+        accessorKey: 'type',
+        header: '类型',
         cell: ({ row }) => (
-          <div className='capitalize'>{row.getValue('name')}</div>
+          <Badge variant={'outline'}>{row.getValue('type')}</Badge>
         )
       },
       {
-        accessorKey: 'email',
-        header: '邮箱',
+        header: '描述',
+        accessorKey: 'description',
         cell: ({ row }) => (
-          <div className='capitalize'>{row.getValue('email')}</div>
-        )
-      },
-      {
-        header: '角色',
-        accessorKey: 'role',
-        cell: ({ row }) => (
-          <div className='lowercase'>
-            {row.getValue('role') === 'member' ? '成员' : '管理员'}
-          </div>
+          <TextHelp text={row.getValue('description')} width={360}>
+            <div className='max-w-80 truncate cursor-default'>
+              {row.getValue('description')}
+            </div>
+          </TextHelp>
         )
       },
       {
@@ -60,8 +62,8 @@ export default observer(() => {
                 size='icon-sm'
                 onClick={() => {
                   setState({
-                    selectedMemberId: data.id,
-                    openAddMember: true
+                    selectedToolId: data.id,
+                    openAddTool: true
                   })
                 }}
               >
@@ -74,30 +76,29 @@ export default observer(() => {
           )
         }
       }
-    ] as ColumnDef<TableUser>[]
+    ] as ColumnDef<TableTool>[]
   }, [])
   const [state, setState] = useLocalState({
     page: 1,
     pageSize: 10,
     keyword: '',
-    openAddMember: false,
-    selectedMemberId: null as null | string,
-    data: [] as TableUser[],
+    openAddTool: false,
+    selectedToolId: null as null | string,
+    data: [] as TableTool[],
     total: 0
   })
-  const getMembers = useCallback(() => {
-    trpc.manage.getMembers
+  const getTools = useCallback(() => {
+    trpc.manage.getTools
       .query({
         page: state.page,
-        pageSize: state.pageSize,
-        keyword: state.keyword
+        pageSize: state.pageSize
       })
       .then((res) => {
-        setState({ data: res.members as any, total: res.total })
+        setState({ data: res.tools as any, total: res.total })
       })
   }, [])
   useEffect(() => {
-    getMembers()
+    getTools()
   }, [])
   const table = useReactTable({
     data: state.data,
@@ -111,11 +112,11 @@ export default observer(() => {
           <div>
             <Button
               onClick={() => {
-                setState({ openAddMember: true, selectedMemberId: null })
+                setState({ openAddTool: true, selectedToolId: null })
               }}
             >
               <Plus />
-              成员
+              模型工具
             </Button>
           </div>
         </div>
@@ -162,7 +163,7 @@ export default observer(() => {
                     colSpan={columns.length}
                     className='h-24 text-center'
                   >
-                    No results.
+                    暂无数据。
                   </TableCell>
                 </TableRow>
               )}
@@ -175,11 +176,11 @@ export default observer(() => {
           total={state.total}
           onPageChange={() => {}}
         />
-        <AddMember
-          open={state.openAddMember}
-          onUpdate={() => getMembers()}
-          id={state.selectedMemberId || undefined}
-          onClose={() => setState({ openAddMember: false })}
+        <AddTool
+          open={state.openAddTool}
+          onClose={() => setState({ openAddTool: false })}
+          onUpdate={() => getTools()}
+          id={state.selectedToolId || undefined}
         />
       </div>
     </div>
