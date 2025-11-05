@@ -46,6 +46,8 @@ Output only the summarized version of the conversation.`,
     data: {
       chatId: string
       userId: string
+      assistantId: string
+      model: string
     }
   ) {
     const { chatId, userId } = data
@@ -79,8 +81,8 @@ Output only the summarized version of the conversation.`,
     assistant = parseRecord(assistant!)
     const client = createClient({
       mode: assistant.mode,
-      apiKey: assistant.api_key,
-      baseUrl: assistant.base_url
+      api_key: assistant.api_key,
+      base_url: assistant.base_url
     })!
     let summary = chat.summary
     const [userMessage, assistantMessage] = messages.slice(-2)

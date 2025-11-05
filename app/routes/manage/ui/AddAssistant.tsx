@@ -16,32 +16,30 @@ import {
   SelectValue
 } from '~/components/ui/select'
 import { ModelIcon } from '~/lib/ModelIcon'
-import { ChevronLeft, WifiOff } from 'lucide-react'
+import { ChevronLeft, Earth, Wrench } from 'lucide-react'
 import { SelectFilter } from '~/components/ui/select-filter'
 import { isFormInValid } from '~/lib/utils'
 import { trpc } from '~/.client/trpc'
-import { useEffect } from 'react'
-import type { SearchOptions, TrpcRequestError } from 'types'
+import { useCallback, useEffect } from 'react'
+import type { TrpcRequestError } from 'types'
 import { toast } from 'sonner'
 import { useLocalState } from '~/hooks/localState'
 import { Spinner } from '~/components/ui/spinner'
-import googleIcon from '~/assets/google.png'
-import exaIcon from '~/assets/exa.png'
-import tavilyIcon from '~/assets/tavily.png'
-import { Switch } from '~/components/ui/switch'
+import type { TableTool } from 'types/table'
 
 export const AddAssistant = observer(
   (props: { open: boolean; onClose: () => void; id: string | null }) => {
     const [state, setState] = useLocalState({
-      submitting: false
+      submitting: false,
+      tools: [] as TableTool[]
     })
     const form = useForm({
       defaultValues: {
         name: '',
         mode: 'openai',
         models: [] as string[],
-        apiKey: null as string | null,
-        baseUrl: null as string | null,
+        api_key: null as string | null,
+        base_url: null as string | null,
         options: {} as Record<string, any>,
         tools: [] as string[]
       },
@@ -51,27 +49,32 @@ export const AddAssistant = observer(
           await trpc.manage.checkConnect.mutate({
             mode: value.mode,
             models: value.models,
-            apiKey: value.apiKey || null,
-            baseUrl: value.baseUrl || null
+            api_key: value.api_key || null,
+            base_url: value.base_url || null
           })
           const data = {
             mode: value.mode,
             models: value.models,
             name: value.name,
-            api_key: value.apiKey || null,
-            base_url: value.baseUrl || null,
+            api_key: value.api_key || null,
+            base_url: value.base_url || null,
             options: {}
           }
+          let tools = value.tools
+            .map((t) => {
+              return state.tools.find((tool) => tool.name === t)?.id!
+            })
+            .filter(Boolean)
           if (props.id) {
             await trpc.manage.updateAssistant.mutate({
               id: props.id as string,
               data,
-              tools: []
+              tools: tools
             })
           } else {
             await trpc.manage.createAssistant.mutate({
               data,
-              tools: []
+              tools: tools
             })
           }
         } catch (e) {
@@ -86,22 +89,39 @@ export const AddAssistant = observer(
         }
       }
     })
-    useEffect(() => {
-      if (props.id) {
-        trpc.manage.getAssistant.query(props.id).then((res) => {
+    const init = useCallback(async (id: string | null) => {
+      await trpc.manage.getTools
+        .query({
+          page: 1,
+          pageSize: 1000
+        })
+        .then((res) => {
+          setState({ tools: res.tools })
+        })
+      if (id) {
+        trpc.manage.getAssistant.query(id as string).then((res) => {
           if (res) {
-            form.reset({
-              mode: res.mode,
-              name: res.name,
-              models: res.models,
-              apiKey: res.api_key,
-              baseUrl: res.base_url,
-              options: res.options,
-              tools: res.tools
+            Object.keys(res).forEach((key) => {
+              if (key === 'tools') {
+                form.setFieldValue(
+                  'tools',
+                  res.tools.map(
+                    (t) => state.tools.find((tool) => tool.id === t)?.name!
+                  )
+                )
+              } else {
+                form.setFieldValue(
+                  key as keyof typeof form.state.values,
+                  res[key as keyof typeof res]
+                )
+              }
             })
           }
         })
       }
+    }, [])
+    useEffect(() => {
+      init(props.id)
     }, [props.id])
     return (
       <div className={'max-w-[500px] mx-auto py-4'}>
@@ -139,7 +159,7 @@ export const AddAssistant = observer(
                       id={field.name}
                       name={field.name}
                       value={field.state.value}
-                      onBlur={field.handleBlur}
+                      // onBlur={field.handleBlur}
                       onChange={(e) => field.handleChange(e.target.value)}
                       aria-invalid={isInvalid}
                       placeholder='输入名称'
@@ -176,21 +196,6 @@ export const AddAssistant = observer(
                       onValueChange={(value) => {
                         field.setValue(value)
                         form.setFieldValue('models', [])
-                        // if (value === 'openrouter') {
-                        //   form.setFieldValue('webSearch.mode', 'openrouter')
-                        // } else {
-                        //   if (
-                        //     field.form.getFieldValue('webSearch.mode') ===
-                        //     'openrouter'
-                        //   ) {
-                        //     form.setFieldValue('webSearch.mode', undefined)
-                        //   }
-                        // }
-                        // form.setValue(
-                        //   'options.searchMode',
-                        //   value === 'openrouter' ? 'openrouter' : ''
-                        // )
-                        // form.clearErrors('apiKey')
                       }}
                     >
                       <SelectTrigger className={'w-full'}>
@@ -265,7 +270,7 @@ export const AddAssistant = observer(
               }}
             />
             <form.Field
-              name='apiKey'
+              name='api_key'
               children={(field) => {
                 const isInvalid =
                   field.state.meta.isTouched && !field.state.meta.isValid
@@ -291,7 +296,7 @@ export const AddAssistant = observer(
               }}
             />
             <form.Field
-              name='baseUrl'
+              name='base_url'
               children={(field) => {
                 const isInvalid =
                   field.state.meta.isTouched && !field.state.meta.isValid
@@ -316,8 +321,10 @@ export const AddAssistant = observer(
                 )
               }}
             />
+
             <form.Field
               name='tools'
+              key={state.tools.length}
               children={(field) => {
                 return (
                   <Field>
@@ -330,7 +337,34 @@ export const AddAssistant = observer(
                       调用工具
                     </FieldLabel>
                     <SelectFilter
-                      options={[]}
+                      options={state.tools.map((t) => {
+                        return {
+                          label: t.name,
+                          value: t.name,
+                          render: (
+                            <div className={'space-y-1'}>
+                              <div
+                                className={'text-sm flex items-center gap-1'}
+                              >
+                                <span className={'text-sm'}>{t.name}</span>
+                                {t.type === 'http' && (
+                                  <Wrench size={12} className={'size-3'} />
+                                )}
+                                {t.type === 'web_search' && (
+                                  <Earth size={12} className={'size-3'} />
+                                )}
+                              </div>
+                              <div
+                                className={
+                                  'text-xs text-secondary-foreground/80 line-clamp-2'
+                                }
+                              >
+                                {t.description}
+                              </div>
+                            </div>
+                          )
+                        }
+                      })}
                       value={field.state.value}
                       placeholder={'选择工具'}
                       onValueChange={(value) => {

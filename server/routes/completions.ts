@@ -16,7 +16,10 @@ import type { Knex } from 'knex'
 const InputSchema = z.object({
   chatId: z.string(),
   regenerate: z.boolean().optional(),
-  repoIds: z.string().array().optional()
+  assistantId: z.string(),
+  model: z.string(),
+  repoIds: z.string().array().optional(),
+  tools: z.string().array()
 })
 
 export const completions = async (req: Request, res: Response, db: Knex) => {
@@ -27,6 +30,7 @@ export const completions = async (req: Request, res: Response, db: Knex) => {
     res.status(401).send('Unauthorized')
     return
   }
+
   try {
     InputSchema.parse(json)
   } catch (e) {
@@ -38,16 +42,29 @@ export const completions = async (req: Request, res: Response, db: Knex) => {
   const { uiMessages, summary, chat, client, assistantMessage, assistant } =
     await MessageManager.getStreamMessage(db, {
       chatId: json.chatId,
-      userId: uid
+      userId: uid,
+      assistantId: json.assistantId,
+      model: json.model
     })
+  const toolsId = await db('assistant_tools')
+    .where({ assistant_id: assistant.id })
+    .select('tool_id')
+  const toolsData = await db('tools')
+    .whereIn(
+      'id',
+      toolsId.map((t) => t.tool_id)
+    )
+    .select('*')
   const tools: Record<string, Tool> = {
     getUrlContent
   }
-  const search = assistant.web_search as SearchOptions
-  if (search?.mode) {
-    const tool = createWebSearchTool(search)
-    if (tool) {
-      tools['webSearch'] = tool
+  for (let t of toolsData) {
+    if (t.type === 'web_search' && (t.auto || json.tools.includes(t.id))) {
+      tools[t.name] = createWebSearchTool({
+        mode: t.params.mode as any,
+        apiKey: t.params.apiKey,
+        cseId: t.params.cseId
+      })
     }
   }
   const controller = new AbortController()

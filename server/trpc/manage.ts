@@ -11,8 +11,8 @@ export const manageRouter = {
     .input(
       z.object({
         mode: z.string().min(1),
-        apiKey: z.string().nullable(),
-        baseUrl: z.string().nullable(),
+        api_key: z.string().nullable(),
+        base_url: z.string().nullable(),
         models: z.array(z.string()).min(1)
       })
     )
@@ -61,12 +61,14 @@ export const manageRouter = {
           .where({ id: input.id })
           .update(insertRecord(input.data))
         await trx('assistant_tools').where({ assistant_id: input.id }).delete()
-        await trx('assistant_tools').insert(
-          input.tools.map((tool) => ({
-            assistant_id: input.id,
-            tool_id: tool
-          }))
-        )
+        if (input.tools.length > 0) {
+          await trx('assistant_tools').insert(
+            input.tools.map((tool) => ({
+              assistant_id: input.id,
+              tool_id: tool
+            }))
+          )
+        }
       })
       return { success: true }
     }),

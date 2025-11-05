@@ -8,46 +8,46 @@ import { createDeepSeek } from '@ai-sdk/deepseek'
 
 export const createClient = (data: {
   mode: string
-  apiKey: string | null
-  baseUrl: string | null
+  api_key: string | null
+  base_url: string | null
 }) => {
   switch (data.mode) {
     case 'openai':
       return createOpenAI({
-        apiKey: data.apiKey ?? undefined,
-        baseURL: data.baseUrl ?? undefined
+        apiKey: data.api_key ?? undefined,
+        baseURL: data.base_url ?? undefined
       })
     case 'openrouter':
       return createOpenRouter({
-        apiKey: data.apiKey ?? undefined
+        apiKey: data.api_key ?? undefined
       })
     case 'anthropic':
       return createAnthropic({
-        apiKey: data.apiKey ?? undefined,
-        baseURL: data.baseUrl ?? undefined
+        apiKey: data.api_key ?? undefined,
+        baseURL: data.base_url ?? undefined
       })
     case 'gemini':
       return createGoogleGenerativeAI({
-        apiKey: data.apiKey ?? undefined,
-        baseURL: data.baseUrl ?? undefined
+        apiKey: data.api_key ?? undefined,
+        baseURL: data.base_url ?? undefined
       })
     case 'deepseek':
       return createDeepSeek({
-        apiKey: data.apiKey ?? undefined,
-        baseURL: data.baseUrl ?? undefined
+        apiKey: data.api_key ?? undefined,
+        baseURL: data.base_url ?? undefined
       })
     case 'qwen':
       return createOpenAI({
-        apiKey: data.apiKey ?? undefined,
+        apiKey: data.api_key ?? undefined,
         baseURL:
-          data.baseUrl ?? 'https://dashscope.aliyuncs.com/compatible-mode/v1'
+          data.base_url ?? 'https://dashscope.aliyuncs.com/compatible-mode/v1'
       })
   }
 }
 export const checkLLmConnect = async (provider: {
   mode: string
-  apiKey: string | null
-  baseUrl: string | null
+  api_key: string | null
+  base_url: string | null
   models: string[]
 }) => {
   const models = provider.models as string[]

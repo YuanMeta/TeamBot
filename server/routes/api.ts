@@ -139,8 +139,8 @@ export const registerRoutes = (app: Express, db: Knex) => {
       .first()
     const client = createClient({
       mode: assistant!.mode,
-      apiKey: assistant!.api_key,
-      baseUrl: assistant!.base_url
+      api_key: assistant!.api_key,
+      base_url: assistant!.base_url
     })!
     const messages: UIMessage[] = [
       {
