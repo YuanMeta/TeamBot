@@ -1,6 +1,6 @@
 import { useForm } from '@tanstack/react-form'
 import { observer } from 'mobx-react-lite'
-import { useEffect } from 'react'
+import { useEffect, useMemo } from 'react'
 import z from 'zod'
 import { trpc } from '~/.client/trpc'
 import { TextHelp } from '~/components/project/text-help'
@@ -37,6 +37,46 @@ import googleIcon from '~/assets/google.png'
 import exaIcon from '~/assets/exa.png'
 import tavilyIcon from '~/assets/tavily.png'
 import { Switch } from '~/components/ui/switch'
+import CodeEditor from '~/components/project/Code'
+
+const httpJsonSchema = z.object({
+  url: z.url({ error: '请填写正确的请求URL' }),
+  method: z.enum(['GET', 'POST', 'PUT', 'DELETE', 'PATCH'], {
+    error: '请填写正确的请求方法'
+  }),
+  headers: z.record(z.string(), z.string(), { error: '请填写正确的请求头' }),
+  params: z.record(z.string(), z.any(), { error: '请填写正确的请求参数' }),
+  input: z.record(z.string(), z.any(), { error: '请填写正确的请求输入格式' })
+})
+
+const useTexts = () => {
+  return useMemo(
+    () => ({
+      http_desc: '准确描述HTTP工具的作用',
+      web_search_desc:
+        '通过搜索引擎获取最新网页内容，用于补充或验证模型的知识。如果你认为需要最新的信息来回答用户的问题，请使用此工具。',
+      http_json: `{
+  "url": "https://example.com",
+  "method": "GET",
+  "headers": {
+    "Authorization": "Bearer <your_api_key>"
+  },
+  "params": {"field": "value"},
+  "input": {
+    "field": {
+      "type": "string", 
+      "describe": "描述"
+    }, 
+    "field2": {
+      "type": "number", 
+      "describe": "描述"
+    }
+  }
+}`
+    }),
+    []
+  )
+}
 export const AddTool = observer(
   (props: {
     open: boolean
@@ -44,6 +84,7 @@ export const AddTool = observer(
     onClose: () => void
     onUpdate: () => void
   }) => {
+    const texts = useTexts()
     const form = useForm({
       defaultValues: {
         name: '',
@@ -54,6 +95,12 @@ export const AddTool = observer(
         params: {} as Record<string, any>
       },
       onSubmit: async ({ value }) => {
+        if (value.type === 'http') {
+          const result = httpJsonSchema.safeParse(value.params.http)
+          if (!result.success) {
+            return { message: '请求参数格式错误' }
+          }
+        }
         if (props.id) {
           await trpc.manage.updateTool.mutate({
             id: props.id,
@@ -289,7 +336,21 @@ export const AddTool = observer(
                         <RadioGroup
                           value={field.state.value}
                           disabled={!!props.id}
-                          onValueChange={(value) => field.setValue(value)}
+                          onValueChange={(value) => {
+                            field.setValue(value)
+                            if (value === 'http') {
+                              form.setFieldValue('params', {
+                                http: texts.http_json
+                              })
+                              form.setFieldValue('description', texts.http_desc)
+                            } else {
+                              form.setFieldValue('params', {})
+                              form.setFieldValue(
+                                'description',
+                                texts.web_search_desc
+                              )
+                            }
+                          }}
                         >
                           <div className='flex items-center gap-3'>
                             <RadioGroupItem value='web_search' id='r1' />
@@ -481,6 +542,61 @@ export const AddTool = observer(
                             />
                           )}
                         </>
+                      )}
+                      {type === 'http' && (
+                        <form.Field
+                          name='params.http'
+                          validators={{
+                            onSubmit: ({ value }) => {
+                              let data: Record<string, any> = {}
+                              console.log('value', value)
+
+                              try {
+                                data = JSON.parse(value)
+                              } catch {
+                                return { message: '请输入正确的json格式' }
+                              }
+                              try {
+                                httpJsonSchema.parse(data)
+                              } catch (e) {
+                                if (e instanceof z.ZodError) {
+                                  return { message: e.issues[0].message }
+                                }
+                              }
+                              return undefined
+                            }
+                          }}
+                          children={(field) => {
+                            const isInvalid =
+                              field.state.meta.isTouched &&
+                              !field.state.meta.isValid
+                            return (
+                              <Field>
+                                <FieldLabel
+                                  htmlFor={field.name}
+                                  required
+                                  help={`url和method是必填项，其他参数为可选，如果为POST请求，将以Application/json格式发送body参数。
+                                    如果希望大模型在请求时加入动态参数，请填写input参数，参数将附加在params中， input参数仅支持number和string类型，请准确填写参数描述以让大模型理解参数含义。`}
+                                >
+                                  请求参数
+                                </FieldLabel>
+                                <CodeEditor
+                                  language={'json'}
+                                  height={'336px'}
+                                  value={field.state.value}
+                                  onChange={(value) =>
+                                    field.handleChange(value)
+                                  }
+                                />
+                                {isInvalid && (
+                                  <FieldError
+                                    errors={field.state.meta.errors}
+                                  />
+                                )}
+                              </Field>
+                            )
+                          }}
+                        />
                       )}
                     </>
                   )}

@@ -22,11 +22,10 @@ export const TextHelp = memo(
             />
           )}
         </TooltipTrigger>
-        <TooltipContent
-          className={'break-words whitespace-pre-line'}
-          style={{ maxWidth: props.width }}
-        >
-          {props.text}
+        <TooltipContent style={{ maxWidth: props.width }}>
+          <div className={'max-w-[calc(100vw_-_48px)] break-words w-fit'}>
+            {props.text}
+          </div>
         </TooltipContent>
       </Tooltip>
     )
