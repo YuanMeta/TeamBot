@@ -158,7 +158,10 @@ export class ChatStore extends StructStore<typeof state> {
     let chat = this.chatsMap.get(id)
     if (!chat) {
       const res = await trpc.chat.getChat.query({ id })
-      if (!res) return
+      if (!res) {
+        this.navigate$.next('/chat')
+        return
+      }
       chat = observable(res as unknown as any)
       this.chatsMap.set(
         id,

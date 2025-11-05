@@ -129,11 +129,6 @@ export const chatRouter = {
       })
     )
     .query(async ({ ctx, input }) => {
-      const messages = await getMessagesWithFiles(ctx.db, {
-        chatId: input.id,
-        userId: ctx.userId,
-        page: 1
-      })
       const chat = await ctx
         .db('chats')
         .where({
@@ -141,15 +136,17 @@ export const chatRouter = {
           user_id: ctx.userId
         })
         .select('id', 'title', 'model', 'assistant_id', 'last_chat_time')
-
-      if (!chat || chat.length === 0) {
-        throw new TRPCError({
-          code: 'NOT_FOUND',
-          message: 'Chat not found'
-        })
+        .first()
+      if (!chat) {
+        return null
       }
+      const messages = await getMessagesWithFiles(ctx.db, {
+        chatId: input.id,
+        userId: ctx.userId,
+        page: 1
+      })
       return {
-        ...chat[0],
+        ...chat,
         messages: messages
       }
     }),

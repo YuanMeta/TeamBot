@@ -12,6 +12,7 @@ import {
   TooltipContent,
   TooltipTrigger
 } from '~/components/ui/tooltip'
+import { toast } from 'sonner'
 export const ChatInput = observer(() => {
   const store = useStore()
   const [state, setState] = useLocalState({
@@ -21,6 +22,10 @@ export const ChatInput = observer(() => {
     webSearch: false
   })
   const onSend = useCallback(async () => {
+    if (!store.state.assistant?.id) {
+      toast.error('管理员尚未创建助手。')
+      return
+    }
     if (!state.prompt || store.state.pending) return
     store.chat({
       text: state.prompt

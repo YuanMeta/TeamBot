@@ -20,6 +20,7 @@ export interface TableUser {
   name: string | null
   password: string | null
   role: 'admin' | 'member'
+  root: boolean
   created_at: Date
   updated_at: Date
   deleted: boolean
@@ -103,6 +104,7 @@ export interface TableMessageFile {
 
 export interface TableTool {
   id: string
+  lid: string
   name: string
   icon?: string
   description: string

@@ -11,6 +11,7 @@ export const tableSchema = async (db: Knex) => {
       table.string('password').nullable()
       table.string('role').notNullable()
       table.boolean('deleted').defaultTo(false)
+      table.boolean('root').defaultTo(false)
       table.timestamp('created_at').defaultTo(db.fn.now())
       table.timestamp('updated_at').defaultTo(db.fn.now())
     })
@@ -65,9 +66,7 @@ export const tableSchema = async (db: Knex) => {
       table.timestamp('updated_at').defaultTo(db.fn.now())
       table.timestamp('last_chat_time').defaultTo(db.fn.now())
       table.foreign('user_id').references('id').inTable('users')
-      table.foreign('assistant_id').references('id').inTable('assistants')
       table.index('user_id')
-      table.index('assistant_id')
     })
   }
   if (!(await db.schema.hasTable('messages'))) {
@@ -79,6 +78,7 @@ export const tableSchema = async (db: Knex) => {
       table.json('context').nullable()
       table.string('error').nullable()
       table.string('model').nullable()
+      table.string('assistant_id').nullable()
       table.integer('reasoning_duration').nullable()
       table.json('parts').nullable()
       table.integer('input_tokens').notNullable().defaultTo(0)
@@ -114,6 +114,7 @@ export const tableSchema = async (db: Knex) => {
   if (!(await db.schema.hasTable('tools'))) {
     await db.schema.createTable('tools', (table) => {
       table.string('id').primary()
+      table.string('lid').unique().notNullable()
       table.string('name').notNullable()
       table.string('description').notNullable()
       table.string('type').notNullable()
@@ -143,7 +144,8 @@ export const tableSchema = async (db: Knex) => {
       email: 'teambot@teambot.com',
       password: await PasswordManager.hashPassword('123456'),
       name: 'TeamBot',
-      role: 'admin'
+      role: 'admin',
+      root: true
     })
   }
 }

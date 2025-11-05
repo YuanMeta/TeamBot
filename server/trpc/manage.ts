@@ -215,6 +215,7 @@ export const manageRouter = {
     .input(
       z.object({
         name: z.string().min(1),
+        lid: z.string().min(1),
         description: z.string().min(1),
         type: z.enum(['web_search', 'http']),
         auto: z.boolean(),

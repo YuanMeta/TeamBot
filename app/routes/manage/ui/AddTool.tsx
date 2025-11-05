@@ -50,6 +50,7 @@ export const AddTool = observer(
         description: '',
         type: 'web_search',
         auto: true,
+        lid: '',
         params: {} as Record<string, any>
       },
       onSubmit: async ({ value }) => {
@@ -68,6 +69,7 @@ export const AddTool = observer(
           await trpc.manage.createTool.mutate({
             description: value.description,
             name: value.name,
+            lid: value.lid,
             auto: value.auto,
             params: value.params,
             type: value.type as 'web_search' | 'http'
@@ -92,6 +94,7 @@ export const AddTool = observer(
                 description: res.description,
                 params: res.params,
                 type: res.type,
+                lid: res.lid,
                 auto: res.auto
               })
             }
@@ -119,11 +122,11 @@ export const AddTool = observer(
             <form>
               <FieldGroup>
                 <form.Field
-                  name={'name'}
+                  name={'lid'}
                   validators={{
                     onSubmit: ({ value }) => {
                       if (!value) {
-                        return { message: '请输入工具名称' }
+                        return { message: '请输入工具ID' }
                       }
                       if (!/^[a-zA-Z_]+$/.test(value)) {
                         return {
@@ -142,10 +145,50 @@ export const AddTool = observer(
                           htmlFor={field.name}
                           required
                           help={
-                            '工具名称是工具的唯一标识，只能包含小写字母和下划线。例如: web_search'
+                            '工具ID是工具的唯一标识，只能包含小写字母和下划线。例如: web_search, 工具一旦创建，ID不可更改。'
                           }
                         >
-                          名称{' '}
+                          ID{' '}
+                        </FieldLabel>
+                        <Input
+                          maxLength={50}
+                          id={field.name}
+                          name={field.name}
+                          value={field.state.value}
+                          onBlur={field.handleBlur}
+                          onChange={(e) => field.handleChange(e.target.value)}
+                          aria-invalid={isInvalid}
+                          placeholder='由小写字母和下划线组成'
+                          autoComplete='off'
+                        />
+                        {isInvalid && (
+                          <FieldError errors={field.state.meta.errors} />
+                        )}
+                      </Field>
+                    )
+                  }}
+                />
+                <form.Field
+                  name={'name'}
+                  validators={{
+                    onSubmit: ({ value }) => {
+                      if (!value) {
+                        return { message: '请输入工具名称' }
+                      }
+                      return undefined
+                    }
+                  }}
+                  children={(field) => {
+                    const isInvalid =
+                      field.state.meta.isTouched && !field.state.meta.isValid
+                    return (
+                      <Field data-invalid={isInvalid}>
+                        <FieldLabel
+                          htmlFor={field.name}
+                          required
+                          help={'当工具被调用，工具名将显示在对话界面中。'}
+                        >
+                          ID{' '}
                         </FieldLabel>
                         <Input
                           maxLength={50}
