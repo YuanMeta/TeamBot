@@ -21,12 +21,14 @@ import { Button } from '~/components/ui/button'
 import { observer } from 'mobx-react-lite'
 import { useLocalState } from '~/hooks/localState'
 import { AddAssistant } from './ui/AddAssistant'
-import type { Assistant } from '@prisma/client'
-import { useEffect, useMemo } from 'react'
+import { useCallback, useEffect, useMemo } from 'react'
 import { trpc } from '~/.client/trpc'
+import type { TableAssistant } from 'types/table'
+import { ModelIcon } from '~/lib/ModelIcon'
+import { adminConfirmDialog$ } from '~/components/project/confirm-dialog'
 
 export default observer(() => {
-  const columns: ColumnDef<Assistant>[] = useMemo(() => {
+  const columns: ColumnDef<TableAssistant>[] = useMemo(() => {
     return [
       {
         accessorKey: 'name',
@@ -39,7 +41,10 @@ export default observer(() => {
         accessorKey: 'mode',
         header: '提供者',
         cell: ({ row }) => (
-          <div className='capitalize'>{row.getValue('mode')}</div>
+          <div className='capitalize flex items-center gap-1.5'>
+            <ModelIcon mode={row.getValue('mode')} size={16} />
+            {row.getValue('mode')}
+          </div>
         )
       },
       {
@@ -72,24 +77,46 @@ export default observer(() => {
               >
                 <PencilLine className={'size-3'} />
               </Button>
-              <Button variant='outline' size='icon-sm' aria-label='Submit'>
+              <Button
+                variant='outline'
+                size='icon-sm'
+                aria-label='Submit'
+                onClick={() => {
+                  adminConfirmDialog$.next({
+                    title: '提示',
+                    description:
+                      '该操作无法撤销，删除后无法在使用此助手进行对话，确定要删除该助手吗？',
+                    destructive: true,
+                    onConfirm: () => {
+                      return trpc.manage.deleteAssistant
+                        .mutate({ assistantId: data.id })
+                        .then(() => {
+                          getAssistantsList()
+                        })
+                    }
+                  })
+                }}
+              >
                 <Trash className={'size-3'} />
               </Button>
             </div>
           )
         }
       }
-    ] as ColumnDef<Assistant>[]
+    ] as ColumnDef<TableAssistant>[]
   }, [])
   const [state, setState] = useLocalState({
     openProviderForm: false,
     selectedProviderId: null as null | string,
-    data: [] as Assistant[]
+    data: [] as TableAssistant[]
   })
-  useEffect(() => {
+  const getAssistantsList = useCallback(() => {
     trpc.manage.getAssistants.query().then((res) => {
-      setState({ data: res as unknown as Assistant[] })
+      setState({ data: res as unknown as TableAssistant[] })
     })
+  }, [])
+  useEffect(() => {
+    getAssistantsList()
   }, [])
   const table = useReactTable({
     data: state.data,
@@ -160,7 +187,7 @@ export default observer(() => {
                     colSpan={columns.length}
                     className='h-24 text-center'
                   >
-                    No results.
+                    暂无结果。
                   </TableCell>
                 </TableRow>
               )}

@@ -14,6 +14,7 @@ import {
 } from '~/components/ui/alert-dialog'
 import { useLocalState, useSubject } from '~/hooks/localState'
 import { Spinner } from '../ui/spinner'
+import { CircleAlert } from 'lucide-react'
 export const adminConfirmDialog$ = new Subject<{
   title: string
   description: string
@@ -55,7 +56,12 @@ export const AdminConfirmDialog = observer(() => {
     <AlertDialog open={state.open} onOpenChange={(open) => setState({ open })}>
       <AlertDialogContent className={'w-96'}>
         <AlertDialogHeader>
-          <AlertDialogTitle>{state.title}</AlertDialogTitle>
+          <AlertDialogTitle className={'flex items-center gap-2'}>
+            <CircleAlert
+              className={`size-5 ${state.destructive ? 'text-destructive' : 'text-primary'}`}
+            />
+            {state.title}
+          </AlertDialogTitle>
           <AlertDialogDescription>{state.description}</AlertDialogDescription>
         </AlertDialogHeader>
         <AlertDialogFooter>

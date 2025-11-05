@@ -126,12 +126,11 @@ export const tableSchema = async (db: Knex) => {
   }
   if (!(await db.schema.hasTable('assistant_tools'))) {
     await db.schema.createTable('assistant_tools', (table) => {
-      table.string('id').primary()
       table.string('assistant_id').notNullable()
       table.string('tool_id').notNullable()
       table.foreign('assistant_id').references('id').inTable('assistants')
       table.foreign('tool_id').references('id').inTable('tools')
-      table.unique(['assistant_id', 'tool_id'])
+      table.primary(['assistant_id', 'tool_id'])
       table.index('assistant_id')
       table.index('tool_id')
     })

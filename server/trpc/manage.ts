@@ -72,6 +72,21 @@ export const manageRouter = {
       })
       return { success: true }
     }),
+  deleteAssistant: adminProcedure
+    .input(
+      z.object({
+        assistantId: z.string().min(1)
+      })
+    )
+    .mutation(async ({ input, ctx }) => {
+      await ctx.db.transaction(async (trx) => {
+        await trx('assistant_tools')
+          .where({ assistant_id: input.assistantId })
+          .delete()
+        await trx('assistants').where({ id: input.assistantId }).delete()
+      })
+      return { success: true }
+    }),
   createAssistant: adminProcedure
     .input(
       z.object({

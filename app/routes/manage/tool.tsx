@@ -189,7 +189,7 @@ export default observer(() => {
                     colSpan={columns.length}
                     className='h-24 text-center'
                   >
-                    暂无数据。
+                    暂无结果。
                   </TableCell>
                 </TableRow>
               )}
