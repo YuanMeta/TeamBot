@@ -58,14 +58,22 @@ export const WebSearchTool = observer(({ tool }: { tool: ToolPart }) => {
       variant={'secondary'}
       className={'cursor-pointer text-sm'}
       onClick={() => {
-        store.setState((draft) => {
-          draft.selectSearchResult = tool.output
-        })
+        if (tool.output instanceof Array) {
+          store.setState((draft) => {
+            draft.selectSearchResult = tool.output
+          })
+        }
       }}
     >
       <Earth />
-      {tool.output?.length} 个网页{' '}
-      <ChevronRight className={'size-7'} strokeWidth={3} />
+      {tool.output instanceof Array ? (
+        <>
+          <span>{tool.output?.length}个网页</span>
+          <ChevronRight className={'size-7'} strokeWidth={3} />
+        </>
+      ) : (
+        <span>{tool.output as string}</span>
+      )}
     </Badge>
   )
 })

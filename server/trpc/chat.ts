@@ -28,7 +28,6 @@ export const chatRouter = {
     )
     .mutation(async ({ input, ctx }) => {
       const date = new Date()
-      ctx.db('users').select
       return await ctx.db.transaction(async (trx) => {
         const chat = await trx('chats')
           .insert({
@@ -197,6 +196,8 @@ export const chatRouter = {
       z.object({
         chatId: z.string(),
         userPrompt: z.string().optional(),
+        userMessageId: z.string().min(1),
+        assistantMessageId: z.string().min(1),
         files: z
           .array(
             z.object({
@@ -226,16 +227,17 @@ export const chatRouter = {
       return ctx.db.transaction(async (trx) => {
         const userMessage = await trx('messages')
           .insert({
+            id: input.userMessageId,
             chat_id: input.chatId,
             role: 'user',
             user_id: ctx.userId,
             created_at: date,
-            parts: [
+            parts: JSON.stringify([
               {
                 type: 'text',
                 text: input.userPrompt
               }
-            ]
+            ]) as any
           })
           .returning('*')
 
@@ -265,16 +267,13 @@ export const chatRouter = {
 
         const aiMessage = await trx('messages')
           .insert({
+            id: input.assistantMessageId,
             chat_id: input.chatId,
             role: 'assistant',
             user_id: ctx.userId,
             created_at: dayjs(date).add(1, 'second').toDate()
           })
           .returning('*')
-
-        await trx('chats')
-          .where({ id: input.chatId, user_id: ctx.userId })
-          .update({ last_chat_time: new Date().toISOString() })
 
         const messages = [
           { ...userMessage[0], files: userFiles },

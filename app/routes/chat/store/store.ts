@@ -2,11 +2,11 @@ import { createContext, useContext } from 'react'
 import { StructStore } from './struct'
 import { trpc } from '~/.client/trpc'
 import { isClient } from '~/lib/utils'
-import type { Assistant, MessageFile } from '@prisma/client'
 import { Subject } from 'rxjs'
 import { ChatClient } from './client'
 import type { MessagePart, SearchResult } from 'types'
 import { observable } from 'mobx'
+import type { TableAssistant, TableMessageFile } from 'types/table'
 
 export interface MessageData {
   id?: string
@@ -18,7 +18,7 @@ export interface MessageData {
   reasoningDuration?: number | null
   context?: Record<string, any> | null
   error?: string | null
-  files?: MessageFile[]
+  files?: TableMessageFile[]
   updatedAt: Date
 }
 
@@ -46,8 +46,8 @@ const state = {
     role: string | null
   },
   loadingChats: false,
-  assistants: [] as Assistant[],
-  assistantMap: {} as Record<string, Assistant>,
+  assistants: [] as TableAssistant[],
+  assistantMap: {} as Record<string, TableAssistant>,
   cacheModel: null as string | null,
   selectSearchResult: null as null | SearchResult[],
   selectedChat: null as null | {
@@ -61,7 +61,7 @@ const state = {
   get pending() {
     return this.chatPending[this.selectedChat?.id!]?.pending || false
   },
-  get assistant(): Assistant | null {
+  get assistant(): TableAssistant | null {
     if (this.selectedChat) {
       const as = this.assistantMap[this.selectedChat?.assistant_id!]
       if (as) {
@@ -122,10 +122,10 @@ export class ChatStore extends StructStore<typeof state> {
     this.state.assistantMap = {}
     await trpc.chat.getAssistants.query().then((res) => {
       res.forEach((a) => {
-        this.state.assistantMap[a.id] = a as unknown as Assistant
+        this.state.assistantMap[a.id] = a as unknown as TableAssistant
       })
       this.setState((state) => {
-        state.assistants = res as unknown as Assistant[]
+        state.assistants = res as unknown as TableAssistant[]
       })
     })
   }

@@ -66,7 +66,7 @@ export interface TableChat {
   message_offset: number
   created_at: string
   updated_at: string
-  last_chat_time: string
+  last_chat_time: Date
 }
 
 export interface TableMessage {

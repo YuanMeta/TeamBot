@@ -7,12 +7,13 @@ import {
 } from 'ai'
 import z from 'zod'
 import { TRPCError } from '@trpc/server'
-import type { MessagePart, SearchOptions, Usage } from 'types'
+import type { MessagePart, Usage } from 'types'
 import { createWebSearchTool, getUrlContent } from '../lib/tools'
 import { MessageManager } from '../lib/message'
 import { getUserId } from '../session'
 import type { Request, Response } from 'express'
 import type { Knex } from 'knex'
+import { parseRecord } from 'server/lib/table'
 const InputSchema = z.object({
   chatId: z.string(),
   regenerate: z.boolean().optional(),
@@ -49,30 +50,37 @@ export const completions = async (req: Request, res: Response, db: Knex) => {
   const toolsId = await db('assistant_tools')
     .where({ assistant_id: assistant.id })
     .select('tool_id')
-  const toolsData = await db('tools')
+  let toolsData = await db('tools')
     .whereIn(
       'id',
       toolsId.map((t) => t.tool_id)
     )
     .select('*')
+  toolsData = toolsData.map((t) => parseRecord(t))
   const tools: Record<string, Tool> = {
-    getUrlContent
+    get_url_content: getUrlContent
   }
   for (let t of toolsData) {
     if (t.type === 'web_search' && (t.auto || json.tools.includes(t.id))) {
-      tools[t.name] = createWebSearchTool({
+      tools[`web-${t.name}`] = createWebSearchTool({
         mode: t.params.mode as any,
         apiKey: t.params.apiKey,
         cseId: t.params.cseId
       })
     }
   }
+
   const controller = new AbortController()
 
   res.once('close', () => {
     controller.abort()
   })
   let text = ''
+  await db('chats').where('id', chat.id).update({
+    last_chat_time: new Date(),
+    model: chat.model!,
+    assistant_id: assistant.id
+  })
   const result = streamText({
     model: client(chat.model!),
     messages: convertToModelMessages(uiMessages),
@@ -127,6 +135,8 @@ export const completions = async (req: Request, res: Response, db: Knex) => {
             })
           }
           if (c.type === 'tool-result' || c.type === 'tool-error') {
+            console.log('t', c)
+
             parts.push({
               type: 'tool',
               toolName: c.toolName,
@@ -169,7 +179,7 @@ export const completions = async (req: Request, res: Response, db: Knex) => {
     },
     onError: async (error: any) => {
       let err = error.error as APICallError
-      db('messages').where('id', assistantMessage.id).update({
+      await db('messages').where('id', assistantMessage.id).update({
         error: err.message
       })
       console.log('request', err)

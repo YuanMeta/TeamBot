@@ -30,8 +30,8 @@ const MessageContent = observer<{ msg: MessageData }>(({ msg }) => {
             )}
             {p.type === 'tool' && (
               <div>
-                {p.toolName === 'getUrlContent' && <UrlTool tool={p} />}
-                {p.toolName === 'webSearch' && <WebSearchTool tool={p} />}
+                {p.toolName === 'get_url_content' && <UrlTool tool={p} />}
+                {p.toolName.startsWith('web-') && <WebSearchTool tool={p} />}
               </div>
             )}
 

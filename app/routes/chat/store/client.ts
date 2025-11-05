@@ -13,8 +13,6 @@ export class ChatClient {
   private generateTitleSet = new Set<string>()
   constructor(private readonly store: ChatStore) {}
   async complete(data: { text: string; onFinish?: () => void }) {
-    console.log('text', data)
-
     const abortController = new AbortController()
     const tChatId = cid()
     let chat = this.store.state.selectedChat
@@ -42,7 +40,9 @@ export class ChatClient {
     if (chat) {
       await trpc.chat.createMessages.mutate({
         chatId: chat.id,
-        userPrompt: data.text
+        userPrompt: data.text,
+        userMessageId: userMessage.id!,
+        assistantMessageId: aiMessage.id!
       })
       this.store.setState((state) => {
         const index = state.chats.findIndex((c) => c.id === chat?.id)
@@ -87,7 +87,12 @@ export class ChatClient {
       },
       signal: abortController.signal,
       body: JSON.stringify({
-        chatId: this.store.state.selectedChat?.id
+        chatId: this.store.state.selectedChat?.id,
+        assistantId: this.store.state.assistant!.id,
+        model: this.store.state.model!,
+        tools: [],
+        repoIds: undefined,
+        regenerate: undefined
       }),
       credentials: 'include'
     })
@@ -223,7 +228,6 @@ export class ChatClient {
                   break
               }
             })
-            // console.log('value', value.value)
           }
         }
       } catch (e: any) {
