@@ -154,6 +154,7 @@ export const AddTool = observer(
                           maxLength={50}
                           id={field.name}
                           name={field.name}
+                          disabled={!!props.id}
                           value={field.state.value}
                           onBlur={field.handleBlur}
                           onChange={(e) => field.handleChange(e.target.value)}
@@ -175,6 +176,11 @@ export const AddTool = observer(
                       if (!value) {
                         return { message: '请输入工具名称' }
                       }
+                      if (value.length > 20) {
+                        return {
+                          message: '工具名称应在20个字符以内'
+                        }
+                      }
                       return undefined
                     }
                   }}
@@ -186,19 +192,19 @@ export const AddTool = observer(
                         <FieldLabel
                           htmlFor={field.name}
                           required
-                          help={'当工具被调用，工具名将显示在对话界面中。'}
+                          help={'当工具被调用时，工具名将显示在对话界面中。'}
                         >
-                          ID{' '}
+                          名称{' '}
                         </FieldLabel>
                         <Input
-                          maxLength={50}
+                          maxLength={20}
                           id={field.name}
                           name={field.name}
                           value={field.state.value}
                           onBlur={field.handleBlur}
                           onChange={(e) => field.handleChange(e.target.value)}
                           aria-invalid={isInvalid}
-                          placeholder='由小写字母和下划线组成'
+                          placeholder='工具名称应在20个字符以内'
                           autoComplete='off'
                         />
                         {isInvalid && (
@@ -282,6 +288,7 @@ export const AddTool = observer(
                         </FieldLabel>
                         <RadioGroup
                           value={field.state.value}
+                          disabled={!!props.id}
                           onValueChange={(value) => field.setValue(value)}
                         >
                           <div className='flex items-center gap-3'>
@@ -308,13 +315,24 @@ export const AddTool = observer(
                         <>
                           <form.Field
                             name={'params.mode'}
+                            validators={{
+                              onSubmit: ({ value }) => {
+                                if (!value) {
+                                  return { message: '请选择搜索模式' }
+                                }
+                                return undefined
+                              }
+                            }}
                             children={(field) => {
                               const isInvalid =
                                 field.state.meta.isTouched &&
                                 !field.state.meta.isValid
                               return (
                                 <Field data-invalid={isInvalid}>
-                                  <FieldLabel htmlFor={field.name}>
+                                  <FieldLabel
+                                    htmlFor={field.name}
+                                    required={true}
+                                  >
                                     网络搜索模式
                                   </FieldLabel>
                                   <Select

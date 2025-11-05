@@ -20,6 +20,7 @@ import {
   SidebarMenuItem
 } from '~/components/ui/sidebar'
 import { observer } from 'mobx-react-lite'
+import { AdminConfirmDialog } from '~/components/project/confirm-dialog'
 
 // Menu items.
 const items = [
@@ -88,6 +89,7 @@ export default observer(() => {
           </div>
         </main>
       </SidebarInset>
+      <AdminConfirmDialog />
     </SidebarProvider>
   )
 })

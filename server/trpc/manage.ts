@@ -1,4 +1,4 @@
-import type { TRPCRouterRecord } from '@trpc/server'
+import { TRPCError, type TRPCRouterRecord } from '@trpc/server'
 import z from 'zod'
 import { checkLLmConnect } from '../lib/checkConnect'
 import { PasswordManager } from '../lib/password'
@@ -275,5 +275,24 @@ export const manageRouter = {
       .select('*')
       .first()
     return record ? parseRecord(record, ['auto']) : null
-  })
+  }),
+  deleteTool: adminProcedure
+    .input(
+      z.object({
+        toolId: z.string().min(1)
+      })
+    )
+    .mutation(async ({ input, ctx }) => {
+      const deps = await ctx
+        .db('assistant_tools')
+        .where({ tool_id: input.toolId })
+        .first()
+      if (deps) {
+        throw new TRPCError({
+          code: 'BAD_REQUEST',
+          message: '工具已被助手使用，无法删除'
+        })
+      }
+      return ctx.db('tools').where({ id: input.toolId }).delete()
+    })
 } satisfies TRPCRouterRecord

@@ -24,6 +24,9 @@ import type { TableTool } from 'types/table'
 import { AddTool } from './ui/AddTool'
 import { Badge } from '~/components/ui/badge'
 import { TextHelp } from '~/components/project/text-help'
+import { adminConfirmDialog$ } from '~/components/project/confirm-dialog'
+import { sleep } from '~/lib/utils'
+import { toast } from 'sonner'
 
 export default observer(() => {
   const columns: ColumnDef<TableTool>[] = useMemo(() => {
@@ -69,7 +72,30 @@ export default observer(() => {
               >
                 <PencilLine className={'size-3'} />
               </Button>
-              <Button variant='outline' size='icon-sm'>
+              <Button
+                variant='outline'
+                size='icon-sm'
+                onClick={() => {
+                  adminConfirmDialog$.next({
+                    title: '提示',
+                    description: '该操作无法撤销，确定要删除该工具吗？',
+                    destructive: true,
+                    onConfirm: () => {
+                      return trpc.manage.deleteTool
+                        .mutate({ toolId: data.id })
+                        .then(() => {
+                          getTools()
+                        })
+                        .catch((error) => {
+                          toast.error(error.message, {
+                            position: 'top-right'
+                          })
+                          throw error
+                        })
+                    }
+                  })
+                }}
+              >
                 <Trash className={'size-3'} />
               </Button>
             </div>
