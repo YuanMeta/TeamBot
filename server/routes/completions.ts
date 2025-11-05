@@ -62,7 +62,7 @@ export const completions = async (req: Request, res: Response, db: Knex) => {
   }
   for (let t of toolsData) {
     if (t.type === 'web_search' && (t.auto || json.tools.includes(t.id))) {
-      tools[`web-${t.name}`] = createWebSearchTool({
+      tools[t.lid] = createWebSearchTool({
         mode: t.params.mode as any,
         apiKey: t.params.apiKey,
         cseId: t.params.cseId
@@ -135,8 +135,6 @@ export const completions = async (req: Request, res: Response, db: Knex) => {
             })
           }
           if (c.type === 'tool-result' || c.type === 'tool-error') {
-            console.log('t', c)
-
             parts.push({
               type: 'tool',
               toolName: c.toolName,

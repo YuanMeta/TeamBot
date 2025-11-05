@@ -2,9 +2,10 @@ import { type ReactNode } from 'react'
 import { observer } from 'mobx-react-lite'
 import Markdown from '~/components/project/markdown/markdown'
 import BubblesLoading from './BubbleLoading'
-import type { MessageData } from '../../store/store'
+import { useStore, type MessageData } from '../../store/store'
 import { Reasoning } from './Reasion'
 import { UrlTool, WebSearchTool } from './Tools'
+import { formatStreamText } from '~/lib/chat'
 
 export interface MessageContentProps {
   fontSize?: number
@@ -13,6 +14,7 @@ export interface MessageContentProps {
   duration?: number
 }
 const MessageContent = observer<{ msg: MessageData }>(({ msg }) => {
+  const store = useStore()
   if (!msg.parts?.length && !msg.terminated) return <BubblesLoading />
   return (
     <div className={'relative max-w-full'}>
@@ -25,15 +27,19 @@ const MessageContent = observer<{ msg: MessageData }>(({ msg }) => {
                 fullFeaturedCodeBlock={true}
                 variant={'chat'}
               >
-                {p.text}
+                {formatStreamText(p.text)}
               </Markdown>
             )}
-            {p.type === 'tool' && (
-              <div>
-                {p.toolName === 'get_url_content' && <UrlTool tool={p} />}
-                {p.toolName.startsWith('web-') && <WebSearchTool tool={p} />}
-              </div>
-            )}
+            {p.type === 'tool' &&
+              (store.toolsMap.get(p.toolName) ||
+                p.toolName === 'get_url_content') && (
+                <div>
+                  {p.toolName === 'get_url_content' && <UrlTool tool={p} />}
+                  {store.toolsMap.get(p.toolName)?.type === 'web_search' && (
+                    <WebSearchTool tool={p} />
+                  )}
+                </div>
+              )}
 
             {p.type === 'reasoning' && (!p.completed || !!p.reasoning) && (
               <Reasoning

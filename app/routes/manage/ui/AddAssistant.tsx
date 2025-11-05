@@ -355,6 +355,7 @@ export const AddAssistant = observer(
                                 )}
                               </div>
                               <div
+                                title={t.description}
                                 className={
                                   'text-xs text-secondary-foreground/80 line-clamp-2'
                                 }

@@ -6,7 +6,7 @@ import { Subject } from 'rxjs'
 import { ChatClient } from './client'
 import type { MessagePart, SearchResult } from 'types'
 import { observable } from 'mobx'
-import type { TableAssistant, TableMessageFile } from 'types/table'
+import type { TableAssistant, TableMessageFile, TableTool } from 'types/table'
 
 export interface MessageData {
   id?: string
@@ -40,6 +40,7 @@ const state = {
   >,
   messages: [] as MessageData[],
   ready: false,
+  tools: [] as TableTool[],
   userInfo: null as null | {
     name: string | null
     email: string | null
@@ -103,6 +104,7 @@ export class ChatStore extends StructStore<typeof state> {
   moveChatInput$ = new Subject<void>()
   abortController: AbortController | null = null
   client = new ChatClient(this)
+  toolsMap = new Map<string, TableTool>()
   constructor() {
     super(state)
     if (isClient) {
@@ -112,13 +114,14 @@ export class ChatStore extends StructStore<typeof state> {
   async init() {
     this.state.cacheModel = localStorage.getItem('last_assistant_model')
     await this.loadAssistants()
+    await this.loadTools()
     await trpc.chat.getUserInfo.query().then((res) => {
       this.setState((state) => (state.userInfo = res || null))
     })
     this.setState((state) => (state.ready = true))
     await this.loadChats()
   }
-  async loadAssistants() {
+  private async loadAssistants() {
     this.state.assistantMap = {}
     await trpc.chat.getAssistants.query().then((res) => {
       res.forEach((a) => {
@@ -126,6 +129,14 @@ export class ChatStore extends StructStore<typeof state> {
       })
       this.setState((state) => {
         state.assistants = res as unknown as TableAssistant[]
+      })
+    })
+  }
+  private async loadTools() {
+    await trpc.chat.getTools.query().then((res) => {
+      this.setState((state) => (state.tools = res as unknown as TableTool[]))
+      res.forEach((t) => {
+        this.toolsMap.set(t.lid, t as TableTool)
       })
     })
   }

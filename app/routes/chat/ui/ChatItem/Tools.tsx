@@ -11,6 +11,7 @@ import { Badge } from '~/components/ui/badge'
 import { getDomain } from '~/lib/utils'
 import type { ToolPart } from 'types'
 import { useStore } from '../../store/store'
+import { TextHelp } from '~/components/project/text-help'
 
 export const UrlTool = observer(({ tool }: { tool: ToolPart }) => {
   if (tool.state === 'start') {
@@ -45,35 +46,38 @@ export const UrlTool = observer(({ tool }: { tool: ToolPart }) => {
 
 export const WebSearchTool = observer(({ tool }: { tool: ToolPart }) => {
   const store = useStore()
+  if (!tool.input?.query) return null
   if (tool.state === 'start') {
     return (
       <div className='flex items-center gap-1'>
         <Search className={'size-4 text-neutral-500 dark:text-neutral-400'} />
-        <span className={'shine-text'}>正在搜索相关内容...</span>
+        <span className={'shine-text'}>{tool.input?.query}...</span>
       </div>
     )
   }
   return (
-    <Badge
-      variant={'secondary'}
-      className={'cursor-pointer text-sm'}
-      onClick={() => {
-        if (tool.output instanceof Array) {
-          store.setState((draft) => {
-            draft.selectSearchResult = tool.output
-          })
-        }
-      }}
-    >
-      <Earth />
-      {tool.output instanceof Array ? (
-        <>
-          <span>{tool.output?.length}个网页</span>
-          <ChevronRight className={'size-7'} strokeWidth={3} />
-        </>
-      ) : (
-        <span>{tool.output as string}</span>
-      )}
-    </Badge>
+    <TextHelp text={tool.input?.query} delay={1000}>
+      <Badge
+        variant={'secondary'}
+        className={'cursor-pointer text-sm'}
+        onClick={() => {
+          if (tool.output instanceof Array) {
+            store.setState((draft) => {
+              draft.selectSearchResult = tool.output
+            })
+          }
+        }}
+      >
+        <Earth />
+        {tool.output instanceof Array ? (
+          <>
+            <span>{tool.output?.length}个网页</span>
+            <ChevronRight className={'size-7'} strokeWidth={3} />
+          </>
+        ) : (
+          <span>{tool.output as string}</span>
+        )}
+      </Badge>
+    </TextHelp>
   )
 })

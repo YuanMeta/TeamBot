@@ -188,6 +188,9 @@ export const chatRouter = {
       }
     })
   }),
+  getTools: procedure.query(async ({ ctx }) => {
+    return ctx.db('tools').select('id', 'name', 'description', 'type', 'lid')
+  }),
   createMessages: procedure
     .input(
       z.object({
