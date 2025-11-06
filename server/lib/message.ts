@@ -170,19 +170,19 @@ Output only the summarized version of the conversation.`,
     return { uiMessages, summary, chat, client, assistantMessage, assistant }
   }
 
-  static getSystemPromp(ctx: {
-    summary?: string | null
-    tools?: Record<string, Tool>
-  }) {
+  static getSystemPromp(ctx: { summary?: string | null; tools?: string[] }) {
     let prompt = ''
     if (ctx.summary) {
       prompt += `This is a summary of the previous conversation: ${ctx.summary}`
     }
-    if (ctx.tools?.['webSearch']) {
-      prompt += `\n\nIf you need the latest information to answer user questions, you can choose to use "webSearch" tools. When you call the "webSearch" tool, please follow the following format to output the answer:
-When using a search result, mark the source address after the corresponding sentence, such as: [source](https://apple.com/mackbook)
-If a sentence is based on your own knowledge (not search results), do not add the source`
+    if (ctx.tools?.length) {
+      prompt += `\n\nThe user requires you to use the following tools to answer the questions: [${ctx.tools.join(',')}]`
     }
-    return prompt ? prompt : undefined
+    //     if (ctx.tools?.['webSearch']) {
+    //       prompt += `\n\nIf you need the latest information to answer user questions, you can choose to use "webSearch" tools. When you call the "webSearch" tool, please follow the following format to output the answer:
+    // When using a search result, mark the source address after the corresponding sentence, such as: [source](https://apple.com/mackbook)
+    // If a sentence is based on your own knowledge (not search results), do not add the source`
+    //     }
+    return prompt || undefined
   }
 }

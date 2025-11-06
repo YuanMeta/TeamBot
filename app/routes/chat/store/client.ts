@@ -94,7 +94,7 @@ export class ChatClient {
         chatId: this.store.state.selectedChat?.id,
         assistantId: this.store.state.assistant!.id,
         model: this.store.state.model!,
-        tools: [],
+        tools: data.tools,
         repoIds: undefined,
         regenerate: undefined
       }),

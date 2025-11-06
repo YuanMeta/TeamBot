@@ -3,6 +3,7 @@ import {
   ChevronRight,
   Earth,
   FileSearch2,
+  GitBranchPlus,
   Search,
   Wrench,
   X
@@ -59,7 +60,7 @@ export const WebSearchTool = observer(({ tool }: { tool: ToolPart }) => {
   if (tool.errorText) {
     return (
       <TextHelp text={tool.input?.query} delay={1000}>
-        <Badge variant={'destructive'}>
+        <Badge variant={'destructive'} className={'text-sm'}>
           <Earth />
           {tool.errorText}
         </Badge>
@@ -107,35 +108,26 @@ export const HttpTool = observer(({ tool }: { tool: ToolPart }) => {
   }
   if (tool.errorText) {
     return (
-      <Badge variant={'destructive'}>
-        <Wrench />
+      <Badge variant={'destructive'} className={'text-sm'}>
+        <GitBranchPlus />
         {tool.errorText}
       </Badge>
     )
   }
   return (
-    <TextHelp
-      text={
-        tool.output instanceof String
-          ? tool.output
-          : JSON.stringify(tool.output, null, 2)
-      }
-      delay={1000}
+    <Badge
+      variant={'secondary'}
+      className={'text-sm cursor-default'}
+      onClick={() => {
+        if (tool.output instanceof Array) {
+          store.setState((draft) => {
+            draft.selectSearchResult = tool.output
+          })
+        }
+      }}
     >
-      <Badge
-        variant={'secondary'}
-        className={'cursor-pointer text-sm'}
-        onClick={() => {
-          if (tool.output instanceof Array) {
-            store.setState((draft) => {
-              draft.selectSearchResult = tool.output
-            })
-          }
-        }}
-      >
-        <Wrench />
-        <span>{store.toolsMap.get(tool.toolName)?.name || tool.toolName}</span>
-      </Badge>
-    </TextHelp>
+      <GitBranchPlus />
+      <span>{store.toolsMap.get(tool.toolName)?.name || tool.toolName}</span>
+    </Badge>
   )
 })

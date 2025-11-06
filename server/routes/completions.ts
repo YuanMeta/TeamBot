@@ -62,7 +62,10 @@ export const completions = async (req: Request, res: Response, db: Knex) => {
     messages: convertToModelMessages(uiMessages),
     stopWhen: stepCountIs(20),
     abortSignal: controller.signal,
-    system: MessageManager.getSystemPromp({ summary: summary, tools }),
+    system: MessageManager.getSystemPromp({
+      summary: summary,
+      tools: json.tools
+    }),
     tools,
     onAbort: async () => {
       await db('messages').where('id', assistantMessage.id).update({
