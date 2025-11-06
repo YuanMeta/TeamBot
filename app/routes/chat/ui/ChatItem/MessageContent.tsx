@@ -4,7 +4,7 @@ import Markdown from '~/components/project/markdown/markdown'
 import BubblesLoading from './BubbleLoading'
 import { useStore, type MessageData } from '../../store/store'
 import { Reasoning } from './Reasion'
-import { UrlTool, WebSearchTool } from './Tools'
+import { HttpTool, UrlTool, WebSearchTool } from './Tools'
 import { formatStreamText } from '~/lib/chat'
 
 export interface MessageContentProps {
@@ -37,6 +37,9 @@ const MessageContent = observer<{ msg: MessageData }>(({ msg }) => {
                   {p.toolName === 'get_url_content' && <UrlTool tool={p} />}
                   {store.toolsMap.get(p.toolName)?.type === 'web_search' && (
                     <WebSearchTool tool={p} />
+                  )}
+                  {store.toolsMap.get(p.toolName)?.type === 'http' && (
+                    <HttpTool tool={p} />
                   )}
                 </div>
               )}

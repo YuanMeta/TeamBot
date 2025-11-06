@@ -23,7 +23,11 @@ export const TextHelp = memo(
           )}
         </TooltipTrigger>
         <TooltipContent style={{ maxWidth: props.width }}>
-          <div className={'max-w-[calc(100vw_-_48px)] break-words w-fit'}>
+          <div
+            className={
+              'max-w-[calc(100vw_-_48px)] break-words w-fit whitespace-pre max-h-[300px] overflow-y-auto'
+            }
+          >
             {props.text}
           </div>
         </TooltipContent>

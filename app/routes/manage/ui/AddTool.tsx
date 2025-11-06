@@ -32,7 +32,6 @@ import {
 } from '~/components/ui/select'
 import { Spinner } from '~/components/ui/spinner'
 import { Textarea } from '~/components/ui/textarea'
-import { useLocalState } from '~/hooks/localState'
 import googleIcon from '~/assets/google.png'
 import exaIcon from '~/assets/exa.png'
 import tavilyIcon from '~/assets/tavily.png'
@@ -44,9 +43,20 @@ const httpJsonSchema = z.object({
   method: z.enum(['GET', 'POST', 'PUT', 'DELETE', 'PATCH'], {
     error: '请填写正确的请求方法'
   }),
-  headers: z.record(z.string(), z.string(), { error: '请填写正确的请求头' }),
-  params: z.record(z.string(), z.any(), { error: '请填写正确的请求参数' }),
-  input: z.record(z.string(), z.any(), { error: '请填写正确的请求输入格式' })
+  headers: z
+    .record(z.string(), z.string(), { error: '请填写正确的请求头' })
+    .optional(),
+  params: z
+    .record(z.string(), z.any(), { error: '请填写正确的请求参数' })
+    .optional(),
+  input: z
+    .object({
+      key: z.string({ error: '请填写Input参数中的key值' }),
+      type: z.enum(['string', 'number'], { error: '请填写正确的请求输入类型' }),
+      describe: z.string({ error: '请填写正确的请求输入描述' })
+    })
+    .array()
+    .optional()
 })
 
 const useTexts = () => {
@@ -62,16 +72,18 @@ const useTexts = () => {
     "Authorization": "Bearer <your_api_key>"
   },
   "params": {"field": "value"},
-  "input": {
-    "field": {
+  "input": [
+    {
+      "key": "string",
       "type": "string", 
       "describe": "描述"
     }, 
-    "field2": {
+    {
+      "key": "string",
       "type": "number", 
       "describe": "描述"
     }
-  }
+  ]
 }`
     }),
     []
@@ -95,12 +107,6 @@ export const AddTool = observer(
         params: {} as Record<string, any>
       },
       onSubmit: async ({ value }) => {
-        if (value.type === 'http') {
-          const result = httpJsonSchema.safeParse(value.params.http)
-          if (!result.success) {
-            return { message: '请求参数格式错误' }
-          }
-        }
         if (props.id) {
           await trpc.manage.updateTool.mutate({
             id: props.id,
@@ -560,6 +566,8 @@ export const AddTool = observer(
                                 httpJsonSchema.parse(data)
                               } catch (e) {
                                 if (e instanceof z.ZodError) {
+                                  console.log('1')
+
                                   return { message: e.issues[0].message }
                                 }
                               }

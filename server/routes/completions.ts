@@ -8,7 +8,11 @@ import {
 import z from 'zod'
 import { TRPCError } from '@trpc/server'
 import type { MessagePart, Usage } from 'types'
-import { createWebSearchTool, getUrlContent } from '../lib/tools'
+import {
+  createHttpTool,
+  createWebSearchTool,
+  getUrlContent
+} from '../lib/tools'
 import { MessageManager } from '../lib/message'
 import { getUserId } from '../session'
 import type { Request, Response } from 'express'
@@ -67,6 +71,15 @@ export const completions = async (req: Request, res: Response, db: Knex) => {
         apiKey: t.params.apiKey,
         cseId: t.params.cseId
       })
+    }
+    if (t.type === 'http' && (t.auto || json.tools.includes(t.id))) {
+      try {
+        const http = JSON.parse(t.params.http)
+        tools[t.lid] = createHttpTool({
+          description: t.description,
+          ...http
+        })
+      } catch (e) {}
     }
   }
 

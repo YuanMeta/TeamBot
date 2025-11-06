@@ -4,6 +4,7 @@ import {
   Earth,
   FileSearch2,
   Search,
+  Wrench,
   X
 } from 'lucide-react'
 import { observer } from 'mobx-react-lite'
@@ -77,6 +78,45 @@ export const WebSearchTool = observer(({ tool }: { tool: ToolPart }) => {
         ) : (
           <span>{tool.output as string}</span>
         )}
+      </Badge>
+    </TextHelp>
+  )
+})
+
+export const HttpTool = observer(({ tool }: { tool: ToolPart }) => {
+  const store = useStore()
+  if (tool.state === 'start') {
+    return (
+      <div className='flex items-center gap-1'>
+        <Search className={'size-4 text-neutral-500 dark:text-neutral-400'} />
+        <span className={'shine-text'}>
+          {store.toolsMap.get(tool.toolName)?.name}...
+        </span>
+      </div>
+    )
+  }
+  return (
+    <TextHelp
+      text={
+        tool.output instanceof String
+          ? tool.output
+          : JSON.stringify(tool.output, null, 2)
+      }
+      delay={1000}
+    >
+      <Badge
+        variant={'secondary'}
+        className={'cursor-pointer text-sm'}
+        onClick={() => {
+          if (tool.output instanceof Array) {
+            store.setState((draft) => {
+              draft.selectSearchResult = tool.output
+            })
+          }
+        }}
+      >
+        <Wrench />
+        <span>{store.toolsMap.get(tool.toolName)?.name || tool.toolName}</span>
       </Badge>
     </TextHelp>
   )
