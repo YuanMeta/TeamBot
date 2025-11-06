@@ -113,8 +113,7 @@ export const tableSchema = async (db: Knex) => {
   }
   if (!(await db.schema.hasTable('tools'))) {
     await db.schema.createTable('tools', (table) => {
-      table.string('id').primary()
-      table.string('lid').unique().notNullable()
+      table.string('id').primary().notNullable()
       table.string('name').notNullable()
       table.string('description').notNullable()
       table.string('type').notNullable()

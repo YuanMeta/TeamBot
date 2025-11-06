@@ -1,9 +1,11 @@
-import { tool } from 'ai'
+import { tool, type Tool } from 'ai'
 import z from 'zod'
 import { htmlToMarkdown } from '~/lib/utils'
 import { getReadability } from './utils'
 import type { SearchOptions } from 'types'
 import { tavily } from '@tavily/core'
+import type { Knex } from 'knex'
+import { parseRecord } from './table'
 
 export const getUrlContent = tool({
   description:
@@ -138,4 +140,43 @@ export const createHttpTool = (options: {
       }
     }
   })
+}
+
+export const composeTools = async (
+  db: Knex,
+  assistantId: string,
+  selectedTools: string[]
+) => {
+  const toolsId = await db('assistant_tools')
+    .where({ assistant_id: assistantId })
+    .select('tool_id')
+  let toolsData = await db('tools')
+    .whereIn(
+      'id',
+      toolsId.map((t) => t.tool_id)
+    )
+    .select('*')
+  toolsData = toolsData.map((t) => parseRecord(t))
+  const tools: Record<string, Tool> = {
+    get_url_content: getUrlContent
+  }
+  for (let t of toolsData) {
+    if (t.type === 'web_search' && (t.auto || selectedTools.includes(t.id))) {
+      tools[t.id] = createWebSearchTool({
+        mode: t.params.mode as any,
+        apiKey: t.params.apiKey,
+        cseId: t.params.cseId
+      })
+    }
+    if (t.type === 'http' && (t.auto || selectedTools.includes(t.id))) {
+      try {
+        const http = JSON.parse(t.params.http)
+        tools[t.id] = createHttpTool({
+          description: t.description,
+          ...http
+        })
+      } catch (e) {}
+    }
+  }
+  return tools
 }

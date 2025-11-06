@@ -230,7 +230,7 @@ export const manageRouter = {
     .input(
       z.object({
         name: z.string().min(1),
-        lid: z.string().min(1),
+        id: z.string().min(1),
         description: z.string().min(1),
         type: z.enum(['web_search', 'http']),
         auto: z.boolean(),
@@ -238,10 +238,7 @@ export const manageRouter = {
       })
     )
     .mutation(async ({ input, ctx }) => {
-      return ctx.db('tools').insert({
-        ...insertRecord(input as any),
-        id: tid()
-      })
+      return ctx.db('tools').insert(insertRecord(input))
     }),
   updateTool: adminProcedure
     .input(
@@ -260,7 +257,7 @@ export const manageRouter = {
       return ctx
         .db('tools')
         .where({ id: input.id })
-        .update(insertRecord(input.data as any))
+        .update(insertRecord(input.data))
     }),
   getTools: adminProcedure
     .input(

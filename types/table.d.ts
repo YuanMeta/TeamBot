@@ -104,7 +104,6 @@ export interface TableMessageFile {
 
 export interface TableTool {
   id: string
-  lid: string
   name: string
   icon?: string
   description: string

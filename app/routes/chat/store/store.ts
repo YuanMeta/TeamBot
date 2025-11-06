@@ -22,6 +22,10 @@ export interface MessageData {
   updatedAt: Date
 }
 
+export interface AssistantData extends TableAssistant {
+  tools: string[]
+}
+
 const state = {
   chats: [] as {
     id: string
@@ -39,6 +43,7 @@ const state = {
     }
   >,
   messages: [] as MessageData[],
+  selectedTools: {} as Record<string, string[]>,
   ready: false,
   tools: [] as TableTool[],
   userInfo: null as null | {
@@ -47,8 +52,8 @@ const state = {
     role: string | null
   },
   loadingChats: false,
-  assistants: [] as TableAssistant[],
-  assistantMap: {} as Record<string, TableAssistant>,
+  assistants: [] as AssistantData[],
+  assistantMap: {} as Record<string, AssistantData>,
   cacheModel: null as string | null,
   selectSearchResult: null as null | SearchResult[],
   selectedChat: null as null | {
@@ -62,7 +67,7 @@ const state = {
   get pending() {
     return this.chatPending[this.selectedChat?.id!]?.pending || false
   },
-  get assistant(): TableAssistant | null {
+  get assistant(): null | AssistantData {
     if (this.selectedChat) {
       const as = this.assistantMap[this.selectedChat?.assistant_id!]
       if (as) {
@@ -113,8 +118,8 @@ export class ChatStore extends StructStore<typeof state> {
   }
   async init() {
     this.state.cacheModel = localStorage.getItem('last_assistant_model')
-    await this.loadAssistants()
     await this.loadTools()
+    await this.loadAssistants()
     await trpc.chat.getUserInfo.query().then((res) => {
       this.setState((state) => (state.userInfo = res || null))
     })
@@ -125,10 +130,10 @@ export class ChatStore extends StructStore<typeof state> {
     this.state.assistantMap = {}
     await trpc.chat.getAssistants.query().then((res) => {
       res.forEach((a) => {
-        this.state.assistantMap[a.id] = a as unknown as TableAssistant
+        this.state.assistantMap[a.id] = a as unknown as AssistantData
       })
       this.setState((state) => {
-        state.assistants = res as unknown as TableAssistant[]
+        state.assistants = res as unknown as AssistantData[]
       })
     })
   }
@@ -136,7 +141,7 @@ export class ChatStore extends StructStore<typeof state> {
     await trpc.chat.getTools.query().then((res) => {
       this.setState((state) => (state.tools = res as unknown as TableTool[]))
       res.forEach((t) => {
-        this.toolsMap.set(t.lid, t as TableTool)
+        this.toolsMap.set(t.id, t as TableTool)
       })
     })
   }
@@ -220,7 +225,12 @@ export class ChatStore extends StructStore<typeof state> {
   }
   async chat(data: { text: string }) {
     try {
-      await this.client.complete(data)
+      await this.client.complete({
+        text: data.text,
+        tools:
+          this.state.selectedTools[this.state.selectedChat?.id! || 'default'] ||
+          []
+      })
     } catch (e) {
       console.log('err', e)
     }

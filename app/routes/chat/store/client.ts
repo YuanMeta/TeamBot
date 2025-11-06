@@ -12,7 +12,11 @@ import { cid, findLast } from '../../../lib/utils'
 export class ChatClient {
   private generateTitleSet = new Set<string>()
   constructor(private readonly store: ChatStore) {}
-  async complete(data: { text: string; onFinish?: () => void }) {
+  async complete(data: {
+    text: string
+    tools: string[]
+    onFinish?: () => void
+  }) {
     const abortController = new AbortController()
     const tChatId = cid()
     let chat = this.store.state.selectedChat

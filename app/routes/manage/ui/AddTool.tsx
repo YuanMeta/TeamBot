@@ -103,10 +103,11 @@ export const AddTool = observer(
         description: '',
         type: 'web_search',
         auto: true,
-        lid: '',
+        id: '',
         params: {} as Record<string, any>
       },
       onSubmit: async ({ value }) => {
+        console.log('add')
         if (props.id) {
           await trpc.manage.updateTool.mutate({
             id: props.id,
@@ -122,7 +123,7 @@ export const AddTool = observer(
           await trpc.manage.createTool.mutate({
             description: value.description,
             name: value.name,
-            lid: value.lid,
+            id: value.id,
             auto: value.auto,
             params: value.params,
             type: value.type as 'web_search' | 'http'
@@ -147,7 +148,7 @@ export const AddTool = observer(
                 description: res.description,
                 params: res.params,
                 type: res.type,
-                lid: res.lid,
+                id: res.id,
                 auto: res.auto
               })
             }
@@ -175,9 +176,11 @@ export const AddTool = observer(
             <form>
               <FieldGroup>
                 <form.Field
-                  name={'lid'}
+                  name={'id'}
                   validators={{
                     onSubmit: ({ value }) => {
+                      console.log('check', value)
+
                       if (!value) {
                         return { message: '请输入工具ID' }
                       }

@@ -1,17 +1,12 @@
-import { CircleStop, CircleX, Earth, SendHorizontal } from 'lucide-react'
+import { CircleStop, CircleX, SendHorizontal } from 'lucide-react'
 import { observer } from 'mobx-react-lite'
-import { useCallback, useEffect, useRef } from 'react'
+import { useCallback } from 'react'
 import { InputArea } from './InputArea'
 import { useStore } from '../../store/store'
 import { useLocalState } from '~/hooks/localState'
-import { FileChoose } from './FileChoose'
+import { InputTools } from './InputTools'
 import { Button } from '~/components/ui/button'
 import { Badge } from '~/components/ui/badge'
-import {
-  Tooltip,
-  TooltipContent,
-  TooltipTrigger
-} from '~/components/ui/tooltip'
 import { toast } from 'sonner'
 export const ChatInput = observer(() => {
   const store = useStore()
@@ -49,23 +44,6 @@ export const ChatInput = observer(() => {
     //   mediaType(file.name) === 'image'
     //     ? state.images.push(file)
     //     : state.files.push(file)
-    // })
-  }, [])
-  useEffect(() => {
-    // store.api.ipc.on('selectContext', ({ ctx }: { ctx: string }) => {
-    //   if (ctx === 'file' || ctx === 'image') {
-    //     chooseFile(store, ctx).then((file) => {
-    //       console.log('add file', file, file.type)
-    //       setState((state) => {
-    //         if (ctx === 'file') {
-    //           state.files.push(file)
-    //         } else {
-    //           state.images.push(file)
-    //         }
-    //         instance.current.focus?.()
-    //       })
-    //     })
-    //   }
     // })
   }, [])
   return (
@@ -161,26 +139,41 @@ export const ChatInput = observer(() => {
         </div>
         <div
           className={
-            'flex items-center justify-between text-secondary-foreground/80 pt-2.5'
+            'flex items-center justify-between text-secondary-foreground/80 pt-2.5 gap-3'
           }
         >
-          <div className={'flex items-center gap-1.5'}>
-            <FileChoose />
-            <Tooltip delayDuration={500}>
-              <TooltipTrigger asChild>
-                <Button
-                  size={'icon-sm'}
-                  variant={`${state.webSearch ? 'secondary' : 'ghost'}`}
-                >
-                  <Earth size={16} />
-                </Button>
-              </TooltipTrigger>
-              <TooltipContent>
-                <p>
-                  助手将根据提问自主决定是否进行网络搜索，您也可以手动启用网络搜索。
-                </p>
-              </TooltipContent>
-            </Tooltip>
+          <div className={'flex gap-1.5 flex-1 w-0'}>
+            <InputTools />
+            {store.state.selectedTools[
+              store.state.selectedChat?.id || 'default'
+            ]?.length > 0 && (
+              <div
+                className={
+                  'flex items-center gap-1.5 flex-1 w-0 flex-wrap pt-[3px]'
+                }
+              >
+                {store.state.selectedTools[
+                  store.state.selectedChat?.id || 'default'
+                ].map((t) => (
+                  <Badge
+                    removeable={true}
+                    variant={'outline'}
+                    key={t}
+                    onRemove={() => {
+                      store.setState((draft) => {
+                        draft.selectedTools[
+                          draft.selectedChat?.id || 'default'
+                        ] = draft.selectedTools[
+                          draft.selectedChat?.id || 'default'
+                        ]?.filter((id) => id !== t)
+                      })
+                    }}
+                  >
+                    {store.toolsMap.get(t)?.name || t}
+                  </Badge>
+                ))}
+              </div>
+            )}
           </div>
           <div className={'flex items-center justify-between'}>
             <div className={'flex items-center gap-3'}>

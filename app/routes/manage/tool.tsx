@@ -25,12 +25,16 @@ import { AddTool } from './ui/AddTool'
 import { Badge } from '~/components/ui/badge'
 import { TextHelp } from '~/components/project/text-help'
 import { adminConfirmDialog$ } from '~/components/project/confirm-dialog'
-import { sleep } from '~/lib/utils'
 import { toast } from 'sonner'
 
 export default observer(() => {
   const columns: ColumnDef<TableTool>[] = useMemo(() => {
     return [
+      {
+        accessorKey: 'id',
+        header: 'ID',
+        cell: ({ row }) => <div>{row.getValue('id')}</div>
+      },
       {
         accessorKey: 'name',
         header: '名称',

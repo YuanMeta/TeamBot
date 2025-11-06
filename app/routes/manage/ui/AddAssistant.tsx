@@ -60,21 +60,16 @@ export const AddAssistant = observer(
             base_url: value.base_url || null,
             options: {}
           }
-          let tools = value.tools
-            .map((t) => {
-              return state.tools.find((tool) => tool.name === t)?.id!
-            })
-            .filter(Boolean)
           if (props.id) {
             await trpc.manage.updateAssistant.mutate({
               id: props.id as string,
               data,
-              tools: tools
+              tools: value.tools
             })
           } else {
             await trpc.manage.createAssistant.mutate({
               data,
-              tools: tools
+              tools: value.tools
             })
           }
         } catch (e) {
@@ -340,7 +335,7 @@ export const AddAssistant = observer(
                       options={state.tools.map((t) => {
                         return {
                           label: t.name,
-                          value: t.name,
+                          value: t.id,
                           render: (
                             <div className={'space-y-1'}>
                               <div

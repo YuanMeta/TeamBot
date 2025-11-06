@@ -179,17 +179,21 @@ export const chatRouter = {
   getAssistants: procedure.query(async ({ ctx }) => {
     const assistants = await ctx
       .db('assistants')
-      .select('id', 'name', 'mode', 'models', 'options')
-    return assistants.map((a) => {
-      const data = parseRecord(a as any)
-      return {
-        ...data,
-        options: data.options?.searchMode
-      }
-    })
+      .select('id', 'name', 'mode', 'models')
+    let data: any[] = []
+    for (let a of assistants) {
+      const as = parseRecord(a as any)
+      const tools = await ctx
+        .db('assistant_tools')
+        .where({ assistant_id: a.id })
+        .select('tool_id')
+      as.tools = tools.map((t) => t.tool_id)
+      data.push(as)
+    }
+    return data
   }),
   getTools: procedure.query(async ({ ctx }) => {
-    return ctx.db('tools').select('id', 'name', 'description', 'type', 'lid')
+    return ctx.db('tools').select('id', 'name', 'description', 'type')
   }),
   createMessages: procedure
     .input(

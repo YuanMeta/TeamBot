@@ -56,6 +56,16 @@ export const WebSearchTool = observer(({ tool }: { tool: ToolPart }) => {
       </div>
     )
   }
+  if (tool.errorText) {
+    return (
+      <TextHelp text={tool.input?.query} delay={1000}>
+        <Badge variant={'destructive'}>
+          <Earth />
+          {tool.errorText}
+        </Badge>
+      </TextHelp>
+    )
+  }
   return (
     <TextHelp text={tool.input?.query} delay={1000}>
       <Badge
@@ -93,6 +103,14 @@ export const HttpTool = observer(({ tool }: { tool: ToolPart }) => {
           {store.toolsMap.get(tool.toolName)?.name}...
         </span>
       </div>
+    )
+  }
+  if (tool.errorText) {
+    return (
+      <Badge variant={'destructive'}>
+        <Wrench />
+        {tool.errorText}
+      </Badge>
     )
   }
   return (

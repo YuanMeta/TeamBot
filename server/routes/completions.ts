@@ -2,22 +2,16 @@ import {
   convertToModelMessages,
   stepCountIs,
   streamText,
-  type APICallError,
-  type Tool
+  type APICallError
 } from 'ai'
 import z from 'zod'
 import { TRPCError } from '@trpc/server'
 import type { MessagePart, Usage } from 'types'
-import {
-  createHttpTool,
-  createWebSearchTool,
-  getUrlContent
-} from '../lib/tools'
+import { composeTools } from '../lib/tools'
 import { MessageManager } from '../lib/message'
 import { getUserId } from '../session'
 import type { Request, Response } from 'express'
 import type { Knex } from 'knex'
-import { parseRecord } from 'server/lib/table'
 const InputSchema = z.object({
   chatId: z.string(),
   regenerate: z.boolean().optional(),
@@ -51,40 +45,9 @@ export const completions = async (req: Request, res: Response, db: Knex) => {
       assistantId: json.assistantId,
       model: json.model
     })
-  const toolsId = await db('assistant_tools')
-    .where({ assistant_id: assistant.id })
-    .select('tool_id')
-  let toolsData = await db('tools')
-    .whereIn(
-      'id',
-      toolsId.map((t) => t.tool_id)
-    )
-    .select('*')
-  toolsData = toolsData.map((t) => parseRecord(t))
-  const tools: Record<string, Tool> = {
-    get_url_content: getUrlContent
-  }
-  for (let t of toolsData) {
-    if (t.type === 'web_search' && (t.auto || json.tools.includes(t.id))) {
-      tools[t.lid] = createWebSearchTool({
-        mode: t.params.mode as any,
-        apiKey: t.params.apiKey,
-        cseId: t.params.cseId
-      })
-    }
-    if (t.type === 'http' && (t.auto || json.tools.includes(t.id))) {
-      try {
-        const http = JSON.parse(t.params.http)
-        tools[t.lid] = createHttpTool({
-          description: t.description,
-          ...http
-        })
-      } catch (e) {}
-    }
-  }
 
+  const tools = await composeTools(db, assistant.id, json.tools)
   const controller = new AbortController()
-
   res.once('close', () => {
     controller.abort()
   })
