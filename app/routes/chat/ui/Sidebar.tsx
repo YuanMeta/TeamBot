@@ -33,6 +33,7 @@ import {
 } from '~/components/ui/alert-dialog'
 import { NavUser } from './SidebarFooter'
 import { Skeleton } from '~/components/ui/skeleton'
+import { useRef, useEffect } from 'react'
 
 const Item = observer(
   ({
@@ -113,10 +114,31 @@ export const ChatSidebar = observer(() => {
   const store = useStore()
   const params = useParams()
   const navigate = useNavigate()
+  const scrollContainerRef = useRef<HTMLDivElement>(null)
   const [state, setState] = useLocalState({
     showDeleteDialog: false,
     selectedChatId: null as null | string
   })
+
+  useEffect(() => {
+    const container = scrollContainerRef.current
+    if (!container) return
+
+    const handleScroll = () => {
+      const { scrollTop, scrollHeight, clientHeight } = container
+      if (scrollHeight - scrollTop - clientHeight < 50) {
+        if (!store.state.loadingChats && store.loadMoreChats) {
+          store.loadChats()
+        }
+      }
+    }
+
+    container.addEventListener('scroll', handleScroll)
+    return () => {
+      container.removeEventListener('scroll', handleScroll)
+    }
+  }, [store])
+
   return (
     <div className={'w-[260px] h-full border-r border-border bg-sidebar'}>
       <div className={'w-[260px] h-full flex flex-col'}>
@@ -155,7 +177,10 @@ export const ChatSidebar = observer(() => {
             </div>
           </div>
         </div>
-        <div className={'flex-1 h-0 pt-2 overflow-auto pb-5'}>
+        <div
+          ref={scrollContainerRef}
+          className={'flex-1 h-0 pt-2 overflow-auto pb-5'}
+        >
           <div className={'text-primary/60 text-sm pl-4 mb-2'}>聊天</div>
           <div className={'px-1.5'}>
             {store.state.loadingChats && !store.state.chats.length && (
@@ -184,6 +209,12 @@ export const ChatSidebar = observer(() => {
             {!store.state.chats.length && !store.state.loadingChats && (
               <div className={'text-center text-primary/50 text-[13px] mt-5'}>
                 暂无聊天记录
+              </div>
+            )}
+            {store.state.loadingChats && store.state.chats.length > 0 && (
+              <div className={'px-2 py-2 space-y-2'}>
+                <Skeleton className='h-4 w-full' />
+                <Skeleton className='h-4 w-1/2' />
               </div>
             )}
           </div>

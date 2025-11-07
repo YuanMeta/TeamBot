@@ -117,6 +117,7 @@ export class ChatStore extends StructStore<typeof state> {
   abortController: AbortController | null = null
   client = new ChatClient(this)
   toolsMap = new Map<string, TableTool>()
+  loadMoreChats = true
   constructor() {
     super(state)
     if (isClient) {
@@ -153,6 +154,7 @@ export class ChatStore extends StructStore<typeof state> {
     })
   }
   async loadChats() {
+    if (this.state.loadingChats) return
     this.setState((state) => (state.loadingChats = true))
     await trpc.chat.getChats
       .query({
@@ -164,6 +166,9 @@ export class ChatStore extends StructStore<typeof state> {
           state.chats.push(...(addChats as any))
           addChats.forEach((c: any) => this.chatsMap.set(c.id, c))
         })
+        if (res.length < 50) {
+          this.loadMoreChats = false
+        }
       })
       .finally(() => {
         this.setState((state) => (state.loadingChats = false))
