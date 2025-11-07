@@ -98,6 +98,13 @@ const state = {
       }
     }
     return models?.[0]
+  },
+  get useTools() {
+    const chatId = this.selectedChat?.id || 'default'
+    const assistantId = this.assistant?.id!
+    const tools = this.selectedTools
+    let id = `${assistantId}:${chatId}`
+    return tools[id] || []
   }
 }
 export class ChatStore extends StructStore<typeof state> {
@@ -265,6 +272,30 @@ export class ChatStore extends StructStore<typeof state> {
     })
     await trpc.chat.deleteChat.mutate({ id })
     this.chatsMap.delete(id)
+  }
+  addTool(toolId: string) {
+    const chatId = this.state.selectedChat?.id || 'default'
+    const assistantId = this.state.assistant?.id!
+    let id = `${assistantId}:${chatId}`
+    if (this.state.selectedTools[id]?.includes(toolId)) {
+      return
+    }
+    this.setState((draft) => {
+      if (!draft.selectedTools[id]) {
+        draft.selectedTools[id] = []
+      }
+      draft.selectedTools[id].push(toolId)
+    })
+  }
+  removeTool(toolId: string) {
+    const chatId = this.state.selectedChat?.id || 'default'
+    const assistantId = this.state.assistant?.id!
+    let id = `${assistantId}:${chatId}`
+    this.setState((draft) => {
+      draft.selectedTools[id] = draft.selectedTools[id].filter(
+        (t) => t !== toolId
+      )
+    })
   }
 }
 

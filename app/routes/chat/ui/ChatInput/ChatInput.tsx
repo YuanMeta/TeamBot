@@ -144,29 +144,19 @@ export const ChatInput = observer(() => {
         >
           <div className={'flex gap-1.5 flex-1 w-0'}>
             <InputTools />
-            {store.state.selectedTools[
-              store.state.selectedChat?.id || 'default'
-            ]?.length > 0 && (
+            {store.state.useTools.length > 0 && (
               <div
                 className={
                   'flex items-center gap-1.5 flex-1 w-0 flex-wrap pt-[3px]'
                 }
               >
-                {store.state.selectedTools[
-                  store.state.selectedChat?.id || 'default'
-                ].map((t) => (
+                {store.state.useTools.map((t) => (
                   <Badge
                     removeable={true}
                     variant={'outline'}
                     key={t}
                     onRemove={() => {
-                      store.setState((draft) => {
-                        draft.selectedTools[
-                          draft.selectedChat?.id || 'default'
-                        ] = draft.selectedTools[
-                          draft.selectedChat?.id || 'default'
-                        ]?.filter((id) => id !== t)
-                      })
+                      store.removeTool(t)
                     }}
                   >
                     {store.toolsMap.get(t)?.name || t}

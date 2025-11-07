@@ -20,7 +20,10 @@ const MessageContent = observer<{ msg: MessageData }>(({ msg }) => {
     <div className={'relative max-w-full'}>
       <div className={'flex flex-col gap-2.5'}>
         {msg.parts?.map((p, index) => (
-          <div key={index}>
+          <div
+            key={index}
+            className={`${p.state === 'completed' && store.toolsMap.get(p.toolName)?.type === 'http' ? 'hidden' : ''}`}
+          >
             {p.type === 'text' && (
               <Markdown
                 fontSize={16}
@@ -38,9 +41,8 @@ const MessageContent = observer<{ msg: MessageData }>(({ msg }) => {
                   {store.toolsMap.get(p.toolName)?.type === 'web_search' && (
                     <WebSearchTool tool={p} />
                   )}
-                  {store.toolsMap.get(p.toolName)?.type === 'http' && (
-                    <HttpTool tool={p} />
-                  )}
+                  {store.toolsMap.get(p.toolName)?.type === 'http' &&
+                    p.state !== 'completed' && <HttpTool tool={p} />}
                 </div>
               )}
 

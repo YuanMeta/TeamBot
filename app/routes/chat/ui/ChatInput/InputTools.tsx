@@ -63,20 +63,7 @@ export const InputTools = observer(() => {
                     <DropdownMenuItem
                       key={t.id}
                       onClick={() => {
-                        store.setState((draft) => {
-                          if (
-                            !draft.selectedTools[
-                              store.state.selectedChat?.id || 'default'
-                            ]
-                          ) {
-                            draft.selectedTools[
-                              store.state.selectedChat?.id || 'default'
-                            ] = []
-                          }
-                          draft.selectedTools[
-                            store.state.selectedChat?.id || 'default'
-                          ].push(t.id)
-                        })
+                        store.addTool(t.id)
                       }}
                     >
                       {t.type === 'http' ? <GitBranchPlus /> : <Earth />}
