@@ -6,19 +6,22 @@ export const getMessagesWithFiles = async (
   data: {
     chatId: string
     userId: string
-    page: number
+    offset: number
   }
 ) => {
   const messages = await db('messages')
     .where({ chat_id: data.chatId, user_id: data.userId })
     .select('*')
-    .orderBy('created_at', 'asc')
+    .offset(data.offset)
+    .limit(10)
+    .orderBy('created_at', 'desc')
   const files = await db('message_files').whereIn(
     'message_id',
     messages.map((message) => message.id)
   )
-  return messages.map((message) => ({
+  const list = messages.map((message) => ({
     ...parseRecord(message),
     files: files.filter((file) => file.message_id === message.id)
   }))
+  return { messages: list, loadMore: list.length === 10 }
 }

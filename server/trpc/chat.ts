@@ -140,27 +140,20 @@ export const chatRouter = {
       if (!chat) {
         return null
       }
-      const messages = await getMessagesWithFiles(ctx.db, {
-        chatId: input.id,
-        userId: ctx.userId,
-        page: 1
-      })
-      return {
-        ...chat,
-        messages: messages
-      }
+      return chat
     }),
   getMessages: procedure
     .input(
       z.object({
-        chatId: z.string()
+        chatId: z.string(),
+        offset: z.number()
       })
     )
     .query(async ({ ctx, input }) => {
       return getMessagesWithFiles(ctx.db, {
         chatId: input.chatId,
         userId: ctx.userId,
-        page: 1
+        offset: input.offset
       })
     }),
   deleteChat: procedure

@@ -29,14 +29,17 @@ export const AiMessageList = observer(() => {
     },
     []
   )
-  const scrollToBottom = useCallback((behavior: 'auto' | 'smooth' = 'auto') => {
-    if (scrollRef.current) {
-      const last = listRef.current?.children?.[
-        listRef.current?.children.length - 1
-      ] as HTMLElement
-      last.scrollIntoView({ behavior, block: 'end' })
-    }
-  }, [])
+  const scrollToBottom = useCallback(
+    (behavior: 'auto' | 'smooth' | 'instant' = 'auto') => {
+      if (scrollRef.current) {
+        const last = listRef.current?.children?.[
+          listRef.current?.children.length - 1
+        ] as HTMLElement
+        last.scrollIntoView({ behavior, block: 'end' })
+      }
+    },
+    []
+  )
   const scroll = useCallback((e: React.UIEvent<HTMLDivElement>) => {
     clearTimeout(scrollTimer.current)
     scrollTimer.current = window.setTimeout(() => {
@@ -46,7 +49,29 @@ export const AiMessageList = observer(() => {
           scrollRef.current!.scrollTop + scrollRef.current!.clientHeight <
             listRef.current!.scrollHeight - 300
       })
-    }, 100)
+      // 检测是否滚动到顶部，加载更多消息
+      if (
+        scrollRef.current &&
+        scrollRef.current.scrollTop < 100 &&
+        !store.state.loadingMessages &&
+        store.loadMoreMessages &&
+        store.state.selectedChat?.id
+      ) {
+        console.log('load')
+
+        // const previousScrollHeight = listRef.current!.scrollHeight
+        store.loadMessages(store.state.selectedChat.id).then(() => {
+          // 恢复滚动位置，避免跳动
+          // requestAnimationFrame(() => {
+          //   if (scrollRef.current && listRef.current) {
+          //     const newScrollHeight = listRef.current.scrollHeight
+          //     // const scrollDiff = newScrollHeight - previousScrollHeight
+          //     // scrollRef.current.scrollTop = scrollDiff
+          //   }
+          // })
+        })
+      }
+    }, 30)
   }, [])
 
   useSubject(store.scrollToActiveMessage$, () => {
@@ -56,11 +81,8 @@ export const AiMessageList = observer(() => {
       }
     }, 30)
   })
-  useSubject(store.scrollToTop$, () => {
-    scrollRef.current?.scrollTo({
-      top: 0,
-      behavior: 'instant'
-    })
+  useSubject(store.scrollToBottom$, () => {
+    scrollToBottom('instant')
   })
   useSubject(store.transList$, () => {
     setState({ visible: false, showScrollToBottom: false })
@@ -70,9 +92,7 @@ export const AiMessageList = observer(() => {
     })
     setTimeout(() => {
       setState({
-        visible: true,
-        showScrollToBottom:
-          listRef.current!.scrollHeight > window.innerHeight - 200
+        visible: true
       })
     }, 50)
   })
@@ -93,7 +113,7 @@ export const AiMessageList = observer(() => {
           className={`chat-list ${state.visible ? 'animate-show' : 'opacity-0'} ${store.state.chatPending[store.state.selectedChat?.id!]?.pending ? 'pending' : ''}`}
         >
           {store.state.messages.map((m) => (
-            <ChatItem key={m.tid || m.id} msg={m} />
+            <ChatItem key={m.id} msg={m} />
           ))}
         </div>
       </div>

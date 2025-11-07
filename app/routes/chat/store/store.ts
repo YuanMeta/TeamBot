@@ -33,7 +33,6 @@ const state = {
     last_chat_time: Date
     assistant_id: string | null
     model: string | null
-    messages?: MessageData[]
   }[],
   chatPending: {} as Record<
     string,
@@ -52,6 +51,7 @@ const state = {
     role: string | null
   },
   loadingChats: false,
+  loadingMessages: false,
   assistants: [] as AssistantData[],
   assistantMap: {} as Record<string, AssistantData>,
   cacheModel: null as string | null,
@@ -110,7 +110,7 @@ const state = {
 export class ChatStore extends StructStore<typeof state> {
   scrollToActiveMessage$ = new Subject<void>()
   chatsMap = new Map<string, (typeof this.state.chats)[number]>()
-  scrollToTop$ = new Subject<void>()
+  scrollToBottom$ = new Subject<void>()
   transList$ = new Subject<void>()
   navigate$ = new Subject<string>()
   moveChatInput$ = new Subject<void>()
@@ -118,6 +118,7 @@ export class ChatStore extends StructStore<typeof state> {
   client = new ChatClient(this)
   toolsMap = new Map<string, TableTool>()
   loadMoreChats = true
+  loadMoreMessages = true
   constructor() {
     super(state)
     if (isClient) {
@@ -174,6 +175,26 @@ export class ChatStore extends StructStore<typeof state> {
         this.setState((state) => (state.loadingChats = false))
       })
   }
+  async loadMessages(chatId: string) {
+    if (!this.loadMoreMessages || this.state.loadingMessages) return
+    try {
+      this.setState((state) => (state.loadingMessages = true))
+      const { messages, loadMore } = await trpc.chat.getMessages.query({
+        chatId,
+        offset: this.state.messages.length
+      })
+      this.setState((state) => {
+        state.messages.unshift(
+          ...(messages as unknown as MessageData[]).reverse()
+        )
+      })
+      if (!loadMore) {
+        this.loadMoreMessages = false
+      }
+    } finally {
+      this.setState((state) => (state.loadingMessages = false))
+    }
+  }
   async selectChat(id?: string) {
     if (this.state.selectedChat?.id === id) return
     if (!id) {
@@ -196,25 +217,14 @@ export class ChatStore extends StructStore<typeof state> {
         chat as unknown as (typeof this.state.chats)[number]
       )
     }
-    if (!chat?.messages?.length) {
-      this.setState((state) => {
-        state.selectedChat = chat as unknown as typeof this.state.selectedChat
-      })
-      const messages = await trpc.chat.getMessages.query({
-        chatId: chat!.id
-      })
-      this.transList$.next()
-      this.setState((state) => {
-        state.messages = messages as unknown as MessageData[]
-        chat!.messages = state.messages
-      })
-    } else {
-      this.setState((state) => {
-        state.selectedChat = chat as any
-        this.transList$.next()
-        state.messages = chat.messages as unknown as MessageData[]
-      })
-    }
+    this.loadMoreMessages = true
+    this.setState((state) => {
+      state.selectedChat = chat as unknown as typeof this.state.selectedChat
+      state.messages = []
+    })
+    await this.loadMessages(chat!.id)
+    this.transList$.next()
+    this.scrollToBottom$.next()
   }
   async selectModel(assistantId: string, model: string) {
     if (this.state.selectedChat) {
