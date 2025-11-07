@@ -81,6 +81,7 @@ export const tableSchema = async (db: Knex) => {
       table.string('assistant_id').nullable()
       table.integer('reasoning_duration').nullable()
       table.json('parts').nullable()
+      table.string('text').nullable()
       table.integer('input_tokens').notNullable().defaultTo(0)
       table.integer('output_tokens').notNullable().defaultTo(0)
       table.integer('total_tokens').notNullable().defaultTo(0)

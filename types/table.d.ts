@@ -79,7 +79,8 @@ export interface TableMessage {
   error: string | null
   model: string | null
   reasoning_duration: number
-  parts: Record<string, any>
+  parts: Record<string, any>[] | null
+  text: string | null
   input_tokens: number
   output_tokens: number
   total_tokens: number

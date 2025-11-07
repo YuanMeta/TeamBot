@@ -123,37 +123,45 @@ Output only the summarized version of the conversation.`,
           role: m.role as 'user' | 'assistant',
           parts: []
         }
-        let parts = m.parts as unknown as MessagePart[]
-        for (let p of parts) {
-          if (p.type === 'text') {
-            msg.parts.push({
-              type: 'text',
-              text: p.text
-            })
-          }
-          if (p.type === 'tool') {
-            if (p.state === 'error') {
+        if (m.role === 'user') {
+          msg.parts.push({
+            type: 'text',
+            text: m.text!
+          })
+        } else {
+          let parts = (m.parts as unknown as MessagePart[]) || []
+          for (let p of parts) {
+            if (p.type === 'text') {
               msg.parts.push({
-                type: 'dynamic-tool',
-                toolName: p.toolName,
-                toolCallId: p.toolCallId,
-                input: p.input,
-                output: undefined,
-                state: 'output-error',
-                errorText: p.errorText || ''
+                type: 'text',
+                text: p.text
               })
-            } else {
-              msg.parts.push({
-                type: 'dynamic-tool',
-                toolName: p.toolName,
-                toolCallId: p.toolCallId,
-                input: p.input,
-                output: p.output,
-                state: 'output-available'
-              })
+            }
+            if (p.type === 'tool') {
+              if (p.state === 'error') {
+                msg.parts.push({
+                  type: 'dynamic-tool',
+                  toolName: p.toolName,
+                  toolCallId: p.toolCallId,
+                  input: p.input,
+                  output: undefined,
+                  state: 'output-error',
+                  errorText: p.errorText || ''
+                })
+              } else {
+                msg.parts.push({
+                  type: 'dynamic-tool',
+                  toolName: p.toolName,
+                  toolCallId: p.toolCallId,
+                  input: p.input,
+                  output: p.output,
+                  state: 'output-available'
+                })
+              }
             }
           }
         }
+
         uiMessages.push(msg)
       })
     }
@@ -163,7 +171,7 @@ Output only the summarized version of the conversation.`,
       parts: [
         {
           type: 'text',
-          text: (userMessage.parts as MessagePart[])?.[0]?.text! || ''
+          text: userMessage.text!
         }
       ]
     })

@@ -15,6 +15,7 @@ export interface MessageData {
   model?: string
   terminated?: boolean
   parts?: MessagePart[] | null
+  text?: string | null
   reasoningDuration?: number | null
   context?: Record<string, any> | null
   error?: string | null

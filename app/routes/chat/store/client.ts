@@ -6,7 +6,7 @@ import {
   uiMessageChunkSchema,
   type UIMessageChunk
 } from 'ai'
-import type { MessagePart } from 'types'
+import type { MessagePart, ReasonPart, TextPart, ToolPart } from 'types'
 import { observable, runInAction } from 'mobx'
 import { cid, findLast } from '../../../lib/utils'
 export class ChatClient {
@@ -23,7 +23,7 @@ export class ChatClient {
     const userMessage = observable<MessageData>({
       id: cid(),
       chatId: this.store.state.selectedChat?.id || tChatId,
-      parts: [{ type: 'text', text: data.text }],
+      text: data.text,
       role: 'user',
       model: this.store.state.model!,
       updatedAt: dayjs().toDate()
@@ -137,39 +137,44 @@ export class ChatClient {
                     output: '',
                     completed: false,
                     state: 'start'
-                  })
+                  } as ToolPart)
                   parts[part.toolCallId] = part
                   this.addPart(part, aiMessage)
                   break
                 case 'tool-input-error':
                   if (parts[value.value.toolCallId]) {
-                    parts[value.value.toolCallId].state = 'error'
-                    parts[value.value.toolCallId].errorText =
+                    ;(parts[value.value.toolCallId] as ToolPart).state =
+                      'error' as const
+                    ;(parts[value.value.toolCallId] as ToolPart).errorText =
                       value.value.errorText
                   }
                   break
                 case 'tool-input-available':
                   if (parts[value.value.toolCallId]) {
-                    parts[value.value.toolCallId].input = value.value.input
+                    ;(parts[value.value.toolCallId] as ToolPart).input =
+                      value.value.input
                   }
                   break
                 case 'tool-output-error':
                   if (parts[value.value.toolCallId]) {
-                    parts[value.value.toolCallId].state = 'error'
-                    parts[value.value.toolCallId].errorText =
+                    ;(parts[value.value.toolCallId] as ToolPart).state =
+                      'error' as const
+                    ;(parts[value.value.toolCallId] as ToolPart).errorText =
                       value.value.errorText
                   }
                   break
                 case 'tool-input-delta':
                   if (parts[value.value.toolCallId]) {
-                    parts[value.value.toolCallId].output +=
+                    ;(parts[value.value.toolCallId] as ToolPart).output +=
                       value.value.inputTextDelta
                   }
                   break
                 case 'tool-output-available':
                   if (parts[value.value.toolCallId]) {
-                    parts[value.value.toolCallId].state = 'completed'
-                    parts[value.value.toolCallId].output = value.value.output
+                    ;(parts[value.value.toolCallId] as ToolPart).state =
+                      'completed' as const
+                    ;(parts[value.value.toolCallId] as ToolPart).output =
+                      value.value.output
                   }
                   break
                 case 'text-start':
@@ -177,8 +182,8 @@ export class ChatClient {
                     type: 'text',
                     text: ''
                   })
-                  parts[value.value.id] = textPart
-                  this.addPart(textPart, aiMessage)
+                  parts[value.value.id] = textPart as TextPart
+                  this.addPart(textPart as MessagePart, aiMessage)
                   break
                 case 'text-delta':
                   if (parts[value.value.id]) {
@@ -207,18 +212,19 @@ export class ChatClient {
                     type: 'reasoning',
                     reasoning: '',
                     completed: false
-                  })
+                  } as ReasonPart)
                   parts[value.value.id] = reasoningPart
-                  this.addPart(reasoningPart, aiMessage)
+                  this.addPart(reasoningPart as MessagePart, aiMessage)
                   break
                 case 'reasoning-delta':
                   if (parts[value.value.id]) {
-                    parts[value.value.id].reasoning += value.value.delta
+                    ;(parts[value.value.id] as ReasonPart).reasoning +=
+                      value.value.delta
                   }
                   break
                 case 'reasoning-end':
                   if (parts[value.value.id]) {
-                    parts[value.value.id].completed = true
+                    ;(parts[value.value.id] as ReasonPart).completed = true
                   }
                   break
                 case 'error':

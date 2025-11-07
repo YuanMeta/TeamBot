@@ -89,6 +89,7 @@ export const completions = async (req: Request, res: Response, db: Knex) => {
         reasoningTokens: 0,
         cachedInputTokens: 0
       }
+      let text = ''
       for (let s of data.steps) {
         let step = {
           usage: s.usage,
@@ -112,6 +113,9 @@ export const completions = async (req: Request, res: Response, db: Knex) => {
               type: 'text',
               text: c.text
             })
+            if (s.finishReason === 'stop' && c.text) {
+              text = c.text
+            }
           }
           if (c.type === 'tool-result' || c.type === 'tool-error') {
             parts.push({
@@ -148,6 +152,7 @@ export const completions = async (req: Request, res: Response, db: Knex) => {
             input_tokens: usage.inputTokens,
             output_tokens: usage.outputTokens,
             total_tokens: usage.totalTokens,
+            text: text,
             reasoning_tokens: usage.reasoningTokens,
             cached_input_tokens: usage.cachedInputTokens,
             model: chat.model

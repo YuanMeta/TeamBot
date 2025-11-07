@@ -2,16 +2,12 @@ import isHotkey from 'is-hotkey'
 import { Check, Copy, Pencil } from 'lucide-react'
 import { useCallback, useRef } from 'react'
 import { observer } from 'mobx-react-lite'
-import { runInAction } from 'mobx'
-import { useTranslation } from 'react-i18next'
 import { useStore, type MessageData } from '../../store/store'
 import { useTheme } from 'remix-themes'
 import { copyToClipboard } from '~/.client/copy'
 import { Textarea } from '~/components/ui/textarea'
 import { Button } from '~/components/ui/button'
 import { useLocalState } from '~/hooks/localState'
-import { getUserPrompt } from '~/lib/chat'
-import type { MessagePart } from 'types'
 const fileTypeIconMap = [
   [/\.pdf$/i, 'pdf', '#F54838'],
   [/\.docx$/i, 'doc', '#0078D4'],
@@ -24,11 +20,10 @@ const fileTypeIconMap = [
 export const UserMessage = observer<{ msg: MessageData }>(({ msg }) => {
   const [theme] = useTheme()
   const store = useStore()
-  const { t } = useTranslation()
   const ref = useRef<HTMLDivElement>(null)
   const [state, setState] = useLocalState({
     copied: false,
-    inputText: getUserPrompt(msg.parts as MessagePart[]) || '',
+    inputText: msg.text || '',
     isEditing: false
   })
   const getFileTypeIcon = useCallback(
@@ -58,7 +53,7 @@ export const UserMessage = observer<{ msg: MessageData }>(({ msg }) => {
   }, [])
 
   const copy = useCallback(() => {
-    copyToClipboard({ text: getUserPrompt(msg.parts as MessagePart[]) || '' })
+    copyToClipboard({ text: msg.text || '' })
     setState({ copied: true })
     setTimeout(() => {
       setState({ copied: false })
@@ -95,7 +90,7 @@ export const UserMessage = observer<{ msg: MessageData }>(({ msg }) => {
     if (isHotkey('escape', e)) {
       setState({
         isEditing: false,
-        inputText: getUserPrompt(msg.parts as MessagePart[]) || ''
+        inputText: msg.text || ''
       })
     }
   }, [])
@@ -123,7 +118,7 @@ export const UserMessage = observer<{ msg: MessageData }>(({ msg }) => {
               onClick={() => {
                 setState({
                   isEditing: false,
-                  inputText: getUserPrompt(msg.parts as MessagePart[]) || ''
+                  inputText: msg.text || ''
                 })
               }}
             >
@@ -150,7 +145,7 @@ export const UserMessage = observer<{ msg: MessageData }>(({ msg }) => {
             </Button>
           </div>
           <div className={'chat-user-message px-4 py-2 max-w-[80%] leading-5'}>
-            <div>{getUserPrompt(msg.parts as MessagePart[])}</div>
+            <div>{msg.text}</div>
           </div>
         </div>
       )}

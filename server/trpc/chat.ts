@@ -3,7 +3,6 @@ import { procedure } from './core'
 import z from 'zod'
 import dayjs from 'dayjs'
 import { tid } from 'server/lib/utils'
-import type { TableChat } from 'types/table'
 import { insertRecord, parseRecord } from 'server/lib/table'
 import { getMessagesWithFiles } from './query'
 export const chatRouter = {
@@ -51,12 +50,7 @@ export const chatRouter = {
             id: input.userMessageId,
             chat_id: chat[0].id,
             role: 'user',
-            parts: JSON.stringify([
-              {
-                type: 'text',
-                text: input.userPrompt
-              }
-            ]) as any,
+            text: input.userPrompt,
             user_id: ctx.userId,
             created_at: date
           })
@@ -229,12 +223,7 @@ export const chatRouter = {
             role: 'user',
             user_id: ctx.userId,
             created_at: date,
-            parts: JSON.stringify([
-              {
-                type: 'text',
-                text: input.userPrompt
-              }
-            ]) as any
+            text: input.userPrompt
           })
           .returning('*')
 

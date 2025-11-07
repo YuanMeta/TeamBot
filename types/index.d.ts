@@ -47,12 +47,14 @@ interface ToolPart {
   output: any
   state?: 'start' | 'completed' | 'error'
   errorText?: string
+  text?: string
 }
 
 interface ReasonPart {
   type: 'reasoning'
   reasoning: string
   completed: boolean
+  text?: string
 }
 
 interface TextPart {
@@ -60,7 +62,7 @@ interface TextPart {
   text: string
 }
 
-export type MessagePart = TextStep | ReasonStep | ToolPart
+export type MessagePart = TextPart | ReasonPart | ToolPart
 
 export interface SearchResult {
   title: string
