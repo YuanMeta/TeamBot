@@ -97,19 +97,10 @@ export const AddAssistant = observer(
         trpc.manage.getAssistant.query(id as string).then((res) => {
           if (res) {
             Object.keys(res).forEach((key) => {
-              if (key === 'tools') {
-                form.setFieldValue(
-                  'tools',
-                  res.tools.map(
-                    (t) => state.tools.find((tool) => tool.id === t)?.name!
-                  )
-                )
-              } else {
-                form.setFieldValue(
-                  key as keyof typeof form.state.values,
-                  res[key as keyof typeof res]
-                )
-              }
+              form.setFieldValue(
+                key as keyof typeof form.state.values,
+                res[key as keyof typeof res]
+              )
             })
           }
         })

@@ -312,8 +312,8 @@ export const manageRouter = {
     .input(
       z.object({
         mode: z.enum(['tavily', 'exa', 'google']),
-        api_key: z.string(),
-        cse_id: z.string().optional()
+        apiKey: z.string(),
+        cseId: z.string().optional()
       })
     )
     .mutation(async ({ input }) => {

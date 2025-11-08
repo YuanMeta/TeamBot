@@ -119,6 +119,9 @@
   color-scheme: dark;
 }
 
+.light {
+  color-scheme: light;
+}
 @layer base {
   * {
     @apply border-border outline-ring/50;

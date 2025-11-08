@@ -37,6 +37,7 @@ import exaIcon from '~/assets/exa.png'
 import tavilyIcon from '~/assets/tavily.png'
 import { Switch } from '~/components/ui/switch'
 import CodeEditor from '~/components/project/Code'
+import { toast } from 'sonner'
 
 const httpJsonSchema = z.object({
   url: z.url({ error: '请填写正确的请求URL' }),
@@ -107,7 +108,14 @@ export const AddTool = observer(
         params: {} as Record<string, any>
       },
       onSubmit: async ({ value }) => {
-        console.log('add')
+        if (value.type === 'web_search') {
+          try {
+            await trpc.manage.connectSearch.mutate(value.params as any)
+          } catch (e: any) {
+            toast.error(e.message)
+            return
+          }
+        }
         if (props.id) {
           await trpc.manage.updateTool.mutate({
             id: props.id,
@@ -179,8 +187,6 @@ export const AddTool = observer(
                   name={'id'}
                   validators={{
                     onSubmit: ({ value }) => {
-                      console.log('check', value)
-
                       if (!value) {
                         return { message: '请输入工具ID' }
                       }

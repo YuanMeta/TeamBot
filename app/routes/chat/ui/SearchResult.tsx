@@ -55,6 +55,7 @@ export const SearchResult = observer(() => {
           <a
             href={s.url}
             target={'_blank'}
+            key={s.url}
             className={
               'p-3 rounded-md space-y-1 hover:bg-accent cursor-default block'
             }
