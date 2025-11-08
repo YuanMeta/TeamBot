@@ -37,6 +37,7 @@ import exaIcon from '~/assets/exa.png'
 import tavilyIcon from '~/assets/tavily.png'
 import { Switch } from '~/components/ui/switch'
 import CodeEditor from '~/components/project/Code'
+import bochaIcon from '~/assets/bocha.png'
 import { toast } from 'sonner'
 
 const httpJsonSchema = z.object({
@@ -59,6 +60,29 @@ const httpJsonSchema = z.object({
     .array()
     .optional()
 })
+
+const searchModes = [
+  {
+    value: 'bocha',
+    label: '博查搜索',
+    icon: bochaIcon
+  },
+  {
+    value: 'tavily',
+    label: 'Tavily',
+    icon: tavilyIcon
+  },
+  {
+    value: 'google',
+    label: 'Google',
+    icon: googleIcon
+  },
+  {
+    value: 'exa',
+    label: 'Exa',
+    icon: exaIcon
+  }
+]
 
 const useTexts = () => {
   return useMemo(
@@ -421,45 +445,24 @@ export const AddTool = observer(
                                       <SelectValue placeholder='选择搜索模式' />
                                     </SelectTrigger>
                                     <SelectContent>
-                                      <SelectItem value={'tavily'}>
-                                        <div
-                                          className={
-                                            'flex items-center gap-1.5'
-                                          }
+                                      {searchModes.map((mode) => (
+                                        <SelectItem
+                                          key={mode.value}
+                                          value={mode.value}
                                         >
-                                          <img
-                                            src={tavilyIcon}
-                                            className={'size-4'}
-                                          />
-                                          Tavily
-                                        </div>
-                                      </SelectItem>
-                                      <SelectItem value={'google'}>
-                                        <div
-                                          className={
-                                            'flex items-center gap-1.5'
-                                          }
-                                        >
-                                          <img
-                                            src={googleIcon}
-                                            className={'size-4'}
-                                          />
-                                          Google
-                                        </div>
-                                      </SelectItem>
-                                      <SelectItem value={'exa'}>
-                                        <div
-                                          className={
-                                            'flex items-center gap-1.5'
-                                          }
-                                        >
-                                          <img
-                                            src={exaIcon}
-                                            className={'size-4'}
-                                          />
-                                          Exa
-                                        </div>
-                                      </SelectItem>
+                                          <div
+                                            className={
+                                              'flex items-center gap-1.5'
+                                            }
+                                          >
+                                            <img
+                                              src={mode.icon}
+                                              className={'size-4'}
+                                            />
+                                            {mode.label}
+                                          </div>
+                                        </SelectItem>
+                                      ))}
                                     </SelectContent>
                                   </Select>
                                   {isInvalid && (

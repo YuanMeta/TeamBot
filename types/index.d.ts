@@ -26,7 +26,7 @@ export interface ChatFile {
 }
 
 export interface SearchOptions {
-  mode?: 'openrouter' | 'disabled' | 'google' | 'exa' | 'tavily'
+  mode?: 'google' | 'exa' | 'tavily' | 'bocha'
   apiKey?: string
   cseId?: string
   auto?: boolean
@@ -67,7 +67,8 @@ export type MessagePart = TextPart | ReasonPart | ToolPart
 export interface SearchResult {
   title: string
   url: string
-  summary: string
+  summary?: string
+  snippet?: string
   score?: number
   date?: string
   favicon?: string

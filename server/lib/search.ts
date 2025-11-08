@@ -51,12 +51,40 @@ export const runWebSearch = async (
     const searchResults = response.data
     return searchResults?.items?.map((item) => ({
       title: item.title!,
-      summary: item.snippet!,
+      snippet: item.snippet!,
       url: item.link!,
       favicon: item.link
         ? `https://www.google.com/s2/favicons?domain=${new URL(item.link).host}&sz=64`
         : undefined
     }))
+  }
+  if (options.mode === 'bocha') {
+    const res = await fetch('https://api.bochaai.com/v1/web-search', {
+      method: 'POST',
+      body: JSON.stringify({
+        query: query,
+        summary: true
+      }),
+      headers: {
+        'Content-Type': 'application/json',
+        Authorization: `Bearer ${options.apiKey}`
+      }
+    })
+    const data = await res.json()
+    if (!res.ok) {
+      throw new Error(data?.message)
+    }
+    try {
+      return data.data.webPages.value.map((item: any) => ({
+        title: item.name,
+        summary: item.summary,
+        url: item.url,
+        favicon: item.siteIcon,
+        date: item.datePublished
+      }))
+    } catch (e: any) {
+      throw new Error(e.message || '搜索失败，请检查API密钥是否正确')
+    }
   }
 }
 export const createWebSearchTool = (options: SearchOptions) => {
