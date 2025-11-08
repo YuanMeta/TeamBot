@@ -68,7 +68,7 @@ export interface SearchResult {
   title: string
   url: string
   summary: string
-  score: number
-  date: string
-  favicon: string
+  score?: number
+  date?: string
+  favicon?: string
 }

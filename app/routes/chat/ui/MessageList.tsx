@@ -49,7 +49,6 @@ export const AiMessageList = observer(() => {
           scrollRef.current!.scrollTop + scrollRef.current!.clientHeight <
             listRef.current!.scrollHeight - 300
       })
-      // 检测是否滚动到顶部，加载更多消息
       if (
         scrollRef.current &&
         scrollRef.current.scrollTop < 100 &&
@@ -59,7 +58,6 @@ export const AiMessageList = observer(() => {
       ) {
         const previousScrollHeight = listRef.current!.scrollHeight
         store.loadMessages(store.state.selectedChat.id).then(() => {
-          // 恢复滚动位置，避免跳动
           requestAnimationFrame(() => {
             if (scrollRef.current && listRef.current) {
               const newScrollHeight = listRef.current.scrollHeight

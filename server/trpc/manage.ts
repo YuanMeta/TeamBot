@@ -6,6 +6,7 @@ import { kdb } from '../lib/knex'
 import { tid } from 'server/lib/utils'
 import { insertRecord, parseRecord } from 'server/lib/table'
 import { adminProcedure } from './core'
+import { runWebSearch } from 'server/lib/search'
 export const manageRouter = {
   checkConnect: adminProcedure
     .input(
@@ -306,5 +307,16 @@ export const manageRouter = {
         })
       }
       return ctx.db('tools').where({ id: input.toolId }).delete()
+    }),
+  connectSearch: adminProcedure
+    .input(
+      z.object({
+        mode: z.enum(['tavily', 'exa', 'google']),
+        api_key: z.string(),
+        cse_id: z.string().optional()
+      })
+    )
+    .mutation(async ({ input }) => {
+      return runWebSearch('Latest news about iPhone', input)
     })
 } satisfies TRPCRouterRecord
