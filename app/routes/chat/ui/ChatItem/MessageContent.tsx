@@ -6,6 +6,7 @@ import { useStore, type MessageData } from '../../store/store'
 import { Reasoning } from './Reasion'
 import { HttpTool, UrlTool, WebSearchTool } from './Tools'
 import { formatStreamText } from '~/lib/chat'
+import type { ToolPart } from 'types'
 
 export interface MessageContentProps {
   fontSize?: number
@@ -22,7 +23,7 @@ const MessageContent = observer<{ msg: MessageData }>(({ msg }) => {
         {msg.parts?.map((p, index) => (
           <div
             key={index}
-            className={`${p.state === 'completed' && store.toolsMap.get(p.toolName)?.type === 'http' ? 'hidden' : ''}`}
+            className={`${(p as ToolPart).state === 'completed' && store.toolsMap.get((p as ToolPart).toolName)?.type === 'http' ? 'hidden' : ''}`}
           >
             {p.type === 'text' && (
               <Markdown

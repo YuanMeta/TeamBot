@@ -57,18 +57,16 @@ export const AiMessageList = observer(() => {
         store.loadMoreMessages &&
         store.state.selectedChat?.id
       ) {
-        console.log('load')
-
-        // const previousScrollHeight = listRef.current!.scrollHeight
+        const previousScrollHeight = listRef.current!.scrollHeight
         store.loadMessages(store.state.selectedChat.id).then(() => {
           // 恢复滚动位置，避免跳动
-          // requestAnimationFrame(() => {
-          //   if (scrollRef.current && listRef.current) {
-          //     const newScrollHeight = listRef.current.scrollHeight
-          //     // const scrollDiff = newScrollHeight - previousScrollHeight
-          //     // scrollRef.current.scrollTop = scrollDiff
-          //   }
-          // })
+          requestAnimationFrame(() => {
+            if (scrollRef.current && listRef.current) {
+              const newScrollHeight = listRef.current.scrollHeight
+              const scrollDiff = newScrollHeight - previousScrollHeight
+              scrollRef.current.scrollTop = scrollDiff
+            }
+          })
         })
       }
     }, 30)

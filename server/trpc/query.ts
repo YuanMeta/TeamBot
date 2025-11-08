@@ -9,11 +9,12 @@ export const getMessagesWithFiles = async (
     offset: number
   }
 ) => {
+  const limit = 10
   const messages = await db('messages')
     .where({ chat_id: data.chatId, user_id: data.userId })
     .select('*')
     .offset(data.offset)
-    .limit(10)
+    .limit(limit)
     .orderBy('created_at', 'desc')
   const files = await db('message_files').whereIn(
     'message_id',
@@ -23,5 +24,5 @@ export const getMessagesWithFiles = async (
     ...parseRecord(message),
     files: files.filter((file) => file.message_id === message.id)
   }))
-  return { messages: list, loadMore: list.length === 10 }
+  return { messages: list, loadMore: list.length === limit }
 }
