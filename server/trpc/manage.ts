@@ -311,7 +311,7 @@ export const manageRouter = {
   connectSearch: adminProcedure
     .input(
       z.object({
-        mode: z.enum(['tavily', 'exa', 'google', 'bocha']),
+        mode: z.enum(['tavily', 'exa', 'google', 'bocha', 'zhipu']),
         apiKey: z.string(),
         cseId: z.string().optional()
       })

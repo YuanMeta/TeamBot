@@ -38,6 +38,7 @@ import tavilyIcon from '~/assets/tavily.png'
 import { Switch } from '~/components/ui/switch'
 import CodeEditor from '~/components/project/Code'
 import bochaIcon from '~/assets/bocha.png'
+import zhipuIcon from '~/assets/zhipu.png'
 import { toast } from 'sonner'
 
 const httpJsonSchema = z.object({
@@ -63,19 +64,24 @@ const httpJsonSchema = z.object({
 
 const searchModes = [
   {
+    value: 'zhipu',
+    label: '智谱搜索',
+    icon: zhipuIcon
+  },
+  {
     value: 'bocha',
     label: '博查搜索',
     icon: bochaIcon
   },
   {
-    value: 'tavily',
-    label: 'Tavily',
-    icon: tavilyIcon
-  },
-  {
     value: 'google',
     label: 'Google',
     icon: googleIcon
+  },
+  {
+    value: 'tavily',
+    label: 'Tavily',
+    icon: tavilyIcon
   },
   {
     value: 'exa',

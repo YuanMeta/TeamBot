@@ -86,6 +86,35 @@ export const runWebSearch = async (
       throw new Error(e.message || '搜索失败，请检查API密钥是否正确')
     }
   }
+  if (options.mode === 'zhipu') {
+    const res = await fetch('https://open.bigmodel.cn/api/paas/v4/web_search', {
+      method: 'POST',
+      body: JSON.stringify({
+        search_query: query,
+        search_engine: 'search_std',
+        search_intent: false
+      }),
+      headers: {
+        'Content-Type': 'application/json',
+        Authorization: `Bearer ${options.apiKey}`
+      }
+    })
+    const data = await res.json()
+    if (!res.ok) {
+      throw new Error(data?.error?.message)
+    }
+    try {
+      return data.search_result.map((item: any) => ({
+        title: item.title,
+        summary: item.content,
+        url: item.link,
+        favicon: item.icon,
+        date: item.publish_date
+      }))
+    } catch (e: any) {
+      throw new Error(e.message || '搜索失败，请检查API密钥是否正确')
+    }
+  }
 }
 export const createWebSearchTool = (options: SearchOptions) => {
   return tool({

@@ -26,7 +26,7 @@ export interface ChatFile {
 }
 
 export interface SearchOptions {
-  mode?: 'google' | 'exa' | 'tavily' | 'bocha'
+  mode?: 'google' | 'exa' | 'tavily' | 'bocha' | 'zhipu'
   apiKey?: string
   cseId?: string
   auto?: boolean
