@@ -20,18 +20,28 @@ import { ChevronLeft, Earth, Wrench } from 'lucide-react'
 import { SelectFilter } from '~/components/ui/select-filter'
 import { isFormInValid } from '~/lib/utils'
 import { trpc } from '~/.client/trpc'
-import { useCallback, useEffect } from 'react'
+import { useCallback, useEffect, useMemo } from 'react'
 import type { TrpcRequestError } from 'types'
 import { toast } from 'sonner'
 import { useLocalState } from '~/hooks/localState'
 import { Spinner } from '~/components/ui/spinner'
 import type { TableTool } from 'types/table'
+import {
+  Card,
+  CardAction,
+  CardContent,
+  CardDescription,
+  CardHeader,
+  CardTitle
+} from '~/components/ui/card'
 
 export const AddAssistant = observer(
   (props: { open: boolean; onClose: () => void; id: string | null }) => {
     const [state, setState] = useLocalState({
       submitting: false,
-      tools: [] as TableTool[]
+      tools: [] as TableTool[],
+      update: false,
+      remoteModels: [] as { id: string; model: string; provider: string }[]
     })
     const form = useForm({
       defaultValues: {
@@ -106,273 +116,340 @@ export const AddAssistant = observer(
         })
       }
     }, [])
+    const modelOptions = useMemo(() => {
+      const mode = form.getFieldValue('mode')
+      return state.remoteModels
+        .filter(
+          (m) =>
+            !form.state.values.mode || m.provider === form.state.values.mode
+        )
+        .map((m) => {
+          return {
+            label: m.model,
+            value: m.model
+          }
+        })
+    }, [state.remoteModels.length, state.update])
     useEffect(() => {
       init(props.id)
-    }, [props.id])
+      trpc.manage.getModels.query({}).then((res) => {
+        setState({ remoteModels: res })
+      })
+    }, [props.id, state.update])
     return (
-      <div className={'max-w-[500px] mx-auto py-4'}>
-        <Button variant={'outline'} className={'mb-5'} onClick={props.onClose}>
+      <div className={'max-w-[1000px] mx-auto py-4'}>
+        <Card className='w-full'>
+          <CardHeader>
+            <CardTitle className={'flex justify-between items-center'}>
+              <Button variant={'outline'} onClick={props.onClose}>
+                <ChevronLeft />
+                返回
+              </Button>
+              <span className={'ml-2 text-lg'}>添加助手开启对话</span>
+              <div className={'w-20'}></div>
+            </CardTitle>
+          </CardHeader>
+          <CardContent>
+            <form
+              onSubmit={(e) => {
+                e.preventDefault()
+                form.handleSubmit()
+              }}
+            >
+              <div>
+                <div className={'max-w-md'}>
+                  <FieldGroup>
+                    <form.Field
+                      name='name'
+                      validators={{
+                        onSubmit: ({ value }) => {
+                          if (!value) {
+                            return { message: '请输入名称' }
+                          }
+                          return undefined
+                        }
+                      }}
+                      children={(field) => {
+                        const isInvalid =
+                          field.state.meta.isTouched &&
+                          !field.state.meta.isValid
+                        return (
+                          <Field data-invalid={isInvalid}>
+                            <FieldLabel htmlFor={field.name} required>
+                              名称
+                            </FieldLabel>
+                            <Input
+                              maxLength={200}
+                              id={field.name}
+                              name={field.name}
+                              value={field.state.value}
+                              // onBlur={field.handleBlur}
+                              onChange={(e) =>
+                                field.handleChange(e.target.value)
+                              }
+                              aria-invalid={isInvalid}
+                              placeholder='输入名称'
+                              autoComplete='off'
+                            />
+                            {isInvalid && (
+                              <FieldError errors={field.state.meta.errors} />
+                            )}
+                          </Field>
+                        )
+                      }}
+                    />
+                    <form.Field
+                      name='mode'
+                      validators={{
+                        onSubmit: ({ value }) => {
+                          if (!value) {
+                            return { message: '请选择模型提供方' }
+                          }
+                          return undefined
+                        }
+                      }}
+                      children={(field) => {
+                        const isInvalid =
+                          field.state.meta.isTouched &&
+                          !field.state.meta.isValid
+
+                        return (
+                          <Field data-invalid={isInvalid}>
+                            <FieldLabel htmlFor={field.name} required>
+                              提供方
+                            </FieldLabel>
+                            <Select
+                              value={field.state.value}
+                              onValueChange={(value) => {
+                                field.setValue(value)
+                                form.setFieldValue('models', [])
+                                setState({ update: !state.update })
+                              }}
+                            >
+                              <SelectTrigger className={'w-full'}>
+                                <SelectValue placeholder='OpenRouter' />
+                              </SelectTrigger>
+                              <SelectContent>
+                                <SelectItem value='openrouter'>
+                                  <ModelIcon mode='openrouter' size={20} />
+                                  OpenRouter
+                                </SelectItem>
+                                <SelectItem value='openai'>
+                                  <ModelIcon mode='openai' size={20} />
+                                  OpenAI
+                                </SelectItem>
+                                <SelectItem value='gemini'>
+                                  <ModelIcon mode='gemini' size={20} />
+                                  Gemini
+                                </SelectItem>
+                                <SelectItem value='deepseek'>
+                                  <ModelIcon mode='deepseek' size={20} />
+                                  DeepSeek
+                                </SelectItem>
+                                <SelectItem value='qwen'>
+                                  <ModelIcon mode='qwen' size={20} />
+                                  Qwen
+                                </SelectItem>
+                                <SelectItem value='anthropic'>
+                                  <ModelIcon mode='anthropic' size={20} />
+                                  Anthropic
+                                </SelectItem>
+                              </SelectContent>
+                            </Select>
+                            {isInvalid && (
+                              <FieldError errors={field.state.meta.errors} />
+                            )}
+                          </Field>
+                        )
+                      }}
+                    />
+                    <form.Field
+                      name='models'
+                      key={JSON.stringify(modelOptions)}
+                      validators={{
+                        onSubmit: ({ value }) => {
+                          if (!value.length) {
+                            return { message: '请添加模型' }
+                          }
+                          return undefined
+                        }
+                      }}
+                      children={(field) => {
+                        return (
+                          <Field>
+                            <FieldLabel
+                              htmlFor={field.name}
+                              required
+                              help={
+                                '模型来自OpenRouter数据，请注意，有些模型可能官方平台不支持。'
+                              }
+                            >
+                              模型
+                            </FieldLabel>
+                            <SelectFilter
+                              options={modelOptions}
+                              value={field.state.value}
+                              placeholder={'添加模型'}
+                              onValueChange={(value) => {
+                                field.setValue(value as string[])
+                              }}
+                              searchPlaceholder={'使用回车创建模型'}
+                              allowCreateOnEnter={true}
+                              multiple={true}
+                            />
+                            {isFormInValid(field) && (
+                              <FieldError errors={field.state.meta.errors} />
+                            )}
+                          </Field>
+                        )
+                      }}
+                    />
+                    <form.Field
+                      name='api_key'
+                      children={(field) => {
+                        const isInvalid =
+                          field.state.meta.isTouched &&
+                          !field.state.meta.isValid
+                        return (
+                          <Field data-invalid={isInvalid}>
+                            <FieldLabel htmlFor={field.name}>
+                              API Key
+                            </FieldLabel>
+                            <Input
+                              id={field.name}
+                              name={field.name}
+                              value={field.state.value ?? undefined}
+                              onBlur={field.handleBlur}
+                              maxLength={200}
+                              onChange={(e) =>
+                                field.handleChange(e.target.value)
+                              }
+                              aria-invalid={isInvalid}
+                              placeholder='输入API Key'
+                              autoComplete='off'
+                            />
+                            {isInvalid && (
+                              <FieldError errors={field.state.meta.errors} />
+                            )}
+                          </Field>
+                        )
+                      }}
+                    />
+                    <form.Field
+                      name='base_url'
+                      children={(field) => {
+                        const isInvalid =
+                          field.state.meta.isTouched &&
+                          !field.state.meta.isValid
+                        return (
+                          <Field data-invalid={isInvalid}>
+                            <FieldLabel htmlFor={field.name}>
+                              Base URL
+                            </FieldLabel>
+                            <Input
+                              id={field.name}
+                              name={field.name}
+                              value={field.state.value ?? undefined}
+                              onBlur={field.handleBlur}
+                              maxLength={200}
+                              onChange={(e) =>
+                                field.handleChange(e.target.value)
+                              }
+                              aria-invalid={isInvalid}
+                              placeholder='Base URL'
+                              autoComplete='off'
+                            />
+                            {isInvalid && (
+                              <FieldError errors={field.state.meta.errors} />
+                            )}
+                          </Field>
+                        )
+                      }}
+                    />
+
+                    <form.Field
+                      name='tools'
+                      key={state.tools.length}
+                      children={(field) => {
+                        return (
+                          <Field>
+                            <FieldLabel
+                              htmlFor={field.name}
+                              help={
+                                '如果希望模型拥有获取最新信息的能力，请添加网络搜索工具。'
+                              }
+                            >
+                              调用工具
+                            </FieldLabel>
+                            <SelectFilter
+                              options={state.tools.map((t) => {
+                                return {
+                                  label: t.name,
+                                  value: t.id,
+                                  render: (
+                                    <div className={'space-y-1'}>
+                                      <div
+                                        className={
+                                          'text-sm flex items-center gap-1'
+                                        }
+                                      >
+                                        <span className={'text-sm'}>
+                                          {t.name}
+                                        </span>
+                                        {t.type === 'http' && (
+                                          <Wrench
+                                            size={12}
+                                            className={'size-3'}
+                                          />
+                                        )}
+                                        {t.type === 'web_search' && (
+                                          <Earth
+                                            size={12}
+                                            className={'size-3'}
+                                          />
+                                        )}
+                                      </div>
+                                      <div
+                                        title={t.description}
+                                        className={
+                                          'text-xs text-secondary-foreground/80 line-clamp-2'
+                                        }
+                                      >
+                                        {t.description}
+                                      </div>
+                                    </div>
+                                  )
+                                }
+                              })}
+                              value={field.state.value}
+                              placeholder={'选择工具'}
+                              onValueChange={(value) => {
+                                field.setValue(value as string[])
+                              }}
+                              multiple={true}
+                            />
+                          </Field>
+                        )
+                      }}
+                    />
+                  </FieldGroup>
+                  <Button
+                    type={'submit'}
+                    className={'w-full mt-10'}
+                    disabled={state.submitting}
+                  >
+                    {state.submitting && <Spinner />}
+                    {props.id ? '更新' : '创建'}
+                  </Button>
+                </div>
+              </div>
+            </form>
+          </CardContent>
+        </Card>
+        {/* <Button variant={'outline'} className={'mb-5'} onClick={props.onClose}>
           <ChevronLeft />
           返回
-        </Button>
-        <form
-          onSubmit={(e) => {
-            e.preventDefault()
-            form.handleSubmit()
-          }}
-        >
-          <FieldGroup>
-            <form.Field
-              name='name'
-              validators={{
-                onSubmit: ({ value }) => {
-                  if (!value) {
-                    return { message: '请输入名称' }
-                  }
-                  return undefined
-                }
-              }}
-              children={(field) => {
-                const isInvalid =
-                  field.state.meta.isTouched && !field.state.meta.isValid
-                return (
-                  <Field data-invalid={isInvalid}>
-                    <FieldLabel htmlFor={field.name} required>
-                      名称
-                    </FieldLabel>
-                    <Input
-                      maxLength={200}
-                      id={field.name}
-                      name={field.name}
-                      value={field.state.value}
-                      // onBlur={field.handleBlur}
-                      onChange={(e) => field.handleChange(e.target.value)}
-                      aria-invalid={isInvalid}
-                      placeholder='输入名称'
-                      autoComplete='off'
-                    />
-                    {isInvalid && (
-                      <FieldError errors={field.state.meta.errors} />
-                    )}
-                  </Field>
-                )
-              }}
-            />
-            <form.Field
-              name='mode'
-              validators={{
-                onSubmit: ({ value }) => {
-                  if (!value) {
-                    return { message: '请选择模型提供方' }
-                  }
-                  return undefined
-                }
-              }}
-              children={(field) => {
-                const isInvalid =
-                  field.state.meta.isTouched && !field.state.meta.isValid
-
-                return (
-                  <Field data-invalid={isInvalid}>
-                    <FieldLabel htmlFor={field.name} required>
-                      提供方
-                    </FieldLabel>
-                    <Select
-                      value={field.state.value}
-                      onValueChange={(value) => {
-                        field.setValue(value)
-                        form.setFieldValue('models', [])
-                      }}
-                    >
-                      <SelectTrigger className={'w-full'}>
-                        <SelectValue placeholder='OpenRouter' />
-                      </SelectTrigger>
-                      <SelectContent>
-                        <SelectItem value='openrouter'>
-                          <ModelIcon mode='openrouter' size={20} />
-                          OpenRouter
-                        </SelectItem>
-                        <SelectItem value='openai'>
-                          <ModelIcon mode='openai' size={20} />
-                          OpenAI
-                        </SelectItem>
-                        <SelectItem value='gemini'>
-                          <ModelIcon mode='gemini' size={20} />
-                          Gemini
-                        </SelectItem>
-                        <SelectItem value='deepseek'>
-                          <ModelIcon mode='deepseek' size={20} />
-                          DeepSeek
-                        </SelectItem>
-                        <SelectItem value='qwen'>
-                          <ModelIcon mode='qwen' size={20} />
-                          Qwen
-                        </SelectItem>
-                        <SelectItem value='anthropic'>
-                          <ModelIcon mode='anthropic' size={20} />
-                          Anthropic
-                        </SelectItem>
-                      </SelectContent>
-                    </Select>
-                    {isInvalid && (
-                      <FieldError errors={field.state.meta.errors} />
-                    )}
-                  </Field>
-                )
-              }}
-            />
-            <form.Field
-              name='models'
-              validators={{
-                onSubmit: ({ value }) => {
-                  if (!value.length) {
-                    return { message: '请添加模型' }
-                  }
-                  return undefined
-                }
-              }}
-              children={(field) => {
-                return (
-                  <Field>
-                    <FieldLabel htmlFor={field.name} required>
-                      模型
-                    </FieldLabel>
-                    <SelectFilter
-                      options={[]}
-                      value={field.state.value}
-                      placeholder={'添加模型'}
-                      onValueChange={(value) => {
-                        field.setValue(value as string[])
-                      }}
-                      searchPlaceholder={'使用回车创建'}
-                      allowCreateOnEnter={true}
-                      multiple={true}
-                    />
-                    {isFormInValid(field) && (
-                      <FieldError errors={field.state.meta.errors} />
-                    )}
-                  </Field>
-                )
-              }}
-            />
-            <form.Field
-              name='api_key'
-              children={(field) => {
-                const isInvalid =
-                  field.state.meta.isTouched && !field.state.meta.isValid
-                return (
-                  <Field data-invalid={isInvalid}>
-                    <FieldLabel htmlFor={field.name}>API Key</FieldLabel>
-                    <Input
-                      id={field.name}
-                      name={field.name}
-                      value={field.state.value ?? undefined}
-                      onBlur={field.handleBlur}
-                      maxLength={200}
-                      onChange={(e) => field.handleChange(e.target.value)}
-                      aria-invalid={isInvalid}
-                      placeholder='输入API Key'
-                      autoComplete='off'
-                    />
-                    {isInvalid && (
-                      <FieldError errors={field.state.meta.errors} />
-                    )}
-                  </Field>
-                )
-              }}
-            />
-            <form.Field
-              name='base_url'
-              children={(field) => {
-                const isInvalid =
-                  field.state.meta.isTouched && !field.state.meta.isValid
-                return (
-                  <Field data-invalid={isInvalid}>
-                    <FieldLabel htmlFor={field.name}>Base URL</FieldLabel>
-                    <Input
-                      id={field.name}
-                      name={field.name}
-                      value={field.state.value ?? undefined}
-                      onBlur={field.handleBlur}
-                      maxLength={200}
-                      onChange={(e) => field.handleChange(e.target.value)}
-                      aria-invalid={isInvalid}
-                      placeholder='Base URL'
-                      autoComplete='off'
-                    />
-                    {isInvalid && (
-                      <FieldError errors={field.state.meta.errors} />
-                    )}
-                  </Field>
-                )
-              }}
-            />
-
-            <form.Field
-              name='tools'
-              key={state.tools.length}
-              children={(field) => {
-                return (
-                  <Field>
-                    <FieldLabel
-                      htmlFor={field.name}
-                      help={
-                        '如果希望模型拥有获取最新信息的能力，请添加网络搜索工具。'
-                      }
-                    >
-                      调用工具
-                    </FieldLabel>
-                    <SelectFilter
-                      options={state.tools.map((t) => {
-                        return {
-                          label: t.name,
-                          value: t.id,
-                          render: (
-                            <div className={'space-y-1'}>
-                              <div
-                                className={'text-sm flex items-center gap-1'}
-                              >
-                                <span className={'text-sm'}>{t.name}</span>
-                                {t.type === 'http' && (
-                                  <Wrench size={12} className={'size-3'} />
-                                )}
-                                {t.type === 'web_search' && (
-                                  <Earth size={12} className={'size-3'} />
-                                )}
-                              </div>
-                              <div
-                                title={t.description}
-                                className={
-                                  'text-xs text-secondary-foreground/80 line-clamp-2'
-                                }
-                              >
-                                {t.description}
-                              </div>
-                            </div>
-                          )
-                        }
-                      })}
-                      value={field.state.value}
-                      placeholder={'选择工具'}
-                      onValueChange={(value) => {
-                        field.setValue(value as string[])
-                      }}
-                      multiple={true}
-                    />
-                  </Field>
-                )
-              }}
-            />
-          </FieldGroup>
-          <Button
-            type={'submit'}
-            className={'w-full mt-10'}
-            disabled={state.submitting}
-          >
-            {state.submitting && <Spinner />}
-            {props.id ? '更新' : '创建'}
-          </Button>
-        </form>
+        </Button> */}
       </div>
     )
   }

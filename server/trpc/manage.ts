@@ -318,5 +318,14 @@ export const manageRouter = {
     )
     .mutation(async ({ input }) => {
       return runWebSearch('Latest news about iPhone', input)
+    }),
+  getModels: adminProcedure
+    .input(
+      z.object({
+        provider: z.string().optional()
+      })
+    )
+    .query(async ({ input, ctx }) => {
+      return ctx.db('models').where(input).select('id', 'model', 'provider')
     })
 } satisfies TRPCRouterRecord

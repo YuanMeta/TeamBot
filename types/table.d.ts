@@ -10,6 +10,7 @@ declare module 'knex/types/tables' {
     message_files: TableMessageFile
     tools: TableTool
     assistant_tools: TableAssistantTool
+    models: TableModel
   }
 }
 
@@ -120,4 +121,11 @@ export interface TableAssistantTool {
   id: string
   assistant_id: string
   tool_id: string
+}
+
+export interface TableModel {
+  id: string
+  model: string
+  provider: string
+  options: Record<string, any>
 }
