@@ -1,0 +1,34 @@
+import type { Knex } from 'knex'
+import { tid } from './utils'
+
+const providerMap = new Map([['google', 'gemini']])
+export const fetchOpenRouterModels = async (db: Knex) => {
+  try {
+    const res = await fetch('https://openrouter.ai/api/v1/models').then((res) =>
+      res.json()
+    )
+    const data = res.data
+
+    // 批量准备要插入的数据
+    const modelsToInsert = data
+      .filter((model: any) => model.supported_parameters?.includes('tools'))
+      .map((model: any) => {
+        const [provider, modelId] = model.id.split('/')
+        return {
+          id: tid(),
+          model: modelId.split(':')[0],
+          provider: providerMap.get(provider) ?? provider,
+          options: JSON.stringify(model)
+        }
+      })
+
+    if (modelsToInsert.length > 0) {
+      await db('models')
+        .insert(modelsToInsert)
+        .onConflict(['model', 'provider'])
+        .ignore()
+    }
+  } catch (e) {
+    console.error('Failed to fetch OpenRouter models', e)
+  }
+}

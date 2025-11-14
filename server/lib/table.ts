@@ -136,6 +136,16 @@ export const tableSchema = async (db: Knex) => {
     })
   }
 
+  if (!(await db.schema.hasTable('models'))) {
+    await db.schema.createTable('models', (table) => {
+      table.string('id').primary()
+      table.string('model').notNullable()
+      table.string('provider').notNullable()
+      table.json('options').nullable()
+      table.unique(['model', 'provider'])
+    })
+  }
+
   const user = await db('users').first()
   if (!user) {
     await db('users').insert({

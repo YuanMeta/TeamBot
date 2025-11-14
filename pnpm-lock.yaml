@@ -20,9 +20,6 @@ dependencies:
   '@ai-sdk/react':
     specifier: ^2.0.89
     version: 2.0.89(react@19.2.0)(zod@4.1.12)
-  '@cacheable/memory':
-    specifier: ^2.0.4
-    version: 2.0.4
   '@codemirror/lang-javascript':
     specifier: ^6.2.4
     version: 6.2.4
@@ -182,6 +179,9 @@ dependencies:
   express:
     specifier: ^5.1.0
     version: 5.1.0
+  flat-cache:
+    specifier: ^6.1.18
+    version: 6.1.18
   framer-motion:
     specifier: ^12.23.24
     version: 12.23.24(react-dom@19.2.0)(react@19.2.0)
@@ -996,6 +996,12 @@ packages:
 
   /@braintree/sanitize-url@7.1.1:
     resolution: {integrity: sha512-i1L7noDNxtFyL5DmZafWy1wRVhGehQmzZaz1HiN5e7iylJMSZR7ekOV7NsIqa5qBldlLrsKv4HbgFUVlQrz8Mw==}
+    dev: false
+
+  /@cacheable/memoize@2.0.3:
+    resolution: {integrity: sha512-hl9wfQgpiydhQEIv7fkjEzTGE+tcosCXLKFDO707wYJ/78FVOlowb36djex5GdbSyeHnG62pomYLMuV/OT8Pbw==}
+    dependencies:
+      '@cacheable/utils': 2.2.0
     dev: false
 
   /@cacheable/memory@2.0.4:
@@ -5288,6 +5294,17 @@ packages:
     engines: {node: '>=8'}
     dev: true
 
+  /cacheable@2.1.1:
+    resolution: {integrity: sha512-LmF4AXiSNdiRbI2UjH8pAp9NIXxeQsTotpEaegPiDcnN0YPygDJDV3l/Urc0mL72JWdATEorKqIHEx55nDlONg==}
+    dependencies:
+      '@cacheable/memoize': 2.0.3
+      '@cacheable/memory': 2.0.4
+      '@cacheable/utils': 2.2.0
+      hookified: 1.12.2
+      keyv: 5.5.3
+      qified: 0.5.1
+    dev: false
+
   /call-bind-apply-helpers@1.0.2:
     resolution: {integrity: sha512-Sp1ablJ0ivDkSzjcaJdxEunN5/XvksFJ2sMBFfq6x0ryhQV/2b/KwFe21cMpmHtPOSij8K99/wSfoEuTObmuMQ==}
     engines: {node: '>= 0.4'}
@@ -6548,6 +6565,18 @@ packages:
 
   /find-root@1.1.0:
     resolution: {integrity: sha512-NKfW6bec6GfKc0SGx1e07QZY9PE99u0Bft/0rzSD5k3sO/vwkVUpDUKVm5Gpp5Ue3YfShPFTX2070tDs5kB9Ng==}
+    dev: false
+
+  /flat-cache@6.1.18:
+    resolution: {integrity: sha512-JUPnFgHMuAVmLmoH9/zoZ6RHOt5n9NlUw/sDXsTbROJ2SFoS2DS4s+swAV6UTeTbGH/CAsZIE6M8TaG/3jVxgQ==}
+    dependencies:
+      cacheable: 2.1.1
+      flatted: 3.3.3
+      hookified: 1.12.2
+    dev: false
+
+  /flatted@3.3.3:
+    resolution: {integrity: sha512-GX+ysw4PBCz0PzosHDepZGANEuFCMLrnRTiEy9McGjmkCQYwRq4A/X786G/fjM/+OjsWSU1ZrY5qyARZmO/uwg==}
     dev: false
 
   /follow-redirects@1.15.11:
@@ -9026,6 +9055,13 @@ packages:
   /punycode@2.3.1:
     resolution: {integrity: sha512-vYt7UD1U9Wg6138shLtLOvdAu+8DsC/ilFtEVHcH+wydcSpNE20AfSOduf6MkRFahL5FY7X1oU7nKVZFtfq8Fg==}
     engines: {node: '>=6'}
+    dev: false
+
+  /qified@0.5.1:
+    resolution: {integrity: sha512-+BtFN3dCP+IaFA6IYNOu/f/uK1B8xD2QWyOeCse0rjtAebBmkzgd2d1OAXi3ikAzJMIBSdzZDNZ3wZKEUDQs5w==}
+    engines: {node: '>=20'}
+    dependencies:
+      hookified: 1.12.2
     dev: false
 
   /qs@6.14.0:

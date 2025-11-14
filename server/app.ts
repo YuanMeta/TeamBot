@@ -9,6 +9,7 @@ import { registerRoutes } from './routes/api'
 import type { Knex } from 'knex'
 import { TRPCError } from '@trpc/server'
 import { getHTTPStatusCodeFromError } from '@trpc/server/http'
+import { fetchOpenRouterModels } from './lib/openRouterModels'
 
 declare module 'react-router' {
   interface AppLoadContext {
@@ -17,6 +18,7 @@ declare module 'react-router' {
 }
 
 const db = await kdb()
+fetchOpenRouterModels(db)
 export const app = express()
 app.use(
   express.json({
