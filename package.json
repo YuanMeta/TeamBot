@@ -14,6 +14,7 @@
     "@ai-sdk/deepseek": "^1.0.27",
     "@ai-sdk/google": "^2.0.29",
     "@ai-sdk/openai": "^2.0.64",
+    "@ai-sdk/openai-compatible": "^1.0.27",
     "@ai-sdk/react": "^2.0.89",
     "@codemirror/lang-javascript": "^6.2.4",
     "@codemirror/lang-json": "^6.0.2",

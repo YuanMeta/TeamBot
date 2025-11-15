@@ -147,6 +147,8 @@ export class ChatClient {
                       'error' as const
                     ;(parts[value.value.toolCallId] as ToolPart).errorText =
                       value.value.errorText
+                    ;(parts[value.value.toolCallId] as ToolPart).input =
+                      value.value.input
                   }
                   break
                 case 'tool-input-available':
@@ -237,9 +239,11 @@ export class ChatClient {
                   data.onFinish?.()
                   break
               }
+              console.log('value', value)
             })
           }
         }
+        console.log('parts', parts)
       } catch (e: any) {
         if (e.name === 'AbortError') {
           runInAction(() => {
