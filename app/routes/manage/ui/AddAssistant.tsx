@@ -256,11 +256,15 @@ export const AddAssistant = observer(
                                 </SelectItem>
                                 <SelectItem value='z-ai'>
                                   <ModelIcon mode='z-ai' size={20} />
-                                  Bigmodel
+                                  智谱
                                 </SelectItem>
                                 <SelectItem value='moonshotai'>
                                   <ModelIcon mode='moonshotai' size={20} />
-                                  Moonshot
+                                  月之暗面
+                                </SelectItem>
+                                <SelectItem value='doubao'>
+                                  <ModelIcon mode='doubao' size={20} />
+                                  豆包
                                 </SelectItem>
                               </SelectContent>
                             </Select>

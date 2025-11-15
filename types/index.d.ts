@@ -7,6 +7,7 @@ export type AiMode =
   | 'openrouter'
   | 'z-ai'
   | 'moonshotai'
+  | 'doubao'
 
 export interface TrpcRequestError extends TRPCError {
   meta?: {

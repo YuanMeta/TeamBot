@@ -248,8 +248,6 @@ export class ChatStore extends StructStore<typeof state> {
   }
   async chat(data: { text: string }) {
     try {
-      console.log('tools', this.state.selectedTools)
-
       await this.client.complete({
         text: data.text,
         tools:

@@ -58,6 +58,13 @@ export const createClient = (data: {
         includeUsage: true,
         name: 'moonshot'
       })
+    case 'doubao':
+      return createOpenAICompatible({
+        apiKey: data.api_key ?? undefined,
+        baseURL: data.base_url ?? 'https://ark.cn-beijing.volces.com/api/v3',
+        includeUsage: true,
+        name: 'doubao'
+      })
   }
 }
 export const checkLLmConnect = async (provider: {

@@ -10,6 +10,7 @@ import {
   OpenRouter,
   Qwen
 } from '@lobehub/icons'
+import { Doubao } from '@lobehub/icons'
 import { memo } from 'react'
 
 export const ModelIcon = memo(
@@ -43,6 +44,9 @@ export const ModelIcon = memo(
     }
     if (mode === 'moonshotai') {
       return <Moonshot size={size} />
+    }
+    if (mode === 'doubao') {
+      return <Doubao.Color size={size} />
     }
     return null
   }
