@@ -44,6 +44,13 @@ export const createClient = (data: {
         includeUsage: true,
         name: 'qwen'
       })
+    case 'z-ai':
+      return createOpenAICompatible({
+        apiKey: data.api_key ?? undefined,
+        baseURL: data.base_url ?? 'https://open.bigmodel.cn/api/paas/v4',
+        includeUsage: true,
+        name: 'z-ai'
+      })
   }
 }
 export const checkLLmConnect = async (provider: {

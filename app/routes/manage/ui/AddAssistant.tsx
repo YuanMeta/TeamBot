@@ -230,17 +230,9 @@ export const AddAssistant = observer(
                                 <SelectValue placeholder='OpenRouter' />
                               </SelectTrigger>
                               <SelectContent>
-                                <SelectItem value='openrouter'>
-                                  <ModelIcon mode='openrouter' size={20} />
-                                  OpenRouter
-                                </SelectItem>
                                 <SelectItem value='openai'>
                                   <ModelIcon mode='openai' size={20} />
                                   OpenAI
-                                </SelectItem>
-                                <SelectItem value='gemini'>
-                                  <ModelIcon mode='gemini' size={20} />
-                                  Gemini
                                 </SelectItem>
                                 <SelectItem value='deepseek'>
                                   <ModelIcon mode='deepseek' size={20} />
@@ -250,9 +242,21 @@ export const AddAssistant = observer(
                                   <ModelIcon mode='qwen' size={20} />
                                   Qwen
                                 </SelectItem>
+                                <SelectItem value='gemini'>
+                                  <ModelIcon mode='gemini' size={20} />
+                                  Gemini
+                                </SelectItem>
+                                <SelectItem value='openrouter'>
+                                  <ModelIcon mode='openrouter' size={20} />
+                                  OpenRouter
+                                </SelectItem>
                                 <SelectItem value='anthropic'>
                                   <ModelIcon mode='anthropic' size={20} />
                                   Anthropic
+                                </SelectItem>
+                                <SelectItem value='z-ai'>
+                                  <ModelIcon mode='z-ai' size={20} />
+                                  智谱
                                 </SelectItem>
                               </SelectContent>
                             </Select>

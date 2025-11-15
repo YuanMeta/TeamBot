@@ -5,6 +5,7 @@ export type AiMode =
   | 'anthropic'
   | 'gemini'
   | 'openrouter'
+  | 'z-ai'
 
 export interface TrpcRequestError extends TRPCError {
   meta?: {

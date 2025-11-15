@@ -57,7 +57,7 @@ export const Thinking = memo<ThinkingProps>(
             <div className={'flex gap-1'}>
               <ChevronRight
                 size={16}
-                className={`${showDetail ? 'rotate-90' : ''}`}
+                className={`duration-100 ${showDetail ? 'rotate-90' : ''}`}
               />
             </div>
           )}

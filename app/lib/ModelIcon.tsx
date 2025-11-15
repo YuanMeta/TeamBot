@@ -1,4 +1,5 @@
 import {
+  ChatGLM,
   Claude,
   DeepSeek,
   Gemini,
@@ -35,6 +36,9 @@ export const ModelIcon = memo(
     }
     if (mode === 'openrouter') {
       return <OpenRouter size={size} />
+    }
+    if (mode === 'z-ai') {
+      return <ChatGLM.Color size={size} />
     }
     return null
   }

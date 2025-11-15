@@ -239,11 +239,11 @@ export class ChatClient {
                   data.onFinish?.()
                   break
               }
-              console.log('value', value)
+              // console.log('value', value)
             })
           }
         }
-        console.log('parts', parts)
+        console.log('parts', Object.values(parts))
       } catch (e: any) {
         if (e.name === 'AbortError') {
           runInAction(() => {
