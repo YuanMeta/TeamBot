@@ -51,6 +51,13 @@ export const createClient = (data: {
         includeUsage: true,
         name: 'z-ai'
       })
+    case 'moonshotai':
+      return createOpenAICompatible({
+        apiKey: data.api_key ?? undefined,
+        baseURL: data.base_url ?? 'https://api.moonshot.cn/v1',
+        includeUsage: true,
+        name: 'moonshot'
+      })
   }
 }
 export const checkLLmConnect = async (provider: {
@@ -63,15 +70,14 @@ export const checkLLmConnect = async (provider: {
   const client = createClient(provider)!
   const llm = client(models[0])
   try {
-    const res = await generateText({
+    await generateText({
       model: llm!,
       prompt: 'hello',
       maxOutputTokens: 30
     })
     return {
       success: true,
-      message: '连接成功',
-      data: res.content
+      message: '连接成功'
     }
   } catch (e: any) {
     console.log('e', e)

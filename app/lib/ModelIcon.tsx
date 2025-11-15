@@ -4,6 +4,7 @@ import {
   DeepSeek,
   Gemini,
   LmStudio,
+  Moonshot,
   Ollama,
   OpenAI,
   OpenRouter,
@@ -39,6 +40,9 @@ export const ModelIcon = memo(
     }
     if (mode === 'z-ai') {
       return <ChatGLM.Color size={size} />
+    }
+    if (mode === 'moonshotai') {
+      return <Moonshot size={size} />
     }
     return null
   }
