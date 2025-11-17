@@ -17,6 +17,8 @@ export class ChatClient {
     tools: string[]
     onFinish?: () => void
   }) {
+    const assistantId = this.store.state.assistant!.id
+    const model = this.store.state.model!
     const abortController = new AbortController()
     const tChatId = cid()
     let chat = this.store.state.selectedChat
@@ -92,8 +94,8 @@ export class ChatClient {
       signal: abortController.signal,
       body: JSON.stringify({
         chatId: this.store.state.selectedChat?.id,
-        assistantId: this.store.state.assistant!.id,
-        model: this.store.state.model!,
+        assistantId: assistantId,
+        model: model,
         tools: data.tools,
         repoIds: undefined,
         regenerate: undefined
@@ -287,7 +289,9 @@ export class ChatClient {
       body: JSON.stringify({
         chatId: data.chatId,
         userPrompt: data.userPrompt,
-        aiResponse: data.aiResponse
+        aiResponse: data.aiResponse,
+        assistantId: this.store.state.assistant!.id,
+        model: this.store.state.model!
       }),
       credentials: 'include'
     })

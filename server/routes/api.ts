@@ -6,8 +6,7 @@ import { userCookie } from '../session'
 import { completions } from './completions'
 import { TRPCError } from '@trpc/server'
 import { createClient } from 'server/lib/checkConnect'
-import { tid } from 'server/lib/utils'
-import { convertToModelMessages, streamText, type UIMessage } from 'ai'
+import { APICallError, streamText } from 'ai'
 
 // 防暴力破解：登录尝试记录
 const loginAttempts = new Map<string, { count: number; lockedUntil: number }>()
@@ -116,7 +115,9 @@ export const registerRoutes = (app: Express, db: Knex) => {
     const InputSchema = z.object({
       chatId: z.string(),
       userPrompt: z.string(),
-      aiResponse: z.string()
+      aiResponse: z.string(),
+      assistantId: z.string(),
+      model: z.string()
     })
     const json: z.infer<typeof InputSchema> = req.body
     try {
@@ -135,30 +136,27 @@ export const registerRoutes = (app: Express, db: Knex) => {
       })
     }
     const assistant = await db('assistants')
-      .where('id', chat.assistant_id)
+      .where('id', json.assistantId)
       .first()
     const client = createClient({
       mode: assistant!.mode,
       api_key: assistant!.api_key,
       base_url: assistant!.base_url
     })!
-    const messages: UIMessage[] = [
+    const messages = [
       {
-        id: tid(),
         role: 'user',
-        parts: [{ type: 'text', text: json.userPrompt }]
+        text: json.userPrompt
       },
       {
-        id: tid(),
         role: 'assistant',
-        parts: [{ type: 'text', text: json.aiResponse }]
+        text: json.aiResponse
       }
     ]
-
     const result = streamText({
-      model: client(chat.model!),
-      system: `You are a conversational assistant and you need to summarize the user's conversation into a title of 10 words or less., The summary needs to maintain the original language.`,
-      messages: convertToModelMessages(messages),
+      model: client(json.model!),
+      prompt: `You are a conversational assistant and you need to summarize the user's conversation into a title of 10 words or less., The summary needs to maintain the original language.
+The historical dialogue is as follows: \n${messages.map((m) => `${m.role}: ${m.text}`).join('\n')}`,
       onFinish: async (data) => {
         if (data.finishReason === 'stop') {
           let text = data.content.find((c) => c.type === 'text')?.text
@@ -166,6 +164,10 @@ export const registerRoutes = (app: Express, db: Knex) => {
             await db('chats').where({ id: json.chatId }).update({ title: text })
           }
         }
+      },
+      onError: (error) => {
+        let err = error.error as APICallError
+        console.log('err request', JSON.stringify(err.requestBodyValues))
       }
     })
     result.pipeUIMessageStreamToResponse(res)
