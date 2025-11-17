@@ -5,7 +5,6 @@ import { getReadability } from './utils'
 import type { Knex } from 'knex'
 import { parseRecord } from './table'
 import { createWebSearchTool } from './search'
-
 export const getUrlContent = tool({
   description:
     'Can retrieve the main text content of a given URL webpage and return it in Markdown format',
@@ -19,7 +18,7 @@ export const getUrlContent = tool({
     return content?.content ? markdown : 'Failed to retrieve page content'
   }
 })
-
+getUrlContent.inputSchema
 export const createHttpTool = (options: {
   url: string
   method: 'GET' | 'POST' | 'PUT' | 'DELETE' | 'PATCH'
@@ -148,3 +147,10 @@ export const composeTools = async (
   }
   return tools
 }
+
+// const webSearchInputSchema = lazySchema(() => zodSchema(z.object({})))
+// export const webSearch = createProviderDefinedToolFactory({
+//   inputSchema: webSearchInputSchema,
+//   name: 'web_search',
+//   id: 'doubao.web_search'
+// })

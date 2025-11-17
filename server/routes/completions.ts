@@ -2,6 +2,7 @@ import {
   convertToModelMessages,
   stepCountIs,
   streamText,
+  type Tool,
   type APICallError
 } from 'ai'
 import z from 'zod'
@@ -57,16 +58,17 @@ export const completions = async (req: Request, res: Response, db: Knex) => {
     model: chat.model!,
     assistant_id: assistant.id
   })
+
   const result = streamText({
     model: client(chat.model!),
     messages: convertToModelMessages(uiMessages),
     stopWhen: stepCountIs(20),
+    tools,
     abortSignal: controller.signal,
     system: MessageManager.getSystemPromp({
       summary: summary,
       tools: json.tools
     }),
-    tools,
     onAbort: async () => {
       await db('messages').where('id', assistantMessage.id).update({
         terminated: true
@@ -80,6 +82,7 @@ export const completions = async (req: Request, res: Response, db: Knex) => {
     onFinish: async (data) => {
       // console.log('data', data.steps)
       // console.log('request', JSON.stringify(data.request.body || null))
+      // console.log('response', JSON.stringify(data.response || null))
       const steps: any[] = []
       const parts: MessagePart[] = []
       let usage: Usage = {
@@ -164,7 +167,7 @@ export const completions = async (req: Request, res: Response, db: Knex) => {
       await db('messages').where('id', assistantMessage.id).update({
         error: err.message
       })
-      console.log('request', err)
+      console.log('err request', err)
     }
   })
   result.pipeUIMessageStreamToResponse(res)
