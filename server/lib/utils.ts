@@ -1,6 +1,7 @@
 import { JSDOM } from 'jsdom'
 import { Readability } from '@mozilla/readability'
 import { customAlphabet } from 'nanoid'
+import { randomBytes } from 'crypto'
 
 export const getReadability = (html: string, url: string) => {
   let urlObj = new URL(url)
@@ -37,4 +38,8 @@ export const isJsonObject = (obj: any) => {
   }
 
   return true
+}
+
+export function randomString(len = 48) {
+  return randomBytes(len).toString('base64url')
 }

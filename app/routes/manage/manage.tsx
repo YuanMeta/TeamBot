@@ -43,11 +43,6 @@ const items = [
     title: '模型用量',
     url: '/manage/usage',
     icon: CircleGauge
-  },
-  {
-    title: 'SSO',
-    url: '/manage/sso',
-    icon: Waypoints
   }
 ]
 

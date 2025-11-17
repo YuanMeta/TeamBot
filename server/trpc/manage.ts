@@ -327,5 +327,70 @@ export const manageRouter = {
     )
     .query(async ({ input, ctx }) => {
       return ctx.db('models').where(input).select('id', 'model', 'provider')
+    }),
+  getAuthProviders: adminProcedure.query(async ({ ctx }) => {
+    return ctx
+      .db('auth_providers')
+      .select('id', 'name', 'scopes', 'created_at', 'use_pkce', 'updated_at')
+  }),
+  createAuthProvider: adminProcedure
+    .input(
+      z.object({
+        name: z.string().min(1),
+        issuer: z.string().optional(),
+        auth_url: z.string().min(1),
+        token_url: z.string().min(1),
+        userinfo_url: z.string().optional(),
+        jwks_uri: z.string().optional(),
+        client_id: z.string().min(1),
+        client_secret: z.string().optional(),
+        scopes: z.string().optional(),
+        use_pkce: z.boolean().optional(),
+        allow_jit_provision: z.boolean().optional()
+      })
+    )
+    .mutation(async ({ input, ctx }) => {
+      return ctx.db('auth_providers').insert(input)
+    }),
+  updateAuthProvider: adminProcedure
+    .input(
+      z.object({
+        id: z.string().min(1),
+        data: z.object({
+          name: z.string().min(1).optional(),
+          issuer: z.string().optional(),
+          auth_url: z.string().min(1),
+          token_url: z.string().min(1),
+          userinfo_url: z.string().optional(),
+          jwks_uri: z.string().optional(),
+          client_id: z.string().min(1),
+          client_secret: z.string().optional(),
+          scopes: z.string().optional(),
+          use_pkce: z.boolean().optional(),
+          allow_jit_provision: z.boolean().optional()
+        })
+      })
+    )
+    .mutation(async ({ input, ctx }) => {
+      return ctx.db('auth_providers').where({ id: input.id }).update(input.data)
+    }),
+  deleteAuthProvider: adminProcedure
+    .input(
+      z.object({
+        providerId: z.string().min(1)
+      })
+    )
+    .mutation(async ({ input, ctx }) => {
+      return ctx.db.transaction(async (trx) => {
+        await trx('oauth_accounts')
+          .where({ provider_id: input.providerId })
+          .delete()
+        await trx('auth_providers').where({ id: input.providerId }).delete()
+      })
+    }),
+  getAuthProvider: adminProcedure
+    .input(z.string())
+    .query(async ({ input, ctx }) => {
+      return ctx.db('auth_providers').where({ id: input }).select('*').first()
     })
 } satisfies TRPCRouterRecord

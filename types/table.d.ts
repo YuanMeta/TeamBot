@@ -2,8 +2,6 @@ import type { Knex } from 'knex'
 declare module 'knex/types/tables' {
   interface Tables {
     users: TableUser
-    idps: TableIdp
-    relation_idps: TableRelationIdp
     assistants: TableAssistant
     chats: TableChat
     messages: TableMessage
@@ -11,6 +9,8 @@ declare module 'knex/types/tables' {
     tools: TableTool
     assistant_tools: TableAssistantTool
     models: TableModel
+    auth_providers: TableAuthProvider
+    oauth_accounts: TableOauthAccount
   }
 }
 
@@ -25,22 +25,6 @@ export interface TableUser {
   created_at: Date
   updated_at: Date
   deleted: boolean
-}
-
-export interface TableIdp {
-  id: string
-  name: string
-  params: Record<string, any>
-  created_at: string
-  updated_at: string
-}
-
-export interface TableRelationIdp {
-  id: string
-  user_id: string
-  idp_id: string
-  created_at: string
-  updated_at: string
 }
 
 export interface TableAssistant {
@@ -128,4 +112,28 @@ export interface TableModel {
   model: string
   provider: string
   options: Record<string, any>
+}
+
+export interface TableAuthProvider {
+  id: string
+  name: string
+  issuer: string
+  auth_url: string
+  token_url: string
+  userinfo_url: string
+  jwks_uri: string
+  client_id: string
+  client_secret: string
+  scopes: string
+  use_pkce: boolean
+  created_at: string
+  updated_at: string
+}
+
+export interface TableOauthAccount {
+  id: string
+  provider_id: string
+  provider_user_id: string
+  user_id: string
+  profile_json: Record<string, any>
 }

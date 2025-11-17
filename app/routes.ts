@@ -12,10 +12,6 @@ export default [
       file: 'routes/manage/assistant.tsx'
     },
     {
-      path: 'sso',
-      file: 'routes/manage/sso.tsx'
-    },
-    {
       path: 'member',
       file: 'routes/manage/member.tsx'
     },

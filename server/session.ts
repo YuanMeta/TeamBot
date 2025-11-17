@@ -11,6 +11,14 @@ export const userCookie = createCookie('user', {
   secrets: [process.env.COOKIE_SECRET || 's3cr3t']
 })
 
+export const oauthStateCookie = createCookie('oauth_state', {
+  httpOnly: true,
+  sameSite: 'lax',
+  secure: false,
+  maxAge: 600,
+  secrets: [process.env.COOKIE_SECRET || 's3cr3t']
+})
+
 export const getUserId = async (request: Request) => {
   const token = await userCookie.parse(request.headers.cookie || '')
   if (!token) {

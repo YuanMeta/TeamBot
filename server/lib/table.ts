@@ -5,7 +5,8 @@ export const tableSchema = async (db: Knex) => {
   if (!(await db.schema.hasTable('users'))) {
     await db.schema.createTable('users', (table) => {
       table.string('id').primary()
-      table.string('email').unique()
+      table.string('email').unique().nullable()
+      table.string('mobile').unique().nullable()
       table.string('avatar').nullable()
       table.string('name').nullable()
       table.string('password').nullable()
@@ -16,27 +17,7 @@ export const tableSchema = async (db: Knex) => {
       table.timestamp('updated_at').defaultTo(db.fn.now())
     })
   }
-  if (!(await db.schema.hasTable('idps'))) {
-    await db.schema.createTable('idps', (table) => {
-      table.string('id').primary()
-      table.string('name').notNullable()
-      table.json('params').notNullable()
-      table.timestamp('created_at').defaultTo(db.fn.now())
-      table.timestamp('updated_at').defaultTo(db.fn.now())
-    })
-  }
-  if (!(await db.schema.hasTable('relation_idps'))) {
-    await db.schema.createTable('relation_idps', (table) => {
-      table.string('id').primary()
-      table.string('user_id').notNullable()
-      table.string('idp_id').notNullable()
-      table.timestamp('created_at').defaultTo(db.fn.now())
-      table.timestamp('updated_at').defaultTo(db.fn.now())
-      table.foreign('user_id').references('id').inTable('users')
-      table.foreign('idp_id').references('id').inTable('idps')
-      table.unique(['user_id', 'idp_id'])
-    })
-  }
+
   if (!(await db.schema.hasTable('assistants'))) {
     await db.schema.createTable('assistants', (table) => {
       table.string('id').primary()
@@ -143,6 +124,37 @@ export const tableSchema = async (db: Knex) => {
       table.string('provider').notNullable()
       table.json('options').nullable()
       table.unique(['model', 'provider'])
+    })
+  }
+
+  if (!(await db.schema.hasTable('auth_providers'))) {
+    await db.schema.createTable('auth_providers', (table) => {
+      table.string('id').primary()
+      table.string('name').notNullable()
+      table.string('issuer').nullable()
+      table.string('auth_url').notNullable()
+      table.string('token_url').notNullable()
+      table.string('userinfo_url').nullable()
+      table.string('jwks_uri').nullable()
+      table.string('client_id').notNullable()
+      table.string('client_secret').nullable()
+      table.string('scopes').nullable()
+      table.boolean('use_pkce').notNullable().defaultTo(false)
+      table.timestamp('created_at').defaultTo(db.fn.now())
+      table.timestamp('updated_at').defaultTo(db.fn.now())
+    })
+  }
+
+  if (!(await db.schema.hasTable('oauth_accounts'))) {
+    await db.schema.createTable('oauth_accounts', (table) => {
+      table.string('id').primary()
+      table.string('provider_id').notNullable()
+      table.string('provider_user_id').notNullable()
+      table.string('user_id').notNullable()
+      table.json('profile_json').nullable()
+      table.foreign('provider_id').references('id').inTable('auth_providers')
+      table.foreign('user_id').references('id').inTable('users')
+      table.unique(['provider_id', 'provider_user_id'])
     })
   }
 

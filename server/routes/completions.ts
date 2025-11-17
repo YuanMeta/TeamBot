@@ -69,6 +69,9 @@ export const completions = async (req: Request, res: Response, db: Knex) => {
       summary: summary,
       tools: json.tools
     }),
+    // providerOptions: {
+    //   qwen: { enable_search: true }
+    // },
     onAbort: async () => {
       await db('messages').where('id', assistantMessage.id).update({
         terminated: true

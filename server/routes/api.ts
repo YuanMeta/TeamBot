@@ -2,12 +2,12 @@ import type { Express } from 'express'
 import type { Knex } from 'knex'
 import z from 'zod'
 import { generateToken, PasswordManager } from '../lib/password'
-import { userCookie } from '../session'
+import { userCookie, oauthStateCookie } from '../session'
 import { completions } from './completions'
 import { TRPCError } from '@trpc/server'
 import { createClient } from 'server/lib/checkConnect'
 import { APICallError, streamText } from 'ai'
-
+import { randomString } from 'server/lib/utils'
 // 防暴力破解：登录尝试记录
 const loginAttempts = new Map<string, { count: number; lockedUntil: number }>()
 const MAX_ATTEMPTS = 5
@@ -171,5 +171,32 @@ The historical dialogue is as follows: \n${messages.map((m) => `${m.role}: ${m.t
       }
     })
     result.pipeUIMessageStreamToResponse(res)
+  })
+
+  app.get('/login/:provider', async (req, res) => {
+    const state = randomString(24)
+    const provider = await db('auth_providers')
+      .where('id', req.params.provider)
+      .first()
+    if (!provider) {
+      res.status(404).json({ error: 'Provider not found' })
+      return
+    }
+    const origin = new URL(req.url).origin
+    const oauthState = {
+      state,
+      provider: provider.id,
+      createdAt: Date.now()
+    }
+    res.setHeader('Set-Cookie', await oauthStateCookie.serialize(oauthState))
+    const params = new URLSearchParams({
+      response_type: 'code',
+      client_id: provider.client_id,
+      redirect_uri: `${origin}/auth/${provider.id}/callback`,
+      scope: provider.scopes || '',
+      state
+    })
+    const redirectUrl = `${provider.auth_url}?${params.toString()}`
+    res.redirect(redirectUrl)
   })
 }

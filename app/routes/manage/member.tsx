@@ -4,7 +4,7 @@ import {
   getCoreRowModel,
   useReactTable
 } from '@tanstack/react-table'
-import { PencilLine, Plus, Trash } from 'lucide-react'
+import { PencilLine, Plus, Trash, Users, Waypoints } from 'lucide-react'
 
 import {
   Table,
@@ -17,11 +17,14 @@ import {
 import { Button } from '~/components/ui/button'
 import { observer } from 'mobx-react-lite'
 import { useLocalState } from '~/hooks/localState'
-import { useCallback, useEffect, useMemo } from 'react'
+import { useCallback, useEffect, useMemo, useRef } from 'react'
 import { trpc } from '~/.client/trpc'
 import { Pagination } from '~/components/project/pagination'
 import { AddMember } from './ui/AddMemeber'
 import type { TableUser } from 'types/table'
+import { Tabs, TabsContent, TabsList, TabsTrigger } from '~/components/ui/tabs'
+import { SSO, type SSOInstance } from './ui/Sso'
+import { AddSsoProvider } from './ui/AddSsoProvider'
 
 export default observer(() => {
   const columns: ColumnDef<TableUser>[] = useMemo(() => {
@@ -76,10 +79,12 @@ export default observer(() => {
       }
     ] as ColumnDef<TableUser>[]
   }, [])
+  const ssoInstance = useRef<SSOInstance>({} as SSOInstance)
   const [state, setState] = useLocalState({
     page: 1,
     pageSize: 10,
     keyword: '',
+    tab: 'member',
     openAddMember: false,
     selectedMemberId: null as null | string,
     data: [] as TableUser[],
@@ -107,74 +112,110 @@ export default observer(() => {
   return (
     <div className='w-full'>
       <div>
-        <div className='flex items-center pb-4 justify-between'>
-          <div>
-            <Button
-              onClick={() => {
-                setState({ openAddMember: true, selectedMemberId: null })
-              }}
-            >
-              <Plus />
-              成员
-            </Button>
-          </div>
-        </div>
-        <div className='overflow-hidden rounded-md border'>
-          <Table>
-            <TableHeader>
-              {table.getHeaderGroups().map((headerGroup) => (
-                <TableRow key={headerGroup.id}>
-                  {headerGroup.headers.map((header) => {
-                    return (
-                      <TableHead key={header.id}>
-                        {header.isPlaceholder
-                          ? null
-                          : flexRender(
-                              header.column.columnDef.header,
-                              header.getContext()
-                            )}
-                      </TableHead>
-                    )
-                  })}
-                </TableRow>
-              ))}
-            </TableHeader>
-            <TableBody>
-              {table.getRowModel().rows?.length ? (
-                table.getRowModel().rows.map((row) => (
-                  <TableRow
-                    key={row.id}
-                    data-state={row.getIsSelected() && 'selected'}
-                  >
-                    {row.getVisibleCells().map((cell) => (
-                      <TableCell key={cell.id}>
-                        {flexRender(
-                          cell.column.columnDef.cell,
-                          cell.getContext()
-                        )}
-                      </TableCell>
-                    ))}
-                  </TableRow>
-                ))
-              ) : (
-                <TableRow>
-                  <TableCell
-                    colSpan={columns.length}
-                    className='h-24 text-center'
-                  >
-                    暂无结果。
-                  </TableCell>
-                </TableRow>
+        <Tabs
+          value={state.tab}
+          onValueChange={(value) =>
+            setState({ tab: value as 'member' | 'sso' })
+          }
+        >
+          <div className='flex items-center justify-between'>
+            <TabsList>
+              <TabsTrigger value='member'>
+                <Users />
+                成员
+              </TabsTrigger>
+              <TabsTrigger value='sso'>
+                <Waypoints />
+                SSO
+              </TabsTrigger>
+            </TabsList>
+            <div>
+              {state.tab === 'member' && (
+                <Button
+                  variant={'outline'}
+                  onClick={() => {
+                    setState({ openAddMember: true, selectedMemberId: null })
+                  }}
+                >
+                  <Plus />
+                  成员
+                </Button>
               )}
-            </TableBody>
-          </Table>
-        </div>
-        <Pagination
-          page={state.page}
-          pageSize={state.pageSize}
-          total={state.total}
-          onPageChange={() => {}}
-        />
+              {state.tab === 'sso' && (
+                <Button
+                  variant={'outline'}
+                  onClick={() => {
+                    ssoInstance.current.add?.()
+                  }}
+                >
+                  <Plus />
+                  SSO认证
+                </Button>
+              )}
+            </div>
+          </div>
+          <TabsContent value='member'>
+            <div className='overflow-hidden rounded-md border'>
+              <Table>
+                <TableHeader>
+                  {table.getHeaderGroups().map((headerGroup) => (
+                    <TableRow key={headerGroup.id}>
+                      {headerGroup.headers.map((header) => {
+                        return (
+                          <TableHead key={header.id}>
+                            {header.isPlaceholder
+                              ? null
+                              : flexRender(
+                                  header.column.columnDef.header,
+                                  header.getContext()
+                                )}
+                          </TableHead>
+                        )
+                      })}
+                    </TableRow>
+                  ))}
+                </TableHeader>
+                <TableBody>
+                  {table.getRowModel().rows?.length ? (
+                    table.getRowModel().rows.map((row) => (
+                      <TableRow
+                        key={row.id}
+                        data-state={row.getIsSelected() && 'selected'}
+                      >
+                        {row.getVisibleCells().map((cell) => (
+                          <TableCell key={cell.id}>
+                            {flexRender(
+                              cell.column.columnDef.cell,
+                              cell.getContext()
+                            )}
+                          </TableCell>
+                        ))}
+                      </TableRow>
+                    ))
+                  ) : (
+                    <TableRow>
+                      <TableCell
+                        colSpan={columns.length}
+                        className='h-24 text-center'
+                      >
+                        暂无结果。
+                      </TableCell>
+                    </TableRow>
+                  )}
+                </TableBody>
+              </Table>
+            </div>
+            <Pagination
+              page={state.page}
+              pageSize={state.pageSize}
+              total={state.total}
+              onPageChange={() => {}}
+            />
+          </TabsContent>
+          <TabsContent value='sso'>
+            <SSO instance={ssoInstance.current} />
+          </TabsContent>
+        </Tabs>
         <AddMember
           open={state.openAddMember}
           onUpdate={() => getMembers()}
