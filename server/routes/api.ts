@@ -8,6 +8,7 @@ import { TRPCError } from '@trpc/server'
 import { createClient } from 'server/lib/checkConnect'
 import { APICallError, streamText } from 'ai'
 import { randomString } from 'server/lib/utils'
+import ky from 'ky'
 // 防暴力破解：登录尝试记录
 const loginAttempts = new Map<string, { count: number; lockedUntil: number }>()
 const MAX_ATTEMPTS = 5
@@ -173,7 +174,7 @@ The historical dialogue is as follows: \n${messages.map((m) => `${m.role}: ${m.t
     result.pipeUIMessageStreamToResponse(res)
   })
 
-  app.get('/login/:provider', async (req, res) => {
+  app.get('/oauth/login/:provider', async (req, res) => {
     const state = randomString(24)
     const provider = await db('auth_providers')
       .where('id', req.params.provider)
@@ -182,7 +183,7 @@ The historical dialogue is as follows: \n${messages.map((m) => `${m.role}: ${m.t
       res.status(404).json({ error: 'Provider not found' })
       return
     }
-    const origin = new URL(req.url).origin
+    const origin = `${req.protocol}://${req.get('host')}`
     const oauthState = {
       state,
       provider: provider.id,
@@ -192,11 +193,42 @@ The historical dialogue is as follows: \n${messages.map((m) => `${m.role}: ${m.t
     const params = new URLSearchParams({
       response_type: 'code',
       client_id: provider.client_id,
-      redirect_uri: `${origin}/auth/${provider.id}/callback`,
+      redirect_uri: `${origin}/oauth/callback/${provider.id}`,
       scope: provider.scopes || '',
       state
     })
     const redirectUrl = `${provider.auth_url}?${params.toString()}`
     res.redirect(redirectUrl)
+  })
+
+  app.get('/oauth/callback/:provider', async (req, res) => {
+    const { code } = req.query
+    const provider = await db('auth_providers')
+      .where('id', req.params.provider)
+      .first()
+    if (!provider) {
+      res.status(404).json({ error: 'Provider not found' })
+      return
+    }
+    const origin = `${req.protocol}://${req.get('host')}`
+    const tokenResp = await ky
+      .post(provider.token_url, {
+        json: {
+          client_id: provider.client_id,
+          client_secret: provider.client_secret,
+          code,
+          redirect_uri: `${origin}/oauth/callback/${provider.id}`
+        }
+      })
+      .json<{ access_token: string }>()
+    const access_token = tokenResp.access_token
+    const userResp = await ky
+      .get(provider.userinfo_url, {
+        headers: {
+          Authorization: `Bearer ${access_token}`
+        }
+      })
+      .json<{ id: string; email: string; phone: string }>()
+    res.json({ userResp })
   })
 }

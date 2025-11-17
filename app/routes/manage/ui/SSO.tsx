@@ -56,10 +56,10 @@ export const SSO = observer(({ instance }: SSOProps) => {
                 variant='outline'
                 size='icon-sm'
                 onClick={() => {
-                  // setState({
-                  //   selectedMemberId: data.id,
-                  //   openAddMember: true
-                  // })
+                  setState({
+                    selectedSsoProviderId: data.id,
+                    openAddSsoProvider: true
+                  })
                 }}
               >
                 <PencilLine className={'size-3'} />

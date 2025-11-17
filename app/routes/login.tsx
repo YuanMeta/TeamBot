@@ -19,9 +19,15 @@ import {
 import { Spinner } from '~/components/ui/spinner'
 import { ModelIcon } from '~/lib/ModelIcon'
 import { toast } from 'sonner'
-import { useNavigate } from 'react-router'
+import { useLoaderData, useNavigate } from 'react-router'
+import type { Route } from './+types/login'
 
+export const loader = (args: Route.LoaderArgs) => {
+  const providers = args.context.db('auth_providers').select('id', 'name')
+  return providers
+}
 export default observer(() => {
+  const data = useLoaderData<typeof loader>()
   const navigate = useNavigate()
   const form = useForm({
     defaultValues: {
@@ -175,13 +181,19 @@ export default observer(() => {
                     {isSubmitting && <Spinner />}
                     登录
                   </Button>
-                  <Button
-                    variant='outline'
-                    className='w-full'
-                    disabled={isSubmitting}
-                  >
-                    通过Google登录
-                  </Button>
+                  {data.map((d) => (
+                    <Button
+                      key={d.id}
+                      variant='outline'
+                      className='w-full'
+                      disabled={isSubmitting}
+                      onClick={() => {
+                        window.open(`/oauth/login/${d.id}`)
+                      }}
+                    >
+                      通过 {d.name} 登录
+                    </Button>
+                  ))}
                 </CardFooter>
               )}
             />

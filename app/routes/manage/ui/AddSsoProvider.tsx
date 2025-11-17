@@ -54,27 +54,29 @@ export const AddSsoProvider = observer(
         use_pkce: false
       },
       onSubmit: async ({ value }) => {
-        // if (props.id) {
-        //   await trpc.manage.updateTool.mutate({
-        //     id: props.id,
-        //     data: {
-        //       description: value.description,
-        //       name: value.name,
-        //       params: value.params,
-        //       auto: value.auto,
-        //       type: value.type as 'web_search' | 'http'
-        //     }
-        //   })
-        // } else {
-        //   await trpc.manage.createTool.mutate({
-        //     description: value.description,
-        //     name: value.name,
-        //     id: value.id,
-        //     auto: value.auto,
-        //     params: value.params,
-        //     type: value.type as 'web_search' | 'http'
-        //   })
-        // }
+        if (props.id) {
+          // await trpc.manage.updateTool.mutate({
+          //   id: props.id,
+          //   data: {
+          //     description: value.description,
+          //     name: value.name,
+          //     params: value.params,
+          //     auto: value.auto,
+          //     type: value.type as 'web_search' | 'http'
+          //   }
+          // })
+        } else {
+          await trpc.manage.createAuthProvider.mutate({
+            name: value.name,
+            auth_url: value.auth_url,
+            token_url: value.token_url,
+            userinfo_url: value.userinfo_url,
+            client_id: value.client_id,
+            client_secret: value.client_secret,
+            scopes: value.scopes,
+            use_pkce: value.use_pkce
+          })
+        }
         props.onUpdate()
         props.onClose()
       }
@@ -230,7 +232,7 @@ export const AddSsoProvider = observer(
                           onBlur={field.handleBlur}
                           onChange={(e) => field.handleChange(e.target.value)}
                           aria-invalid={isInvalid}
-                          placeholder='https://example.com/auth'
+                          placeholder='https://example.com/access_token'
                           autoComplete='off'
                         />
                         {isInvalid && (

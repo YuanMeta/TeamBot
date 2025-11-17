@@ -350,7 +350,10 @@ export const manageRouter = {
       })
     )
     .mutation(async ({ input, ctx }) => {
-      return ctx.db('auth_providers').insert(input)
+      return ctx.db('auth_providers').insert({
+        id: tid(),
+        ...input
+      })
     }),
   updateAuthProvider: adminProcedure
     .input(
