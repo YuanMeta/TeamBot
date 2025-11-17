@@ -202,7 +202,7 @@ The historical dialogue is as follows: \n${messages.map((m) => `${m.role}: ${m.t
   })
 
   app.get('/oauth/callback/:provider', async (req, res) => {
-    const { code } = req.query
+    const { code, state } = req.query
     const provider = await db('auth_providers')
       .where('id', req.params.provider)
       .first()
@@ -210,6 +210,28 @@ The historical dialogue is as follows: \n${messages.map((m) => `${m.role}: ${m.t
       res.status(404).json({ error: 'Provider not found' })
       return
     }
+
+    const cookieHeader = req.headers.cookie
+    const oauthState = cookieHeader
+      ? await oauthStateCookie.parse(cookieHeader)
+      : null
+
+    if (!oauthState || oauthState.state !== state) {
+      res.status(400).json({ error: 'Invalid state parameter' })
+      return
+    }
+
+    // 验证 provider 是否匹配
+    if (oauthState.provider !== provider.id) {
+      res.status(400).json({ error: 'Provider mismatch' })
+      return
+    }
+
+    if (Date.now() - oauthState.createdAt > 10 * 60 * 1000) {
+      res.status(400).json({ error: 'State expired' })
+      return
+    }
+
     const origin = `${req.protocol}://${req.get('host')}`
     const tokenResp = await ky
       .post(provider.token_url, {
@@ -228,7 +250,7 @@ The historical dialogue is as follows: \n${messages.map((m) => `${m.role}: ${m.t
           Authorization: `Bearer ${access_token}`
         }
       })
-      .json<{ id: string; email: string; phone: string }>()
+      .json<{ id: string; email?: string; phone?: string; name?: string }>()
     res.json({ userResp })
   })
 }
