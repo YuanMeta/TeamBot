@@ -55,16 +55,19 @@ export const AddSsoProvider = observer(
       },
       onSubmit: async ({ value }) => {
         if (props.id) {
-          // await trpc.manage.updateTool.mutate({
-          //   id: props.id,
-          //   data: {
-          //     description: value.description,
-          //     name: value.name,
-          //     params: value.params,
-          //     auto: value.auto,
-          //     type: value.type as 'web_search' | 'http'
-          //   }
-          // })
+          await trpc.manage.updateAuthProvider.mutate({
+            id: props.id,
+            data: {
+              name: value.name,
+              auth_url: value.auth_url,
+              token_url: value.token_url,
+              userinfo_url: value.userinfo_url,
+              client_id: value.client_id,
+              client_secret: value.client_secret,
+              scopes: value.scopes,
+              use_pkce: value.use_pkce
+            }
+          })
         } else {
           await trpc.manage.createAuthProvider.mutate({
             name: value.name,

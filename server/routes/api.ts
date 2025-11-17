@@ -9,6 +9,7 @@ import { createClient } from 'server/lib/checkConnect'
 import { APICallError, streamText } from 'ai'
 import { randomString } from 'server/lib/utils'
 import ky from 'ky'
+import { createHash } from 'crypto'
 // 防暴力破解：登录尝试记录
 const loginAttempts = new Map<string, { count: number; lockedUntil: number }>()
 const MAX_ATTEMPTS = 5
@@ -184,10 +185,17 @@ The historical dialogue is as follows: \n${messages.map((m) => `${m.role}: ${m.t
       return
     }
     const origin = `${req.protocol}://${req.get('host')}`
-    const oauthState = {
+    const oauthState: Record<string, any> = {
       state,
       provider: provider.id,
       createdAt: Date.now()
+    }
+    let codeChallenge: string | undefined, codeVerifier: string | undefined
+    if (provider.use_pkce) {
+      codeVerifier = randomString(64)
+      const digest = createHash('sha256').update(codeVerifier).digest()
+      codeChallenge = digest.toString('base64url')
+      oauthState.codeVerifier = codeVerifier
     }
     res.setHeader('Set-Cookie', await oauthStateCookie.serialize(oauthState))
     const params = new URLSearchParams({
@@ -197,6 +205,10 @@ The historical dialogue is as follows: \n${messages.map((m) => `${m.role}: ${m.t
       scope: provider.scopes || '',
       state
     })
+    if (codeChallenge) {
+      params.set('code_challenge', codeChallenge)
+      params.set('code_challenge_method', 'S256')
+    }
     const redirectUrl = `${provider.auth_url}?${params.toString()}`
     res.redirect(redirectUrl)
   })
@@ -239,7 +251,8 @@ The historical dialogue is as follows: \n${messages.map((m) => `${m.role}: ${m.t
           client_id: provider.client_id,
           client_secret: provider.client_secret,
           code,
-          redirect_uri: `${origin}/oauth/callback/${provider.id}`
+          redirect_uri: `${origin}/oauth/callback/${provider.id}`,
+          code_verifier: oauthState.codeVerifier || undefined
         }
       })
       .json<{ access_token: string }>()
