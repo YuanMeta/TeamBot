@@ -23,8 +23,7 @@ import { Pagination } from '~/components/project/pagination'
 import { AddMember } from './ui/AddMemeber'
 import type { TableUser } from 'types/table'
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '~/components/ui/tabs'
-import { SSO, type SSOInstance } from './ui/Sso'
-import { AddSsoProvider } from './ui/AddSsoProvider'
+import { SSO, type SSOInstance } from './ui/SSO'
 
 export default observer(() => {
   const columns: ColumnDef<TableUser>[] = useMemo(() => {
