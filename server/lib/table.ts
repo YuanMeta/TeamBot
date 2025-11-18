@@ -2,11 +2,14 @@ import type { Knex } from 'knex'
 import { isJsonObject, tid } from './utils'
 import { PasswordManager } from './password'
 export const tableSchema = async (db: Knex) => {
+  await db.schema.alterTable('users', (table: any) => {
+    table.string('id').notNullable().alter()
+  })
   if (!(await db.schema.hasTable('users'))) {
     await db.schema.createTable('users', (table) => {
-      table.string('id').primary()
+      table.string('id').primary().notNullable()
       table.string('email').unique().nullable()
-      table.string('mobile').unique().nullable()
+      table.string('phone').unique().nullable()
       table.string('avatar').nullable()
       table.string('name').nullable()
       table.string('password').nullable()
@@ -20,7 +23,7 @@ export const tableSchema = async (db: Knex) => {
 
   if (!(await db.schema.hasTable('assistants'))) {
     await db.schema.createTable('assistants', (table) => {
-      table.string('id').primary()
+      table.string('id').primary().notNullable()
       table.string('name').notNullable()
       table.string('mode').notNullable()
       table.string('api_key').nullable()
@@ -34,7 +37,7 @@ export const tableSchema = async (db: Knex) => {
   }
   if (!(await db.schema.hasTable('chats'))) {
     await db.schema.createTable('chats', (table) => {
-      table.string('id').primary()
+      table.string('id').primary().notNullable()
       table.string('title').notNullable()
       table.string('user_id').notNullable()
       table.string('assistant_id').nullable()
@@ -52,7 +55,7 @@ export const tableSchema = async (db: Knex) => {
   }
   if (!(await db.schema.hasTable('messages'))) {
     await db.schema.createTable('messages', (table) => {
-      table.string('id').primary()
+      table.string('id').primary().notNullable()
       table.string('role').notNullable()
       table.string('user_id').notNullable()
       table.string('chat_id').notNullable()
@@ -79,7 +82,7 @@ export const tableSchema = async (db: Knex) => {
   }
   if (!(await db.schema.hasTable('message_files'))) {
     await db.schema.createTable('message_files', (table) => {
-      table.string('id').primary()
+      table.string('id').primary().notNullable()
       table.string('name').notNullable()
       table.string('user_id').notNullable()
       table.string('message_id').notNullable()
@@ -119,7 +122,7 @@ export const tableSchema = async (db: Knex) => {
 
   if (!(await db.schema.hasTable('models'))) {
     await db.schema.createTable('models', (table) => {
-      table.string('id').primary()
+      table.string('id').primary().notNullable()
       table.string('model').notNullable()
       table.string('provider').notNullable()
       table.json('options').nullable()
@@ -129,7 +132,7 @@ export const tableSchema = async (db: Knex) => {
 
   if (!(await db.schema.hasTable('auth_providers'))) {
     await db.schema.createTable('auth_providers', (table) => {
-      table.string('id').primary()
+      table.string('id').primary().notNullable()
       table.string('name').notNullable()
       table.string('issuer').nullable()
       table.string('auth_url').notNullable()
@@ -147,7 +150,7 @@ export const tableSchema = async (db: Knex) => {
 
   if (!(await db.schema.hasTable('oauth_accounts'))) {
     await db.schema.createTable('oauth_accounts', (table) => {
-      table.string('id').primary()
+      table.string('id').primary().notNullable()
       table.string('provider_id').notNullable()
       table.string('provider_user_id').notNullable()
       table.string('user_id').notNullable()

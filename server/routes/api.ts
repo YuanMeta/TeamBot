@@ -7,9 +7,10 @@ import { completions } from './completions'
 import { TRPCError } from '@trpc/server'
 import { createClient } from 'server/lib/checkConnect'
 import { APICallError, streamText } from 'ai'
-import { randomString } from 'server/lib/utils'
+import { randomString, tid } from 'server/lib/utils'
 import ky from 'ky'
 import { createHash } from 'crypto'
+import type { TableUser } from 'types/table'
 // 防暴力破解：登录尝试记录
 const loginAttempts = new Map<string, { count: number; lockedUntil: number }>()
 const MAX_ATTEMPTS = 5
@@ -214,56 +215,147 @@ The historical dialogue is as follows: \n${messages.map((m) => `${m.role}: ${m.t
   })
 
   app.get('/oauth/callback/:provider', async (req, res) => {
-    const { code, state } = req.query
-    const provider = await db('auth_providers')
-      .where('id', req.params.provider)
-      .first()
-    if (!provider) {
-      res.status(404).json({ error: 'Provider not found' })
-      return
-    }
+    try {
+      const { code, state } = req.query
+      const provider = await db('auth_providers')
+        .where('id', req.params.provider)
+        .first()
+      if (!provider) {
+        res.status(404).json({ error: 'Provider not found' })
+        return
+      }
 
-    const cookieHeader = req.headers.cookie
-    const oauthState = cookieHeader
-      ? await oauthStateCookie.parse(cookieHeader)
-      : null
+      const cookieHeader = req.headers.cookie
+      const oauthState = cookieHeader
+        ? await oauthStateCookie.parse(cookieHeader)
+        : null
 
-    if (!oauthState || oauthState.state !== state) {
-      res.status(400).json({ error: 'Invalid state parameter' })
-      return
-    }
+      if (!oauthState || oauthState.state !== state) {
+        res.status(400).json({ error: 'Invalid state parameter' })
+        return
+      }
 
-    // 验证 provider 是否匹配
-    if (oauthState.provider !== provider.id) {
-      res.status(400).json({ error: 'Provider mismatch' })
-      return
-    }
+      // 验证 provider 是否匹配
+      if (oauthState.provider !== provider.id) {
+        res.status(400).json({ error: 'Provider mismatch' })
+        return
+      }
 
-    if (Date.now() - oauthState.createdAt > 10 * 60 * 1000) {
-      res.status(400).json({ error: 'State expired' })
-      return
-    }
+      if (Date.now() - oauthState.createdAt > 10 * 60 * 1000) {
+        res.status(400).json({ error: 'State expired' })
+        return
+      }
 
-    const origin = `${req.protocol}://${req.get('host')}`
-    const tokenResp = await ky
-      .post(provider.token_url, {
-        json: {
-          client_id: provider.client_id,
-          client_secret: provider.client_secret,
-          code,
-          redirect_uri: `${origin}/oauth/callback/${provider.id}`,
-          code_verifier: oauthState.codeVerifier || undefined
+      const origin = `${req.protocol}://${req.get('host')}`
+      const tokenResp = await ky
+        .post(provider.token_url, {
+          json: {
+            client_id: provider.client_id,
+            client_secret: provider.client_secret,
+            code,
+            redirect_uri: `${origin}/oauth/callback/${provider.id}`,
+            code_verifier: oauthState.codeVerifier || undefined
+          }
+        })
+        .json<{ access_token: string }>()
+      const access_token = tokenResp.access_token
+      const userResp = await ky
+        .get(provider.userinfo_url, {
+          headers: {
+            Authorization: `Bearer ${access_token}`
+          }
+        })
+        .json<{ id: string; email?: string; phone?: string; name?: string }>()
+      if (userResp?.id) {
+        const user = await db('oauth_accounts')
+          .where({
+            provider_id: provider.id,
+            provider_user_id: userResp.id
+          })
+          .first()
+        if (user) {
+          const token = generateToken({ uid: user.user_id })
+          res.setHeader('Set-Cookie', await userCookie.serialize(token))
+        } else {
+          if (userResp.email || userResp.phone) {
+            const handle = db('users')
+            let user: TableUser | undefined
+            if (userResp.email) {
+              user = await handle.where({ email: userResp.email }).first()
+            }
+            if (userResp.phone) {
+              user = await handle.where({ phone: userResp.phone }).first()
+            }
+            if (user) {
+              await db('oauth_accounts').insert({
+                id: tid(),
+                provider_id: provider.id,
+                provider_user_id: userResp.id,
+                user_id: user.id,
+                profile_json: JSON.stringify(userResp) as any
+              })
+            } else {
+              const user = await db.transaction(async (trx) => {
+                const user = await trx('users')
+                  .insert({
+                    id: tid(),
+                    email: userResp.email,
+                    phone: userResp.phone,
+                    name: userResp.name,
+                    password: null,
+                    role: 'member'
+                  })
+                  .returning('*')
+                await trx('oauth_accounts').insert({
+                  id: tid(),
+                  provider_id: provider.id,
+                  provider_user_id: userResp.id,
+                  user_id: user[0].id!,
+                  profile_json: JSON.stringify(userResp) as any
+                })
+                return user
+              })
+              const token = generateToken({ uid: user[0].id! })
+              res.setHeader('Set-Cookie', await userCookie.serialize(token))
+            }
+          } else {
+            res
+              .json({
+                error: 'Missing email or phone'
+              })
+              .status(400)
+          }
         }
+        res.send(`
+  <!DOCTYPE html>
+  <html>
+  <head>
+    <meta charset="utf-8">
+    <title>登录成功</title>
+  </head>
+  <body>
+    <script>
+      if (window.opener) {
+        window.opener.postMessage({ type: 'oauth-success' }, '*');
+      }
+      window.close();
+      setTimeout(() => {
+        document.body.innerHTML = '<div style="text-align: center; padding: 50px; font-family: sans-serif;"><h2>登录成功！</h2><p>您可以关闭此页面</p></div>';
+      }, 100);
+    </script>
+  </body>
+  </html>
+`)
+      } else {
+        res.json({
+          error: 'Failed to get user info'
+        })
+      }
+      res.json({ userResp })
+    } catch (e: any) {
+      res.json({
+        error: e.message || 'Authorization failed'
       })
-      .json<{ access_token: string }>()
-    const access_token = tokenResp.access_token
-    const userResp = await ky
-      .get(provider.userinfo_url, {
-        headers: {
-          Authorization: `Bearer ${access_token}`
-        }
-      })
-      .json<{ id: string; email?: string; phone?: string; name?: string }>()
-    res.json({ userResp })
+    }
   })
 }

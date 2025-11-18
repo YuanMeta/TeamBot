@@ -21,6 +21,7 @@ import { ModelIcon } from '~/lib/ModelIcon'
 import { toast } from 'sonner'
 import { useLoaderData, useNavigate } from 'react-router'
 import type { Route } from './+types/login'
+import { useEffect } from 'react'
 
 export const loader = (args: Route.LoaderArgs) => {
   const providers = args.context.db('auth_providers').select('id', 'name')
@@ -60,6 +61,13 @@ export default observer(() => {
       }
     }
   })
+  useEffect(() => {
+    window.addEventListener('message', (event) => {
+      if (event.data.type === 'oauth-success') {
+        navigate('/chat', { replace: true })
+      }
+    })
+  }, [])
   return (
     <div className={'login-page dark'}>
       <div className={'stars'}></div>

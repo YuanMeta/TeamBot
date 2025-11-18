@@ -1,7 +1,6 @@
 import { useForm } from '@tanstack/react-form'
 import { observer } from 'mobx-react-lite'
 import { useEffect } from 'react'
-import z from 'zod'
 import { trpc } from '~/.client/trpc'
 import { Button } from '~/components/ui/button'
 import {
@@ -20,20 +19,8 @@ import {
   FieldError
 } from '~/components/ui/field'
 import { Input } from '~/components/ui/input'
-import { Label } from '~/components/ui/label'
-import { RadioGroup, RadioGroupItem } from '~/components/ui/radio-group'
-import {
-  Select,
-  SelectContent,
-  SelectItem,
-  SelectTrigger,
-  SelectValue
-} from '~/components/ui/select'
 import { Spinner } from '~/components/ui/spinner'
-import { Textarea } from '~/components/ui/textarea'
 import { Switch } from '~/components/ui/switch'
-import CodeEditor from '~/components/project/Code'
-import { toast } from 'sonner'
 
 export const AddSsoProvider = observer(
   (props: {
@@ -365,7 +352,7 @@ export const AddSsoProvider = observer(
                         <FieldLabel
                           htmlFor={field.name}
                           required={true}
-                          help={'使用PKCE方式授权。'}
+                          help={'使用PKCE增强安全校验。'}
                         >
                           使用PKCE
                         </FieldLabel>

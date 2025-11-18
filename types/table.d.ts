@@ -17,6 +17,7 @@ declare module 'knex/types/tables' {
 export interface TableUser {
   id: string
   email: string | null
+  phone: string | null
   avatar: string | null
   name: string | null
   password: string | null
@@ -136,4 +137,13 @@ export interface TableOauthAccount {
   provider_user_id: string
   user_id: string
   profile_json: Record<string, any>
+}
+
+export interface TokenLog {
+  id: string
+  input_tokens: number
+  output_tokens: number
+  total_tokens: number
+  reasoning_tokens: number
+  cached_input_tokens: number
 }
