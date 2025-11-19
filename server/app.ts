@@ -10,7 +10,7 @@ import type { Knex } from 'knex'
 import { TRPCError } from '@trpc/server'
 import { getHTTPStatusCodeFromError } from '@trpc/server/http'
 import { fetchOpenRouterModels } from './lib/openRouterModels'
-
+// import 'server/lib/provider/tools/web-search'
 declare module 'react-router' {
   interface AppLoadContext {
     db: Knex

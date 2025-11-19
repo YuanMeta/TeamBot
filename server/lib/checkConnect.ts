@@ -6,6 +6,7 @@ import { generateText, streamText, type LanguageModel } from 'ai'
 import { createAnthropic } from '@ai-sdk/anthropic'
 import { createDeepSeek } from '@ai-sdk/deepseek'
 import { createOpenAICompatible } from '@ai-sdk/openai-compatible'
+import { createTeamAI } from './provider/provider'
 export const createClient = (data: {
   mode: string
   api_key: string | null
@@ -37,11 +38,10 @@ export const createClient = (data: {
         baseURL: data.base_url ?? undefined
       })
     case 'qwen':
-      return createOpenAICompatible({
+      return createTeamAI({
         apiKey: data.api_key ?? undefined,
         baseURL:
           data.base_url ?? 'https://dashscope.aliyuncs.com/compatible-mode/v1',
-        includeUsage: true,
         name: 'qwen'
       })
     case 'z-ai':
