@@ -241,7 +241,7 @@ export class ChatClient {
                   data.onFinish?.()
                   break
               }
-              // console.log('value', value)
+              console.log('value', value.value)
             })
           }
         }

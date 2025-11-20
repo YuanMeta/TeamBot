@@ -6,7 +6,8 @@ import { generateText, streamText, type LanguageModel } from 'ai'
 import { createAnthropic } from '@ai-sdk/anthropic'
 import { createDeepSeek } from '@ai-sdk/deepseek'
 import { createOpenAICompatible } from '@ai-sdk/openai-compatible'
-import { createTeamAI } from './provider/provider'
+import { createTeamAI } from './provider/openai-provider'
+// import { createTeamAI } from './provider/provider'
 export const createClient = (data: {
   mode: string
   api_key: string | null
@@ -38,7 +39,7 @@ export const createClient = (data: {
         baseURL: data.base_url ?? undefined
       })
     case 'qwen':
-      return createTeamAI({
+      return createOpenAICompatible({
         apiKey: data.api_key ?? undefined,
         baseURL:
           data.base_url ?? 'https://dashscope.aliyuncs.com/compatible-mode/v1',
@@ -55,14 +56,12 @@ export const createClient = (data: {
       return createOpenAICompatible({
         apiKey: data.api_key ?? undefined,
         baseURL: data.base_url ?? 'https://api.moonshot.cn/v1',
-        includeUsage: true,
         name: 'moonshot'
       })
     case 'doubao':
-      return createOpenAICompatible({
+      return createTeamAI({
         apiKey: data.api_key ?? undefined,
         baseURL: data.base_url ?? 'https://ark.cn-beijing.volces.com/api/v3',
-        includeUsage: true,
         name: 'doubao'
       })
   }

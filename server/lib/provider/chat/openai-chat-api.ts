@@ -1,11 +1,11 @@
-import type { JSONSchema7 } from 'json-schema'
+import { type JSONSchema7 } from '@ai-sdk/provider'
 import {
   type InferValidator,
   lazyValidator,
   zodSchema
 } from '@ai-sdk/provider-utils'
 import { z } from 'zod/v4'
-import { openaiErrorDataSchema } from './openai-error'
+import { openaiErrorDataSchema } from '../openai-error'
 
 export interface OpenAIChatFunctionTool {
   type: 'function'

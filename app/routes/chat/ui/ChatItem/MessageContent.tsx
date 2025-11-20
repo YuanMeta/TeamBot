@@ -17,6 +17,8 @@ export interface MessageContentProps {
 const MessageContent = observer<{ msg: MessageData }>(({ msg }) => {
   const store = useStore()
   if (!msg.parts?.length && !msg.terminated) return <BubblesLoading />
+  console.log('msg.parts', msg.parts)
+
   return (
     <div className={'relative max-w-full'}>
       <div className={'flex flex-col gap-2.5'}>
@@ -39,9 +41,8 @@ const MessageContent = observer<{ msg: MessageData }>(({ msg }) => {
                 p.toolName === 'get_url_content') && (
                 <div>
                   {p.toolName === 'get_url_content' && <UrlTool tool={p} />}
-                  {store.toolsMap.get(p.toolName)?.type === 'web_search' && (
-                    <WebSearchTool tool={p} />
-                  )}
+                  {(store.toolsMap.get(p.toolName)?.type === 'web_search' ||
+                    p.toolName === 'web_search') && <WebSearchTool tool={p} />}
                   {store.toolsMap.get(p.toolName)?.type === 'http' &&
                     p.state !== 'completed' && <HttpTool tool={p} />}
                 </div>

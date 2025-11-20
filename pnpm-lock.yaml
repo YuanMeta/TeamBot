@@ -245,6 +245,9 @@ dependencies:
   nanoid:
     specifier: ^5.1.6
     version: 5.1.6
+  openai:
+    specifier: ^6.9.1
+    version: 6.9.1(zod@4.1.12)
   react:
     specifier: ^19.1.1
     version: 19.2.0
@@ -8888,6 +8891,21 @@ packages:
         optional: true
     dependencies:
       zod: 3.25.76
+    dev: false
+
+  /openai@6.9.1(zod@4.1.12):
+    resolution: {integrity: sha512-vQ5Rlt0ZgB3/BNmTa7bIijYFhz3YBceAA3Z4JuoMSBftBF9YqFHIEhZakSs+O/Ad7EaoEimZvHxD5ylRjN11Lg==}
+    hasBin: true
+    peerDependencies:
+      ws: ^8.18.0
+      zod: ^3.25 || ^4.0
+    peerDependenciesMeta:
+      ws:
+        optional: true
+      zod:
+        optional: true
+    dependencies:
+      zod: 4.1.12
     dev: false
 
   /package-json-from-dist@1.0.1:

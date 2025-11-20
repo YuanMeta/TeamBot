@@ -171,7 +171,3 @@ export const webSearchToolFactory =
 export const webSearch = (
   args: Parameters<typeof webSearchToolFactory>[0] = {} // default
 ) => webSearchToolFactory(args)
-
-const search = webSearch({})
-
-console.log('search', search.type)

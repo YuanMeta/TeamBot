@@ -36,7 +36,6 @@ export default observer(() => {
       password: ''
     },
     onSubmit: async ({ value }) => {
-      console.log(value)
       try {
         const res = await fetch('/api/login', {
           method: 'POST',

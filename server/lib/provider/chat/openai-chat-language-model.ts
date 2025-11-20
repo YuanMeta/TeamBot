@@ -20,6 +20,7 @@ import {
   parseProviderOptions,
   postJsonToApi
 } from '@ai-sdk/provider-utils'
+import { openaiFailedResponseHandler } from '../openai-error'
 import { convertToOpenAIChatMessages } from './convert-to-openai-chat-messages'
 import { getResponseMetadata } from './get-response-metadata'
 import { mapOpenAIFinishReason } from './map-openai-finish-reason'
@@ -28,21 +29,23 @@ import {
   openaiChatChunkSchema,
   openaiChatResponseSchema
 } from './openai-chat-api'
+import {
+  type OpenAIChatModelId,
+  openaiChatLanguageModelOptions
+} from './openai-chat-options'
 import { prepareChatTools } from './openai-chat-prepare-tools'
-import { openaiFailedResponseHandler } from './openai-error'
 
 type OpenAIChatConfig = {
   provider: string
   headers: () => Record<string, string | undefined>
-  baseURL?: string
-  apiKey?: string
+  url: (options: { modelId: string; path: string }) => string
   fetch?: FetchFunction
 }
 
 export class OpenAIChatLanguageModel implements LanguageModelV2 {
   readonly specificationVersion = 'v2'
 
-  readonly modelId: string
+  readonly modelId: OpenAIChatModelId
 
   readonly supportedUrls = {
     'image/*': [/^https?:\/\/.*$/]
@@ -50,7 +53,7 @@ export class OpenAIChatLanguageModel implements LanguageModelV2 {
 
   private readonly config: OpenAIChatConfig
 
-  constructor(modelId: string, config: OpenAIChatConfig) {
+  constructor(modelId: OpenAIChatModelId, config: OpenAIChatConfig) {
     this.modelId = modelId
     this.config = config
   }
@@ -76,6 +79,16 @@ export class OpenAIChatLanguageModel implements LanguageModelV2 {
   }: LanguageModelV2CallOptions) {
     const warnings: LanguageModelV2CallWarning[] = []
 
+    // Parse provider options
+    const openaiOptions =
+      (await parseProviderOptions({
+        provider: 'openai',
+        providerOptions,
+        schema: openaiChatLanguageModelOptions
+      })) ?? {}
+
+    const structuredOutputs = openaiOptions.structuredOutputs ?? true
+
     if (topK != null) {
       warnings.push({
         type: 'unsupported-setting',
@@ -83,7 +96,11 @@ export class OpenAIChatLanguageModel implements LanguageModelV2 {
       })
     }
 
-    if (responseFormat?.type === 'json' && responseFormat.schema != null) {
+    if (
+      responseFormat?.type === 'json' &&
+      responseFormat.schema != null &&
+      !structuredOutputs
+    ) {
       warnings.push({
         type: 'unsupported-setting',
         setting: 'responseFormat',
@@ -101,17 +118,176 @@ export class OpenAIChatLanguageModel implements LanguageModelV2 {
 
     warnings.push(...messageWarnings)
 
+    const strictJsonSchema = openaiOptions.strictJsonSchema ?? false
+
     const baseArgs = {
+      // model id:
       model: this.modelId,
+
+      // model specific settings:
+      logit_bias: openaiOptions.logitBias,
+      logprobs:
+        openaiOptions.logprobs === true ||
+        typeof openaiOptions.logprobs === 'number'
+          ? true
+          : undefined,
+      top_logprobs:
+        typeof openaiOptions.logprobs === 'number'
+          ? openaiOptions.logprobs
+          : typeof openaiOptions.logprobs === 'boolean'
+            ? openaiOptions.logprobs
+              ? 0
+              : undefined
+            : undefined,
+      user: openaiOptions.user,
+      parallel_tool_calls: openaiOptions.parallelToolCalls,
+
+      // standardized settings:
       max_tokens: maxOutputTokens,
       temperature,
       top_p: topP,
       frequency_penalty: frequencyPenalty,
       presence_penalty: presencePenalty,
+      response_format:
+        responseFormat?.type === 'json'
+          ? structuredOutputs && responseFormat.schema != null
+            ? {
+                type: 'json_schema',
+                json_schema: {
+                  schema: responseFormat.schema,
+                  strict: strictJsonSchema,
+                  name: responseFormat.name ?? 'response',
+                  description: responseFormat.description
+                }
+              }
+            : { type: 'json_object' }
+          : undefined,
       stop: stopSequences,
       seed,
+      verbosity: openaiOptions.textVerbosity,
+
+      // openai specific settings:
+      // TODO AI SDK 6: remove, we auto-map maxOutputTokens now
+      max_completion_tokens: openaiOptions.maxCompletionTokens,
+      store: openaiOptions.store,
+      metadata: openaiOptions.metadata,
+      prediction: openaiOptions.prediction,
+      reasoning_effort: openaiOptions.reasoningEffort,
+      service_tier: openaiOptions.serviceTier,
+      prompt_cache_key: openaiOptions.promptCacheKey,
+      safety_identifier: openaiOptions.safetyIdentifier,
+
+      // messages:
       messages
     }
+
+    if (isReasoningModel(this.modelId)) {
+      // remove unsupported settings for reasoning models
+      // see https://platform.openai.com/docs/guides/reasoning#limitations
+      if (baseArgs.temperature != null) {
+        baseArgs.temperature = undefined
+        warnings.push({
+          type: 'unsupported-setting',
+          setting: 'temperature',
+          details: 'temperature is not supported for reasoning models'
+        })
+      }
+      if (baseArgs.top_p != null) {
+        baseArgs.top_p = undefined
+        warnings.push({
+          type: 'unsupported-setting',
+          setting: 'topP',
+          details: 'topP is not supported for reasoning models'
+        })
+      }
+      if (baseArgs.frequency_penalty != null) {
+        baseArgs.frequency_penalty = undefined
+        warnings.push({
+          type: 'unsupported-setting',
+          setting: 'frequencyPenalty',
+          details: 'frequencyPenalty is not supported for reasoning models'
+        })
+      }
+      if (baseArgs.presence_penalty != null) {
+        baseArgs.presence_penalty = undefined
+        warnings.push({
+          type: 'unsupported-setting',
+          setting: 'presencePenalty',
+          details: 'presencePenalty is not supported for reasoning models'
+        })
+      }
+      if (baseArgs.logit_bias != null) {
+        baseArgs.logit_bias = undefined
+        warnings.push({
+          type: 'other',
+          message: 'logitBias is not supported for reasoning models'
+        })
+      }
+      if (baseArgs.logprobs != null) {
+        baseArgs.logprobs = undefined
+        warnings.push({
+          type: 'other',
+          message: 'logprobs is not supported for reasoning models'
+        })
+      }
+      if (baseArgs.top_logprobs != null) {
+        baseArgs.top_logprobs = undefined
+        warnings.push({
+          type: 'other',
+          message: 'topLogprobs is not supported for reasoning models'
+        })
+      }
+
+      // reasoning models use max_completion_tokens instead of max_tokens:
+      if (baseArgs.max_tokens != null) {
+        if (baseArgs.max_completion_tokens == null) {
+          baseArgs.max_completion_tokens = baseArgs.max_tokens
+        }
+        baseArgs.max_tokens = undefined
+      }
+    } else if (
+      this.modelId.startsWith('gpt-4o-search-preview') ||
+      this.modelId.startsWith('gpt-4o-mini-search-preview')
+    ) {
+      if (baseArgs.temperature != null) {
+        baseArgs.temperature = undefined
+        warnings.push({
+          type: 'unsupported-setting',
+          setting: 'temperature',
+          details:
+            'temperature is not supported for the search preview models and has been removed.'
+        })
+      }
+    }
+
+    // Validate flex processing support
+    if (
+      openaiOptions.serviceTier === 'flex' &&
+      !supportsFlexProcessing(this.modelId)
+    ) {
+      warnings.push({
+        type: 'unsupported-setting',
+        setting: 'serviceTier',
+        details:
+          'flex processing is only available for o3, o4-mini, and gpt-5 models'
+      })
+      baseArgs.service_tier = undefined
+    }
+
+    // Validate priority processing support
+    if (
+      openaiOptions.serviceTier === 'priority' &&
+      !supportsPriorityProcessing(this.modelId)
+    ) {
+      warnings.push({
+        type: 'unsupported-setting',
+        setting: 'serviceTier',
+        details:
+          'priority processing is only available for supported models (gpt-4, gpt-5, gpt-5-mini, o3, o4-mini) and requires Enterprise access. gpt-5-nano is not supported'
+      })
+      baseArgs.service_tier = undefined
+    }
+
     const {
       tools: openaiTools,
       toolChoice: openaiToolChoice,
@@ -119,8 +295,8 @@ export class OpenAIChatLanguageModel implements LanguageModelV2 {
     } = prepareChatTools({
       tools,
       toolChoice,
-      strictJsonSchema: false,
-      structuredOutputs: false
+      structuredOutputs,
+      strictJsonSchema
     })
 
     return {
@@ -143,11 +319,11 @@ export class OpenAIChatLanguageModel implements LanguageModelV2 {
       value: response,
       rawValue: rawResponse
     } = await postJsonToApi({
-      url: `${this.config.baseURL}/chat/completions`,
-      headers: combineHeaders({
-        Authorization: `Bearer ${this.config.apiKey}`,
-        ...options.headers
+      url: this.config.url({
+        path: '/chat/completions',
+        modelId: this.modelId
       }),
+      headers: combineHeaders(this.config.headers(), options.headers),
       body,
       failedResponseHandler: openaiFailedResponseHandler,
       successfulResponseHandler: createJsonResponseHandler(
@@ -236,14 +412,13 @@ export class OpenAIChatLanguageModel implements LanguageModelV2 {
         include_usage: true
       }
     }
-    console.log('stream body', body)
 
     const { responseHeaders, value: response } = await postJsonToApi({
-      url: `${this.config.baseURL}/chat/completions`,
-      headers: combineHeaders({
-        Authorization: `Bearer ${this.config.apiKey}`,
-        ...options.headers
+      url: this.config.url({
+        path: '/chat/completions',
+        modelId: this.modelId
       }),
+      headers: combineHeaders(this.config.headers(), options.headers),
       body,
       failedResponseHandler: openaiFailedResponseHandler,
       successfulResponseHandler: createEventSourceResponseHandler(

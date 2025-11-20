@@ -48,12 +48,17 @@ export const UrlTool = observer(({ tool }: { tool: ToolPart }) => {
 
 export const WebSearchTool = observer(({ tool }: { tool: ToolPart }) => {
   const store = useStore()
-  if (!tool.input?.query) return null
+  // web_search是模型内置工具 需要特殊处理
+  console.log('tool', tool)
+
+  if (!tool.input?.query && tool.toolName !== 'web_search') return null
   if (tool.state === 'start') {
     return (
       <div className='flex items-center gap-1'>
         <Search className={'size-4 text-neutral-500 dark:text-neutral-400'} />
-        <span className={'shine-text'}>{tool.input?.query}...</span>
+        <span className={'shine-text'}>
+          {tool.input?.query || '正在搜索相关内容'}...
+        </span>
       </div>
     )
   }
@@ -68,7 +73,10 @@ export const WebSearchTool = observer(({ tool }: { tool: ToolPart }) => {
     )
   }
   return (
-    <TextHelp text={tool.input?.query} delay={1000}>
+    <TextHelp
+      text={tool.input?.query || tool.output?.action?.query}
+      delay={1000}
+    >
       <Badge
         variant={'secondary'}
         className={'cursor-pointer text-sm'}
@@ -87,7 +95,9 @@ export const WebSearchTool = observer(({ tool }: { tool: ToolPart }) => {
             <ChevronRight className={'size-7'} strokeWidth={3} />
           </>
         ) : (
-          <span>{tool.output as string}</span>
+          <span>
+            {tool.output?.action?.query || (String(tool.output) as string)}
+          </span>
         )}
       </Badge>
     </TextHelp>
