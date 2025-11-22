@@ -126,7 +126,7 @@ export const ChatSidebar = observer(() => {
 
     const handleScroll = () => {
       const { scrollTop, scrollHeight, clientHeight } = container
-      if (scrollHeight - scrollTop - clientHeight < 50) {
+      if (scrollHeight - scrollTop - clientHeight < 100) {
         if (!store.state.loadingChats && store.loadMoreChats) {
           store.loadChats()
         }
@@ -209,12 +209,6 @@ export const ChatSidebar = observer(() => {
             {!store.state.chats.length && !store.state.loadingChats && (
               <div className={'text-center text-primary/50 text-[13px] mt-5'}>
                 暂无聊天记录
-              </div>
-            )}
-            {store.state.loadingChats && store.state.chats.length > 0 && (
-              <div className={'px-2 py-2 space-y-2'}>
-                <Skeleton className='h-4 w-full' />
-                <Skeleton className='h-4 w-1/2' />
               </div>
             )}
           </div>
