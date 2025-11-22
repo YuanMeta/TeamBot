@@ -9,6 +9,8 @@ import type {
   SharedV2ProviderMetadata
 } from '@ai-sdk/provider'
 import { APICallError } from '@ai-sdk/provider'
+import * as fs from 'fs'
+import * as path from 'path'
 import {
   combineHeaders,
   createEventSourceResponseHandler,
@@ -693,7 +695,6 @@ export class OpenAIResponsesLanguageModel implements LanguageModelV2 {
     > = {}
 
     let serviceTier: string | undefined
-
     return {
       stream: response.pipeThrough(
         new TransformStream<
@@ -715,9 +716,18 @@ export class OpenAIResponsesLanguageModel implements LanguageModelV2 {
               controller.enqueue({ type: 'error', error: chunk.error })
               return
             }
-
             const value = chunk.value
-
+            // 将 value 追加到日志文件
+            // try {
+            //   const logDir = path.join(process.cwd(), 'logs')
+            //   if (!fs.existsSync(logDir)) {
+            //     fs.mkdirSync(logDir, { recursive: true })
+            //   }
+            //   const logFile = path.join(logDir, 'openai-responses.log')
+            //   fs.appendFileSync(logFile, JSON.stringify(value) + '\n')
+            // } catch (error) {
+            //   console.error('Failed to write log:', error)
+            // }
             if (isResponseOutputItemAddedChunk(value)) {
               if (value.item.type === 'function_call') {
                 ongoingToolCalls[value.output_index] = {
@@ -858,7 +868,6 @@ export class OpenAIResponsesLanguageModel implements LanguageModelV2 {
                 })
               } else if (value.item.type === 'web_search_call') {
                 ongoingToolCalls[value.output_index] = undefined
-
                 controller.enqueue({
                   type: 'tool-result',
                   toolCallId: value.item.id,

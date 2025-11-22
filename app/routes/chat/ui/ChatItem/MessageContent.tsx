@@ -17,8 +17,6 @@ export interface MessageContentProps {
 const MessageContent = observer<{ msg: MessageData }>(({ msg }) => {
   const store = useStore()
   if (!msg.parts?.length && !msg.terminated) return <BubblesLoading />
-  console.log('msg.parts', msg.parts)
-
   return (
     <div className={'relative max-w-full'}>
       <div className={'flex flex-col gap-2.5'}>

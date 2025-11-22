@@ -1,14 +1,11 @@
 import dayjs from 'dayjs'
 import type { ChatStore, MessageData } from './store'
 import { trpc } from '~/.client/trpc'
-import {
-  parseJsonEventStream,
-  uiMessageChunkSchema,
-  type UIMessageChunk
-} from 'ai'
+import { parseJsonEventStream } from 'ai'
 import type { MessagePart, ReasonPart, TextPart, ToolPart } from 'types'
 import { observable, runInAction } from 'mobx'
 import { cid, findLast } from '../../../lib/utils'
+import { uiMessageChunkSchema, type TemaMessageChunk } from './msgSchema'
 export class ChatClient {
   private generateTitleSet = new Set<string>()
   constructor(private readonly store: ChatStore) {}
@@ -102,9 +99,10 @@ export class ChatClient {
       }),
       credentials: 'include'
     })
-    const p = parseJsonEventStream<UIMessageChunk>({
+    const p = parseJsonEventStream<TemaMessageChunk>({
       stream: res.body as any,
-      schema: uiMessageChunkSchema
+      // @ts-ignore
+      schema: null
     })
     const reader = p?.getReader()
     if (reader) {
@@ -127,6 +125,9 @@ export class ChatClient {
             }
             break
           }
+          // @ts-ignore
+          console.log('value', value.success, value.value)
+
           if (value.success) {
             runInAction(() => {
               switch (value.value.type) {
@@ -241,7 +242,6 @@ export class ChatClient {
                   data.onFinish?.()
                   break
               }
-              console.log('value', value.value)
             })
           }
         }
@@ -295,7 +295,7 @@ export class ChatClient {
       }),
       credentials: 'include'
     })
-    const p = parseJsonEventStream<UIMessageChunk>({
+    const p = parseJsonEventStream<TemaMessageChunk>({
       stream: res.body as any,
       schema: uiMessageChunkSchema
     })

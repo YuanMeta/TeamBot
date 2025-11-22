@@ -2,7 +2,6 @@ import {
   convertToModelMessages,
   stepCountIs,
   streamText,
-  type Tool,
   type APICallError
 } from 'ai'
 import z from 'zod'
@@ -13,7 +12,6 @@ import { MessageManager } from '../lib/message'
 import { getUserId } from '../session'
 import type { Request, Response } from 'express'
 import type { Knex } from 'knex'
-import type { TeamAIProvider } from 'server/lib/provider/openai-provider'
 const InputSchema = z.object({
   chatId: z.string(),
   regenerate: z.boolean().optional(),
@@ -64,11 +62,7 @@ export const completions = async (req: Request, res: Response, db: Knex) => {
     model: client(chat.model!),
     messages: convertToModelMessages(uiMessages),
     stopWhen: stepCountIs(20),
-    tools: {
-      web_search: (client as TeamAIProvider).tools.doubaoWebSearch({
-        max_keyword: 2
-      })
-    },
+    tools,
     abortSignal: controller.signal,
     system: MessageManager.getSystemPromp({
       summary: summary,
@@ -175,7 +169,7 @@ export const completions = async (req: Request, res: Response, db: Knex) => {
       await db('messages').where('id', assistantMessage.id).update({
         error: err.message
       })
-      console.log('err request', err)
+      console.log('err request', JSON.stringify(err.requestBodyValues))
     }
   })
   result.pipeUIMessageStreamToResponse(res)

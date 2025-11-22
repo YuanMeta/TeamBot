@@ -7,7 +7,6 @@ import { createAnthropic } from '@ai-sdk/anthropic'
 import { createDeepSeek } from '@ai-sdk/deepseek'
 import { createOpenAICompatible } from '@ai-sdk/openai-compatible'
 import { createTeamAI } from './provider/openai-provider'
-// import { createTeamAI } from './provider/provider'
 export const createClient = (data: {
   mode: string
   api_key: string | null
@@ -59,7 +58,7 @@ export const createClient = (data: {
         name: 'moonshot'
       })
     case 'doubao':
-      return createTeamAI({
+      return createOpenAICompatible({
         apiKey: data.api_key ?? undefined,
         baseURL: data.base_url ?? 'https://ark.cn-beijing.volces.com/api/v3',
         name: 'doubao'

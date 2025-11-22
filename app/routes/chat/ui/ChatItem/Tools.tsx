@@ -49,8 +49,6 @@ export const UrlTool = observer(({ tool }: { tool: ToolPart }) => {
 export const WebSearchTool = observer(({ tool }: { tool: ToolPart }) => {
   const store = useStore()
   // web_search是模型内置工具 需要特殊处理
-  console.log('tool', tool)
-
   if (!tool.input?.query && tool.toolName !== 'web_search') return null
   if (tool.state === 'start') {
     return (
