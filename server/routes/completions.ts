@@ -18,7 +18,8 @@ const InputSchema = z.object({
   assistantId: z.string(),
   model: z.string(),
   repoIds: z.string().array().optional(),
-  tools: z.string().array()
+  tools: z.string().array(),
+  builtin_search: z.boolean().optional()
 })
 
 export const completions = async (req: Request, res: Response, db: Knex) => {
@@ -63,14 +64,25 @@ export const completions = async (req: Request, res: Response, db: Knex) => {
     messages: convertToModelMessages(uiMessages),
     stopWhen: stepCountIs(20),
     tools,
+    maxOutputTokens: Number(assistant.options?.maxOutputTokens) || undefined,
+    temperature: Number(assistant.options?.temperature) || undefined,
+    topP: assistant.options.top_p.open
+      ? Number(assistant.options?.top_p)
+      : undefined,
+    frequencyPenalty: assistant.options.frequencyPenalty.open
+      ? Number(assistant.options?.frequencyPenalty)
+      : undefined,
+    presencePenalty: assistant.options.presencePenalty.open
+      ? Number(assistant.options?.presencePenalty)
+      : undefined,
     abortSignal: controller.signal,
     system: MessageManager.getSystemPromp({
       summary: summary,
       tools: json.tools
     }),
-    // providerOptions: {
-    //   qwen: { enable_search: true }
-    // },
+    providerOptions: {
+      qwen: json.builtin_search ? { enable_search: true } : {}
+    },
     onAbort: async () => {
       await db('messages').where('id', assistantMessage.id).update({
         terminated: true

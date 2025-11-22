@@ -26,13 +26,7 @@ import { toast } from 'sonner'
 import { useLocalState } from '~/hooks/localState'
 import { Spinner } from '~/components/ui/spinner'
 import type { TableTool } from 'types/table'
-import {
-  Card,
-  CardAction,
-  CardContent,
-  CardHeader,
-  CardTitle
-} from '~/components/ui/card'
+import { Card, CardContent, CardHeader, CardTitle } from '~/components/ui/card'
 import { builtInSearchMode } from './Data'
 import { RadioGroup, RadioGroupItem } from '~/components/ui/radio-group'
 import { Label } from '~/components/ui/label'
@@ -97,10 +91,10 @@ export const AddAssistant = observer(
             base_url: value.base_url || null,
             options: {
               ...value.options,
-              frequencyPenalty: state.options.frequencyPenalty.value,
-              presencePenalty: state.options.presencePenalty.value,
-              temperature: state.options.temperature.value,
-              top_p: state.options.top_p.value
+              frequencyPenalty: state.options.frequencyPenalty,
+              presencePenalty: state.options.presencePenalty,
+              temperature: state.options.temperature,
+              top_p: state.options.top_p
             }
           }
           if (props.id) {
@@ -228,7 +222,6 @@ export const AddAssistant = observer(
                               id={field.name}
                               name={field.name}
                               value={field.state.value}
-                              // onBlur={field.handleBlur}
                               onChange={(e) =>
                                 field.handleChange(e.target.value)
                               }
@@ -590,7 +583,7 @@ export const AddAssistant = observer(
                           if (!/^\d+$/.test(value)) {
                             return { message: '请输入正确的最大输出Token数' }
                           }
-                          if (Number(value) < 500) {
+                          if (Number(value) < 500 && Number(value) !== 0) {
                             return {
                               message: '最大输出Token数至少应大约500'
                             }
