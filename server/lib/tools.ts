@@ -18,7 +18,7 @@ export const getUrlContent = tool({
     return content?.content ? markdown : 'Failed to retrieve page content'
   }
 })
-getUrlContent.inputSchema
+
 export const createHttpTool = (options: {
   url: string
   method: 'GET' | 'POST' | 'PUT' | 'DELETE' | 'PATCH'

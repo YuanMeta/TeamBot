@@ -1,9 +1,13 @@
-"use client"
+import * as React from 'react'
+import * as SliderPrimitive from '@radix-ui/react-slider'
 
-import * as React from "react"
-import * as SliderPrimitive from "@radix-ui/react-slider"
+import { cn } from '~/lib/utils'
+import { Tooltip, TooltipContent, TooltipTrigger } from './tooltip'
 
-import { cn } from "~/lib/utils"
+interface SliderProps
+  extends React.ComponentProps<typeof SliderPrimitive.Root> {
+  onValueCommit?: (value: number[]) => void
+}
 
 function Slider({
   className,
@@ -11,8 +15,9 @@ function Slider({
   value,
   min = 0,
   max = 100,
+  onValueCommit,
   ...props
-}: React.ComponentProps<typeof SliderPrimitive.Root>) {
+}: SliderProps) {
   const _values = React.useMemo(
     () =>
       Array.isArray(value)
@@ -22,39 +27,80 @@ function Slider({
           : [min, max],
     [value, defaultValue, min, max]
   )
-
+  const [showTooltip, setShowTooltip] = React.useState(false)
+  const ready = React.useRef(false)
+  const down = React.useRef(false)
+  const valueRef = React.useRef(value)
+  valueRef.current = value
+  const mousedown = React.useCallback(() => {
+    setShowTooltip(true)
+    down.current = true
+    window.addEventListener('mouseup', close, { once: true })
+  }, [])
+  const close = React.useCallback(() => {
+    window.removeEventListener('mouseup', close)
+    setTimeout(() => {
+      down.current = false
+      // 在滑动结束时触发 onValueCommit 事件
+      if (onValueCommit && valueRef.current) {
+        onValueCommit(
+          Array.isArray(valueRef.current)
+            ? valueRef.current
+            : [valueRef.current]
+        )
+      }
+    }, 16)
+  }, [onValueCommit])
+  React.useEffect(() => {
+    setTimeout(() => {
+      ready.current = true
+    }, 16)
+  }, [])
   return (
     <SliderPrimitive.Root
-      data-slot="slider"
+      data-slot='slider'
       defaultValue={defaultValue}
       value={value}
       min={min}
       max={max}
       className={cn(
-        "relative flex w-full touch-none items-center select-none data-[disabled]:opacity-50 data-[orientation=vertical]:h-full data-[orientation=vertical]:min-h-44 data-[orientation=vertical]:w-auto data-[orientation=vertical]:flex-col",
+        'relative flex w-full touch-none items-center select-none data-[disabled]:opacity-50 data-[orientation=vertical]:h-full data-[orientation=vertical]:min-h-44 data-[orientation=vertical]:w-auto data-[orientation=vertical]:flex-col',
         className
       )}
       {...props}
     >
       <SliderPrimitive.Track
-        data-slot="slider-track"
+        data-slot='slider-track'
         className={cn(
-          "bg-muted relative grow overflow-hidden rounded-full data-[orientation=horizontal]:h-1.5 data-[orientation=horizontal]:w-full data-[orientation=vertical]:h-full data-[orientation=vertical]:w-1.5"
+          'bg-muted relative grow overflow-hidden rounded-full data-[orientation=horizontal]:h-1.5 data-[orientation=horizontal]:w-full data-[orientation=vertical]:h-full data-[orientation=vertical]:w-1.5'
         )}
       >
         <SliderPrimitive.Range
-          data-slot="slider-range"
+          data-slot='slider-range'
           className={cn(
-            "bg-primary absolute data-[orientation=horizontal]:h-full data-[orientation=vertical]:w-full"
+            'bg-primary absolute data-[orientation=horizontal]:h-full data-[orientation=vertical]:w-full'
           )}
         />
       </SliderPrimitive.Track>
       {Array.from({ length: _values.length }, (_, index) => (
-        <SliderPrimitive.Thumb
-          data-slot="slider-thumb"
+        <Tooltip
+          open={showTooltip}
           key={index}
-          className="border-primary ring-ring/50 block size-4 shrink-0 rounded-full border bg-white shadow-sm transition-[color,box-shadow] hover:ring-4 focus-visible:ring-4 focus-visible:outline-hidden disabled:pointer-events-none disabled:opacity-50"
-        />
+          onOpenChange={(open) => {
+            if (down.current || !ready.current) return
+            setShowTooltip(open)
+          }}
+        >
+          <TooltipContent>{value}</TooltipContent>
+          <TooltipTrigger asChild>
+            <SliderPrimitive.Thumb
+              data-slot='slider-thumb'
+              onPointerDown={mousedown}
+              onPointerUp={close}
+              className='border-primary bg-background ring-ring/50 block size-4 shrink-0 rounded-full border shadow-sm transition-[color,box-shadow] hover:ring-4 focus-visible:ring-4 focus-visible:outline-hidden disabled:pointer-events-none disabled:opacity-50'
+            />
+          </TooltipTrigger>
+        </Tooltip>
       ))}
     </SliderPrimitive.Root>
   )

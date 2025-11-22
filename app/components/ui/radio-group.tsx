@@ -13,7 +13,7 @@ function RadioGroup({
   return (
     <RadioGroupPrimitive.Root
       data-slot='radio-group'
-      className={cn('flex gap-3', className)}
+      className={cn('flex gap-3 h-9 items-center', className)}
       {...props}
     />
   )

@@ -7,7 +7,6 @@ import type { Knex } from 'knex'
 import { parseRecord } from './table'
 import type { TableMessage } from 'types/table'
 
-let maxTokens = 20000
 export class MessageManager {
   static async compreTokena(data: {
     model: LanguageModel
@@ -85,6 +84,7 @@ Output only the summarized version of the conversation.`,
       base_url: assistant.base_url
     })!
     let summary = chat.summary
+    const maxTokens = Number(assistant.options?.maxContextTokens) || 20000
     const [userMessage, assistantMessage] = messages.slice(-2)
     const uiMessages: UIMessage[] = []
     if (messages.length > 2) {

@@ -30,10 +30,15 @@ import {
   Card,
   CardAction,
   CardContent,
-  CardDescription,
   CardHeader,
   CardTitle
 } from '~/components/ui/card'
+import { builtInSearchMode } from './Data'
+import { RadioGroup, RadioGroupItem } from '~/components/ui/radio-group'
+import { Label } from '~/components/ui/label'
+import { Slider } from '~/components/ui/slider'
+import { Checkbox } from '~/components/ui/checkbox'
+import { TextHelp } from '~/components/project/text-help'
 
 export const AddAssistant = observer(
   (props: { open: boolean; onClose: () => void; id: string | null }) => {
@@ -41,6 +46,24 @@ export const AddAssistant = observer(
       submitting: false,
       tools: [] as TableTool[],
       update: false,
+      options: {
+        frequencyPenalty: {
+          open: false,
+          value: 0
+        },
+        presencePenalty: {
+          open: false,
+          value: 0
+        },
+        temperature: {
+          open: false,
+          value: 1
+        },
+        top_p: {
+          open: false,
+          value: 1
+        }
+      },
       remoteModels: [] as { id: string; model: string; provider: string }[]
     })
     const form = useForm({
@@ -50,7 +73,11 @@ export const AddAssistant = observer(
         models: [] as string[],
         api_key: null as string | null,
         base_url: null as string | null,
-        options: {} as Record<string, any>,
+        options: {
+          builtin_search: 'on',
+          maxContextTokens: 20000,
+          maxOutputTokens: 0
+        } as Record<string, any>,
         tools: [] as string[]
       },
       onSubmit: async ({ value }) => {
@@ -68,7 +95,13 @@ export const AddAssistant = observer(
             name: value.name,
             api_key: value.api_key || null,
             base_url: value.base_url || null,
-            options: {}
+            options: {
+              ...value.options,
+              frequencyPenalty: state.options.frequencyPenalty.value,
+              presencePenalty: state.options.presencePenalty.value,
+              temperature: state.options.temperature.value,
+              top_p: state.options.top_p.value
+            }
           }
           if (props.id) {
             await trpc.manage.updateAssistant.mutate({
@@ -111,13 +144,25 @@ export const AddAssistant = observer(
                 key as keyof typeof form.state.values,
                 res[key as keyof typeof res]
               )
+              setState({
+                options: {
+                  frequencyPenalty:
+                    res.options.frequencyPenalty ||
+                    state.options.frequencyPenalty,
+                  presencePenalty:
+                    res.options.presencePenalty ||
+                    state.options.presencePenalty,
+                  temperature:
+                    res.options.temperature || state.options.temperature,
+                  top_p: res.options.top_p || state.options.top_p
+                }
+              })
             })
           }
         })
       }
     }, [])
     const modelOptions = useMemo(() => {
-      const mode = form.getFieldValue('mode')
       return state.remoteModels
         .filter(
           (m) =>
@@ -156,8 +201,8 @@ export const AddAssistant = observer(
                 form.handleSubmit()
               }}
             >
-              <div>
-                <div className={'max-w-md'}>
+              <div className={'flex gap-6'}>
+                <div className={'flex-1'}>
                   <FieldGroup>
                     <form.Field
                       name='name'
@@ -454,14 +499,301 @@ export const AddAssistant = observer(
                     {props.id ? '更新' : '创建'}
                   </Button>
                 </div>
+                <div className={'flex-1'}>
+                  <FieldGroup>
+                    {builtInSearchMode.has(form.getFieldValue('mode')) && (
+                      <form.Field
+                        name='options.builtin_search'
+                        children={(field) => {
+                          const isInvalid =
+                            field.state.meta.isTouched &&
+                            !field.state.meta.isValid
+                          return (
+                            <Field data-invalid={isInvalid}>
+                              <FieldLabel
+                                htmlFor={field.name}
+                                required
+                                help={
+                                  '如果使用官方api, 可开启内置搜索能力，用于获取最新的信息。或者配置工具进行网络搜索'
+                                }
+                              >
+                                是否开启内置搜索
+                              </FieldLabel>
+                              <RadioGroup
+                                value={field.state.value}
+                                onValueChange={(value) => field.setValue(value)}
+                              >
+                                <div className='flex items-center gap-3'>
+                                  <RadioGroupItem value='on' id='r2' />
+                                  <Label htmlFor='r2'>开启内置搜索</Label>
+                                </div>
+                                <div className='flex items-center gap-3'>
+                                  <RadioGroupItem value='off' id='r1' />
+                                  <Label htmlFor='r1'>不开启内置搜索</Label>
+                                </div>
+                              </RadioGroup>
+                            </Field>
+                          )
+                        }}
+                      />
+                    )}
+                    <form.Field
+                      name='options.maxContextTokens'
+                      validators={{
+                        onSubmit: ({ value }) => {
+                          if (!/^\d+$/.test(value)) {
+                            return { message: '请输入正确的最大上下文Token数' }
+                          }
+                          if (Number(value) < 5000 || Number(value) > 100000) {
+                            return {
+                              message: '最大上下文Token数应在5000-200000之间'
+                            }
+                          }
+                          return undefined
+                        }
+                      }}
+                      children={(field) => {
+                        const isInvalid =
+                          field.state.meta.isTouched &&
+                          !field.state.meta.isValid
+                        return (
+                          <Field>
+                            <FieldLabel
+                              htmlFor={field.name}
+                              help={
+                                '上下文越长记住的内容越多，但消耗的输入token也越多，建议设置为20000-50000之间。\n当上下文超出该值，TeamBot将自动压缩之前的对话内容，保留关键信息'
+                              }
+                            >
+                              最大上下文Token数
+                            </FieldLabel>
+                            <Input
+                              id={field.name}
+                              name={field.name}
+                              value={field.state.value ?? undefined}
+                              onBlur={field.handleBlur}
+                              maxLength={6}
+                              onChange={(e) =>
+                                field.handleChange(e.target.value)
+                              }
+                            />
+                            {isInvalid && (
+                              <FieldError errors={field.state.meta.errors} />
+                            )}
+                          </Field>
+                        )
+                      }}
+                    />
+                    <form.Field
+                      name='options.maxOutputTokens'
+                      validators={{
+                        onSubmit: ({ value }) => {
+                          if (!/^\d+$/.test(value)) {
+                            return { message: '请输入正确的最大输出Token数' }
+                          }
+                          if (Number(value) < 500) {
+                            return {
+                              message: '最大输出Token数至少应大约500'
+                            }
+                          }
+                          return undefined
+                        }
+                      }}
+                      children={(field) => {
+                        const isInvalid =
+                          field.state.meta.isTouched &&
+                          !field.state.meta.isValid
+                        return (
+                          <Field>
+                            <FieldLabel
+                              htmlFor={field.name}
+                              help={
+                                '限制每轮对话输出的最大Token数，0表示不限制'
+                              }
+                            >
+                              最大输出Token数
+                            </FieldLabel>
+                            <Input
+                              id={field.name}
+                              name={field.name}
+                              value={field.state.value ?? undefined}
+                              onBlur={field.handleBlur}
+                              maxLength={6}
+                              onChange={(e) =>
+                                field.handleChange(e.target.value)
+                              }
+                            />
+                            {isInvalid && (
+                              <FieldError errors={field.state.meta.errors} />
+                            )}
+                          </Field>
+                        )
+                      }}
+                    />
+
+                    <Field>
+                      <FieldLabel
+                        help={
+                          '如果对模型参数不是十分了解，不建议开启自定义模型参数。不分模型不支持所有参数。'
+                        }
+                      >
+                        模型参数
+                      </FieldLabel>
+                      <div className={'space-y-4'}>
+                        <div className={'flex items-center'}>
+                          <div className={'w-52'}>
+                            <div className={'leading-5 text-sm'}>
+                              词汇丰富度{' '}
+                              <TextHelp text='值越大，用词越丰富多样；值越低，用词更朴实简单' />
+                              <br />{' '}
+                              <span
+                                className={'text-sm text-secondary-foreground'}
+                              >
+                                Frequency Penalty
+                              </span>
+                            </div>
+                          </div>
+                          <div className={'pl-2 pr-5'}>
+                            <Checkbox
+                              checked={state.options.frequencyPenalty.open}
+                              onCheckedChange={(checked) => {
+                                setState((state) => {
+                                  state.options.frequencyPenalty.open =
+                                    checked as boolean
+                                })
+                              }}
+                            />
+                          </div>
+                          <Slider
+                            min={-2}
+                            max={2}
+                            step={0.1}
+                            value={[state.options.frequencyPenalty.value]}
+                            disabled={!state.options.frequencyPenalty.open}
+                            onValueChange={(value) => {
+                              setState((state) => {
+                                state.options.frequencyPenalty.value = value[0]
+                              })
+                            }}
+                          />
+                        </div>
+                        <div className={'flex items-center'}>
+                          <div className={'w-52'}>
+                            <div className={'leading-5 text-sm'}>
+                              表述散发度{' '}
+                              <TextHelp text='值越大，越倾向不同的表达方式，避免概念重复；值越小，越倾向使用重复的概念或叙述，表达更具一致性' />
+                              <br />{' '}
+                              <span
+                                className={'text-sm text-secondary-foreground'}
+                              >
+                                Presence Penalty
+                              </span>
+                            </div>
+                          </div>
+                          <div className={'pl-2 pr-5'}>
+                            <Checkbox
+                              checked={state.options.presencePenalty.open}
+                              onCheckedChange={(checked) => {
+                                setState((state) => {
+                                  state.options.presencePenalty.open =
+                                    checked as boolean
+                                })
+                              }}
+                            />
+                          </div>
+                          <Slider
+                            min={-2}
+                            max={2}
+                            step={0.1}
+                            value={[state.options.presencePenalty.value]}
+                            disabled={!state.options.presencePenalty.open}
+                            onValueChange={(value) => {
+                              setState((state) => {
+                                state.options.presencePenalty.value = value[0]
+                              })
+                            }}
+                          />
+                        </div>
+                        <div className={'flex items-center'}>
+                          <div className={'w-52'}>
+                            <div className={'leading-5 text-sm'}>
+                              创意活跃度{' '}
+                              <TextHelp text='数值越大，回答越有创意和想象力；数值越小，回答越严谨' />
+                              <br />{' '}
+                              <span
+                                className={'text-sm text-secondary-foreground'}
+                              >
+                                Temperature
+                              </span>
+                            </div>
+                          </div>
+                          <div className={'pl-2 pr-5'}>
+                            <Checkbox
+                              checked={state.options.temperature.open}
+                              onCheckedChange={(checked) => {
+                                setState((state) => {
+                                  state.options.temperature.open =
+                                    checked as boolean
+                                })
+                              }}
+                            />
+                          </div>
+                          <Slider
+                            min={0}
+                            max={2}
+                            step={0.1}
+                            value={[state.options.temperature.value]}
+                            disabled={!state.options.temperature.open}
+                            onValueChange={(value) => {
+                              setState((state) => {
+                                state.options.temperature.value = value[0]
+                              })
+                            }}
+                          />
+                        </div>
+                        <div className={'flex items-center'}>
+                          <div className={'w-52'}>
+                            <div className={'leading-5 text-sm'}>
+                              思维开放度{' '}
+                              <TextHelp text='考虑多少种可能性，值越大，接受更多可能的回答；值越小，倾向选择最可能的回答。不推荐和创意活跃度一起更改' />
+                              <br />{' '}
+                              <span
+                                className={'text-sm text-secondary-foreground'}
+                              >
+                                Top P
+                              </span>
+                            </div>
+                          </div>
+                          <div className={'pl-2 pr-5'}>
+                            <Checkbox
+                              checked={state.options.top_p.open}
+                              onCheckedChange={(checked) => {
+                                setState((state) => {
+                                  state.options.top_p.open = checked as boolean
+                                })
+                              }}
+                            />
+                          </div>
+                          <Slider
+                            min={0}
+                            max={1}
+                            step={0.1}
+                            value={[state.options.top_p.value]}
+                            disabled={!state.options.top_p.open}
+                            onValueChange={(value) => {
+                              setState((state) => {
+                                state.options.top_p.value = value[0]
+                              })
+                            }}
+                          />
+                        </div>
+                      </div>
+                    </Field>
+                  </FieldGroup>
+                </div>
               </div>
             </form>
           </CardContent>
         </Card>
-        {/* <Button variant={'outline'} className={'mb-5'} onClick={props.onClose}>
-          <ChevronLeft />
-          返回
-        </Button> */}
       </div>
     )
   }

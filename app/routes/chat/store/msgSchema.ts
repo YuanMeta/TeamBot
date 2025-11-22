@@ -125,6 +125,7 @@ export const uiMessageChunkSchema = lazyValidator(() =>
         title: z.string().optional(),
         providerMetadata: providerMetadataSchema.optional()
       }),
+      // 自定义，豆包source
       z.strictObject({
         type: z.literal('source'),
         sourceType: z.enum(['url', 'document']),
