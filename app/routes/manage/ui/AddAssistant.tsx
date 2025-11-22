@@ -130,8 +130,10 @@ export const AddAssistant = observer(
         .then((res) => {
           setState({ tools: res.tools })
         })
-      if (id) {
-        trpc.manage.getAssistant.query(id as string).then((res) => {
+    }, [])
+    useEffect(() => {
+      if (props.id) {
+        trpc.manage.getAssistant.query(props.id as string).then((res) => {
           if (res) {
             Object.keys(res).forEach((key) => {
               form.setFieldValue(
@@ -155,7 +157,7 @@ export const AddAssistant = observer(
           }
         })
       }
-    }, [])
+    }, [props.id])
     const modelOptions = useMemo(() => {
       return state.remoteModels
         .filter(
@@ -623,7 +625,7 @@ export const AddAssistant = observer(
                       }}
                     />
 
-                    <Field>
+                    <Field className={'mt-1'}>
                       <FieldLabel
                         help={
                           '如果对模型参数不是十分了解，不建议开启自定义模型参数。不分模型不支持所有参数。'
@@ -631,7 +633,7 @@ export const AddAssistant = observer(
                       >
                         模型参数
                       </FieldLabel>
-                      <div className={'space-y-4'}>
+                      <div className={'space-y-5'}>
                         <div className={'flex items-center'}>
                           <div className={'w-52'}>
                             <div className={'leading-5 text-sm'}>
