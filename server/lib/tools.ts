@@ -7,6 +7,7 @@ import { parseRecord } from './table'
 import { createWebSearchTool } from './search'
 import { google } from '@ai-sdk/google'
 import type { TableAssistant } from 'types/table'
+import { openai } from '@ai-sdk/openai'
 export const getUrlContent = tool({
   description:
     'Can retrieve the main text content of a given URL webpage and return it in Markdown format',
@@ -136,6 +137,9 @@ export const composeTools = async (
     tools.google_search = google.tools.googleSearch({})
     tools.url_context = google.tools.urlContext({})
   }
+  if (assistant.mode === 'openai' && options.builtinSearch) {
+    tools.web_search = openai.tools.webSearch({})
+  }
   for (let t of toolsData) {
     if (t.type === 'web_search' && (t.auto || selectedTools.includes(t.id))) {
       tools[t.id] = createWebSearchTool({
@@ -156,10 +160,3 @@ export const composeTools = async (
   }
   return tools
 }
-
-// const webSearchInputSchema = lazySchema(() => zodSchema(z.object({})))
-// export const webSearch = createProviderDefinedToolFactory({
-//   inputSchema: webSearchInputSchema,
-//   name: 'web_search',
-//   id: 'doubao.web_search'
-// })

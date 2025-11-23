@@ -62,6 +62,7 @@ export class ChatClient {
         model: this.store.state.model!,
         userPrompt: data.text
       })
+      const openSearch = this.store.state.openWebSearch
       this.store.setState((state) => {
         state.chats.unshift(addRecord.chat as any)
         state.selectedChat = state.chats[0]
@@ -72,12 +73,9 @@ export class ChatClient {
       setTimeout(() => {
         this.store.navigate$.next(`/chat/${addRecord.chat.id}`)
       }, 200)
-      const openSearch = this.store.state.openWebSearch
-      console.log('openSearch', openSearch)
-
       chat = this.store.state.selectedChat!
       if (openSearch) {
-        this.store.toggleWebSearch(addRecord.chat.id)
+        this.store.toggleWebSearch(chat.id)
       }
     }
     setTimeout(() => {
@@ -252,7 +250,6 @@ export class ChatClient {
             })
           }
         }
-        console.log('parts', Object.values(parts))
       } catch (e: any) {
         if (e.name === 'AbortError') {
           runInAction(() => {
