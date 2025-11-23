@@ -166,7 +166,7 @@ export const chatRouter = {
   getAssistants: procedure.query(async ({ ctx }) => {
     const assistants = await ctx
       .db('assistants')
-      .select('id', 'name', 'mode', 'models')
+      .select('id', 'name', 'mode', 'models', 'options')
     let data: any[] = []
     for (let a of assistants) {
       const as = parseRecord(a as any)

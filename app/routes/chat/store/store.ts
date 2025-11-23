@@ -5,8 +5,9 @@ import { isClient } from '~/lib/utils'
 import { Subject } from 'rxjs'
 import { ChatClient } from './client'
 import type { MessagePart, SearchResult } from 'types'
-import { observable } from 'mobx'
+import { observable, runInAction } from 'mobx'
 import type { TableAssistant, TableMessageFile, TableTool } from 'types/table'
+import { builtInSearchMode } from '~/routes/manage/ui/data'
 
 export interface MessageData {
   id?: string
@@ -44,6 +45,7 @@ const state = {
   >,
   messages: [] as MessageData[],
   selectedTools: {} as Record<string, string[]>,
+  openWebSearchData: {} as Record<string, boolean>,
   ready: false,
   tools: [] as TableTool[],
   userInfo: null as null | {
@@ -106,6 +108,22 @@ const state = {
     const tools = this.selectedTools
     let id = `${assistantId}:${chatId}`
     return tools[id] || []
+  },
+  toolsMap: new Map<string, TableTool>(),
+  get enableWebSearch() {
+    return (
+      builtInSearchMode.has(this.assistant?.mode!) ||
+      this.useTools.some((t) => {
+        return this.toolsMap.get(t)?.type === 'web_search'
+      }) ||
+      false
+    )
+  },
+  get openWebSearch() {
+    const chatId = this.selectedChat?.id || 'default'
+    const assistantId = this.assistant?.id!
+    let id = `${assistantId}:${chatId}`
+    return this.openWebSearchData[id] || false
   }
 }
 export class ChatStore extends StructStore<typeof state> {
@@ -117,7 +135,6 @@ export class ChatStore extends StructStore<typeof state> {
   moveChatInput$ = new Subject<void>()
   abortController: AbortController | null = null
   client = new ChatClient(this)
-  toolsMap = new Map<string, TableTool>()
   loadMoreChats = true
   loadMoreMessages = true
   constructor() {
@@ -151,8 +168,16 @@ export class ChatStore extends StructStore<typeof state> {
     await trpc.chat.getTools.query().then((res) => {
       this.setState((state) => (state.tools = res as unknown as TableTool[]))
       res.forEach((t) => {
-        this.toolsMap.set(t.id, t as TableTool)
+        runInAction(() => {
+          this.state.toolsMap.set(t.id, t as TableTool)
+        })
       })
+    })
+  }
+  toggleWebSearch(chatId: string) {
+    this.setState((state) => {
+      state.openWebSearchData[state.assistant?.id! + ':' + chatId] =
+        !state.openWebSearchData[state.assistant?.id! + ':' + chatId]
     })
   }
   async loadChats() {

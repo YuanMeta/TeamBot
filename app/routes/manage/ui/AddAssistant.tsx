@@ -27,7 +27,7 @@ import { useLocalState } from '~/hooks/localState'
 import { Spinner } from '~/components/ui/spinner'
 import type { TableTool } from 'types/table'
 import { Card, CardContent, CardHeader, CardTitle } from '~/components/ui/card'
-import { builtInSearchMode } from './Data'
+import { builtInSearchMode } from './data'
 import { RadioGroup, RadioGroupItem } from '~/components/ui/radio-group'
 import { Label } from '~/components/ui/label'
 import { Slider } from '~/components/ui/slider'
@@ -628,7 +628,7 @@ export const AddAssistant = observer(
                     <Field className={'mt-1'}>
                       <FieldLabel
                         help={
-                          '如果对模型参数不是十分了解，不建议开启自定义模型参数。不分模型不支持所有参数。'
+                          '如果对模型参数不是十分了解，不建议开启自定义模型参数。部分模型不支持所有参数。'
                         }
                       >
                         模型参数

@@ -109,7 +109,7 @@ export const HttpTool = observer(({ tool }: { tool: ToolPart }) => {
       <div className='flex items-center gap-1'>
         <Search className={'size-4 text-neutral-500 dark:text-neutral-400'} />
         <span className={'shine-text'}>
-          {store.toolsMap.get(tool.toolName)?.name}...
+          {store.state.toolsMap.get(tool.toolName)?.name}...
         </span>
       </div>
     )
@@ -135,7 +135,9 @@ export const HttpTool = observer(({ tool }: { tool: ToolPart }) => {
       }}
     >
       <GitBranchPlus />
-      <span>{store.toolsMap.get(tool.toolName)?.name || tool.toolName}</span>
+      <span>
+        {store.state.toolsMap.get(tool.toolName)?.name || tool.toolName}
+      </span>
     </Badge>
   )
 })

@@ -43,7 +43,7 @@ function Button({
   asChild = false,
   ...props
 }: React.ComponentProps<'button'> &
-  VariantProps<typeof buttonVariants> & {
+  VariantProps<typeof buttonVariants & { variant: 'active' }> & {
     asChild?: boolean
   }) {
   const Comp = asChild ? Slot : 'button'

@@ -27,7 +27,7 @@ export const InputTools = observer(() => {
   const tools = useMemo(() => {
     if (store.state.assistant) {
       return store.state.assistant.tools
-        .map((t) => store.toolsMap.get(t)!)
+        .map((t) => store.state.toolsMap.get(t)!)
         .filter(Boolean)
     }
     return []

@@ -23,7 +23,7 @@ const MessageContent = observer<{ msg: MessageData }>(({ msg }) => {
         {msg.parts?.map((p, index) => (
           <div
             key={index}
-            className={`${(p as ToolPart).state === 'completed' && store.toolsMap.get((p as ToolPart).toolName)?.type === 'http' ? 'hidden' : ''}`}
+            className={`${(p as ToolPart).state === 'completed' && store.state.toolsMap.get((p as ToolPart).toolName)?.type === 'http' ? 'hidden' : ''}`}
           >
             {p.type === 'text' && (
               <Markdown
@@ -35,13 +35,14 @@ const MessageContent = observer<{ msg: MessageData }>(({ msg }) => {
               </Markdown>
             )}
             {p.type === 'tool' &&
-              (store.toolsMap.get(p.toolName) ||
+              (store.state.toolsMap.get(p.toolName) ||
                 p.toolName === 'get_url_content') && (
                 <div>
                   {p.toolName === 'get_url_content' && <UrlTool tool={p} />}
-                  {(store.toolsMap.get(p.toolName)?.type === 'web_search' ||
+                  {(store.state.toolsMap.get(p.toolName)?.type ===
+                    'web_search' ||
                     p.toolName === 'web_search') && <WebSearchTool tool={p} />}
-                  {store.toolsMap.get(p.toolName)?.type === 'http' &&
+                  {store.state.toolsMap.get(p.toolName)?.type === 'http' &&
                     p.state !== 'completed' && <HttpTool tool={p} />}
                 </div>
               )}
