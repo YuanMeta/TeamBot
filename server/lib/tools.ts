@@ -8,6 +8,7 @@ import { createWebSearchTool } from './search'
 import { google } from '@ai-sdk/google'
 import type { TableAssistant } from 'types/table'
 import { openai } from '@ai-sdk/openai'
+import { anthropic } from '@ai-sdk/anthropic'
 export const getUrlContent = tool({
   description:
     'Can retrieve the main text content of a given URL webpage and return it in Markdown format',
@@ -139,6 +140,9 @@ export const composeTools = async (
   }
   if (assistant.mode === 'openai' && options.builtinSearch) {
     tools.web_search = openai.tools.webSearch({})
+  }
+  if (assistant.mode === 'anthropic' && options.builtinSearch) {
+    tools.web_search = anthropic.tools.webSearch_20250305({})
   }
   for (let t of toolsData) {
     if (t.type === 'web_search' && (t.auto || selectedTools.includes(t.id))) {

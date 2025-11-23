@@ -68,7 +68,7 @@ export const AddAssistant = observer(
         api_key: null as string | null,
         base_url: null as string | null,
         options: {
-          builtin_search: 'on',
+          builtin_search: 'off',
           maxContextTokens: 20000,
           maxOutputTokens: 0
         } as Record<string, any>,
@@ -521,12 +521,12 @@ export const AddAssistant = observer(
                                 onValueChange={(value) => field.setValue(value)}
                               >
                                 <div className='flex items-center gap-3'>
-                                  <RadioGroupItem value='on' id='r2' />
-                                  <Label htmlFor='r2'>开启内置搜索</Label>
-                                </div>
-                                <div className='flex items-center gap-3'>
                                   <RadioGroupItem value='off' id='r1' />
                                   <Label htmlFor='r1'>不开启内置搜索</Label>
+                                </div>
+                                <div className='flex items-center gap-3'>
+                                  <RadioGroupItem value='on' id='r2' />
+                                  <Label htmlFor='r2'>开启内置搜索</Label>
                                 </div>
                               </RadioGroup>
                             </Field>

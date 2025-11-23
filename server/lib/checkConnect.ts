@@ -74,6 +74,7 @@ export const checkLLmConnect = async (provider: {
   const models = provider.models as string[]
   const client = createClient(provider)!
   const llm = client(models[0])
+  console.log('llm', provider)
   try {
     await generateText({
       model: llm!,

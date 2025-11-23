@@ -4,5 +4,6 @@ export const builtInSearchMode = new Set([
   'qwen',
   'gemini',
   'openrouter',
+  'anthropic',
   'z-ai'
 ])
