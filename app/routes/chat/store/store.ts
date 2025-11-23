@@ -112,7 +112,8 @@ const state = {
   toolsMap: new Map<string, TableTool>(),
   get enableWebSearch() {
     return (
-      builtInSearchMode.has(this.assistant?.mode!) ||
+      (builtInSearchMode.has(this.assistant?.mode!) &&
+        this.assistant?.options.builtin_search === 'on') ||
       this.useTools.some((t) => {
         return this.toolsMap.get(t)?.type === 'web_search'
       }) ||

@@ -36,7 +36,15 @@ export interface TableAssistant {
   base_url: string | null
   prompt: string | null
   models: string[]
-  options: Record<string, any>
+  options: {
+    builtin_search: 'on' | 'off'
+    frequencyPenalty: { open: true; value: 0 }
+    maxContextTokens: 20000
+    maxOutputTokens: 0
+    presencePenalty: { open: false; value: 0 }
+    temperature: { open: false; value: 1 }
+    top_p: { open: false; value: 1 }
+  }
   created_at: string
   updated_at: string
 }

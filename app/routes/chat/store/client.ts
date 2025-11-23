@@ -72,7 +72,11 @@ export class ChatClient {
       setTimeout(() => {
         this.store.navigate$.next(`/chat/${addRecord.chat.id}`)
       }, 200)
+      const openSearch = this.store.state.enableWebSearch
       chat = this.store.state.selectedChat!
+      if (openSearch) {
+        this.store.toggleWebSearch(addRecord.chat.id)
+      }
     }
     setTimeout(() => {
       this.store.scrollToActiveMessage$.next()
@@ -95,7 +99,8 @@ export class ChatClient {
         model: model,
         tools: data.tools,
         repoIds: undefined,
-        regenerate: undefined
+        regenerate: undefined,
+        webSearch: this.store.state.openWebSearch
       }),
       credentials: 'include'
     })

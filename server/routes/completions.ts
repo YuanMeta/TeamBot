@@ -17,9 +17,8 @@ const InputSchema = z.object({
   regenerate: z.boolean().optional(),
   assistantId: z.string(),
   model: z.string(),
-  repoIds: z.string().array().optional(),
   tools: z.string().array(),
-  builtin_search: z.boolean().optional()
+  webSearch: z.boolean().optional()
 })
 
 export const completions = async (req: Request, res: Response, db: Knex) => {
@@ -81,7 +80,10 @@ export const completions = async (req: Request, res: Response, db: Knex) => {
       tools: json.tools
     }),
     providerOptions: {
-      qwen: json.builtin_search ? { enable_search: true } : {}
+      qwen:
+        assistant.options.builtin_search === 'on' && json.webSearch
+          ? { enable_search: true }
+          : {}
     },
     onAbort: async () => {
       await db('messages').where('id', assistantMessage.id).update({
