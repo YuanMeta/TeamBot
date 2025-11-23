@@ -46,7 +46,9 @@ export const completions = async (req: Request, res: Response, db: Knex) => {
       model: json.model
     })
 
-  const tools = await composeTools(db, assistant.id, json.tools)
+  const tools = await composeTools(db, assistant, json.tools, {
+    builtinSearch: assistant.options.builtin_search === 'on' && !!json.webSearch
+  })
   const controller = new AbortController()
   res.once('close', () => {
     controller.abort()

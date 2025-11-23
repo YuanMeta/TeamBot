@@ -60,7 +60,7 @@ export const manageRouter = {
       await ctx.db.transaction(async (trx) => {
         await trx('assistants')
           .where({ id: input.id })
-          .update(insertRecord(input.data))
+          .update(insertRecord(input.data as any))
         await trx('assistant_tools').where({ assistant_id: input.id }).delete()
         if (input.tools.length > 0) {
           await trx('assistant_tools').insert(
@@ -106,16 +106,18 @@ export const manageRouter = {
       await ctx.db.transaction(async (trx) => {
         const [assistant] = await trx('assistants')
           .insert({
-            ...insertRecord(input.data),
+            ...insertRecord(input.data as any),
             id: tid()
           })
           .returning('id')
-        await trx('assistant_tools').insert(
-          input.tools.map((tool) => ({
-            assistant_id: assistant.id,
-            tool_id: tool
-          }))
-        )
+        if (input.tools.length) {
+          await trx('assistant_tools').insert(
+            input.tools.map((tool) => ({
+              assistant_id: assistant.id,
+              tool_id: tool
+            }))
+          )
+        }
       })
       return { success: true }
     }),

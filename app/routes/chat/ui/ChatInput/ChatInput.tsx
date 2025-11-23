@@ -151,7 +151,11 @@ export const ChatInput = observer(() => {
                     store.state.selectedChat?.id! || 'default'
                   )
                 }}
-                className={`flex items-center px-2 h-7 text-sm rounded-md  border gap-1.5 cursor-pointer  duration-150 ${store.state.openWebSearch ? 'border-sky-500/80 text-sky-500/80' : 'border-neutral-200/20 hover:border-neutral-200/40'}`}
+                className={`flex items-center px-2 h-7 text-sm rounded-md  border gap-1.5 cursor-pointer  duration-100 ${
+                  store.state.openWebSearch
+                    ? 'border-sky-500/80 dark:text-sky-500/80 text-sky-500'
+                    : 'dark:border-neutral-200/20 border-neutral-800/20 dark:hover:border-neutral-200/40 hover:border-neutral-800/40'
+                }`}
               >
                 <Globe size={20} className={'size-3.5'} />
                 网络搜索

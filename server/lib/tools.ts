@@ -5,6 +5,8 @@ import { getReadability } from './utils'
 import type { Knex } from 'knex'
 import { parseRecord } from './table'
 import { createWebSearchTool } from './search'
+import { google } from '@ai-sdk/google'
+import type { TableAssistant } from 'types/table'
 export const getUrlContent = tool({
   description:
     'Can retrieve the main text content of a given URL webpage and return it in Markdown format',
@@ -111,11 +113,14 @@ export const createHttpTool = (options: {
 
 export const composeTools = async (
   db: Knex,
-  assistantId: string,
-  selectedTools: string[]
+  assistant: TableAssistant,
+  selectedTools: string[],
+  options: {
+    builtinSearch: boolean
+  }
 ) => {
   const toolsId = await db('assistant_tools')
-    .where({ assistant_id: assistantId })
+    .where({ assistant_id: assistant.id })
     .select('tool_id')
   let toolsData = await db('tools')
     .whereIn(
@@ -125,7 +130,11 @@ export const composeTools = async (
     .select('*')
   toolsData = toolsData.map((t) => parseRecord(t))
   const tools: Record<string, Tool> = {
-    get_url_content: getUrlContent
+    fetch_url_content: getUrlContent
+  }
+  if (assistant.mode === 'gemini' && options.builtinSearch) {
+    tools.google_search = google.tools.googleSearch({})
+    tools.url_context = google.tools.urlContext({})
   }
   for (let t of toolsData) {
     if (t.type === 'web_search' && (t.auto || selectedTools.includes(t.id))) {

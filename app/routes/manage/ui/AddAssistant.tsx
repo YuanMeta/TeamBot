@@ -110,6 +110,8 @@ export const AddAssistant = observer(
             })
           }
         } catch (e) {
+          console.log('e', e)
+
           const err = e as TrpcRequestError
           if (err.meta?.message) {
             toast.error(err.meta?.message, {

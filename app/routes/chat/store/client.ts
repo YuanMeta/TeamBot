@@ -72,7 +72,9 @@ export class ChatClient {
       setTimeout(() => {
         this.store.navigate$.next(`/chat/${addRecord.chat.id}`)
       }, 200)
-      const openSearch = this.store.state.enableWebSearch
+      const openSearch = this.store.state.openWebSearch
+      console.log('openSearch', openSearch)
+
       chat = this.store.state.selectedChat!
       if (openSearch) {
         this.store.toggleWebSearch(addRecord.chat.id)
