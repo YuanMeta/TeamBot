@@ -161,6 +161,14 @@ export const AddAssistant = observer(
       }
     }, [props.id])
     const modelOptions = useMemo(() => {
+      if (form.state.values.mode === 'openrouter') {
+        return state.remoteModels.map((m) => {
+          return {
+            label: m.model,
+            value: m.model
+          }
+        })
+      }
       return state.remoteModels
         .filter(
           (m) =>

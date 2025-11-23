@@ -85,6 +85,10 @@ export const completions = async (req: Request, res: Response, db: Knex) => {
       qwen:
         assistant.options.builtin_search === 'on' && json.webSearch
           ? { enable_search: true }
+          : {},
+      openrouter:
+        assistant.options.builtin_search === 'on' && json.webSearch
+          ? { plugins: [{ id: 'web', max_results: 5 }] }
           : {}
     },
     onAbort: async () => {

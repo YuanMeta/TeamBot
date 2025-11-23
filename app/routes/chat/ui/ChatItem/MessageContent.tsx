@@ -36,9 +36,9 @@ const MessageContent = observer<{ msg: MessageData }>(({ msg }) => {
             )}
             {p.type === 'tool' &&
               (store.state.toolsMap.get(p.toolName) ||
-                p.toolName === 'get_url_content') && (
+                p.toolName === 'fetch_url_content') && (
                 <div>
-                  {p.toolName === 'get_url_content' && <UrlTool tool={p} />}
+                  {p.toolName === 'fetch_url_content' && <UrlTool tool={p} />}
                   {(store.state.toolsMap.get(p.toolName)?.type ===
                     'web_search' ||
                     p.toolName === 'web_search') && <WebSearchTool tool={p} />}
