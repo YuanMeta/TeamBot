@@ -180,10 +180,7 @@ export const chatRouter = {
     return data
   }),
   getTools: procedure.query(async ({ ctx }) => {
-    return ctx
-      .db('tools')
-      .where({ type: 'http' })
-      .select('id', 'name', 'description', 'type')
+    return ctx.db('tools').select('id', 'name', 'description', 'type')
   }),
   createMessages: procedure
     .input(

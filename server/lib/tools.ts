@@ -134,16 +134,20 @@ export const composeTools = async (
   const tools: Record<string, Tool> = {
     fetch_url_content: getUrlContent
   }
-  if (assistant.mode === 'gemini' && options.builtinSearch) {
-    tools.google_search = google.tools.googleSearch({})
-    tools.url_context = google.tools.urlContext({})
+  const hasCustomeWebSearch = toolsData.some((t) => t.type === 'web_search')
+  if (!hasCustomeWebSearch) {
+    if (assistant.mode === 'gemini' && options.builtinSearch) {
+      tools.google_search = google.tools.googleSearch({})
+      tools.url_context = google.tools.urlContext({})
+    }
+    if (assistant.mode === 'openai' && options.builtinSearch) {
+      tools.web_search = openai.tools.webSearch({})
+    }
+    if (assistant.mode === 'anthropic' && options.builtinSearch) {
+      tools.web_search = anthropic.tools.webSearch_20250305({})
+    }
   }
-  if (assistant.mode === 'openai' && options.builtinSearch) {
-    tools.web_search = openai.tools.webSearch({})
-  }
-  if (assistant.mode === 'anthropic' && options.builtinSearch) {
-    tools.web_search = anthropic.tools.webSearch_20250305({})
-  }
+
   for (let t of toolsData) {
     if (t.type === 'web_search' && (t.auto || selectedTools.includes(t.id))) {
       tools[t.id] = createWebSearchTool({

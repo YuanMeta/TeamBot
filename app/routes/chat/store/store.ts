@@ -114,9 +114,9 @@ const state = {
     return (
       (builtInSearchMode.has(this.assistant?.mode!) &&
         this.assistant?.options.builtin_search === 'on') ||
-      this.useTools.some((t) => {
-        return this.toolsMap.get(t)?.type === 'web_search'
-      }) ||
+      this.assistant?.tools.some(
+        (t) => this.toolsMap.get(t)?.type === 'web_search'
+      ) ||
       false
     )
   },
