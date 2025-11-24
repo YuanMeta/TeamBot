@@ -51,11 +51,11 @@ export const SearchResult = observer(() => {
       <div
         className={`flex-1 h-0 px-2 py-2 pb-5 overflow-y-auto duration-400 ${state.show ? 'opacity-100' : 'opacity-0'}`}
       >
-        {store.state.selectSearchResult?.map((s) => (
+        {store.state.selectSearchResult?.map((s, i) => (
           <a
             href={s.url}
             target={'_blank'}
-            key={s.url}
+            key={i}
             className={
               'p-3 rounded-md space-y-1 hover:bg-accent cursor-default block'
             }

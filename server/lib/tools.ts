@@ -146,6 +146,12 @@ export const composeTools = async (
     if (assistant.mode === 'anthropic' && options.builtinSearch) {
       tools.web_search = anthropic.tools.webSearch_20250305({})
     }
+    if (assistant.mode === 'z-ai' && options.builtinSearch) {
+      tools['web_search'] = createWebSearchTool({
+        mode: 'zhipu',
+        apiKey: assistant.api_key!
+      })
+    }
   }
 
   for (let t of toolsData) {
