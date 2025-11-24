@@ -155,3 +155,14 @@ export interface TokenLog {
   reasoning_tokens: number
   cached_input_tokens: number
 }
+
+export interface TableAssistantUsage {
+  id: string
+  assistant_id: string
+  input_tokens: number
+  output_tokens: number
+  total_tokens: number
+  reasoning_tokens: number
+  cached_input_tokens: number
+  created_at: string
+}

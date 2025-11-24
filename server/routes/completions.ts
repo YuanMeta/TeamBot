@@ -12,6 +12,8 @@ import { MessageManager } from '../lib/message'
 import { getUserId } from '../session'
 import type { Request, Response } from 'express'
 import type { Knex } from 'knex'
+import { tid } from '../lib/utils'
+import dayjs from 'dayjs'
 const InputSchema = z.object({
   chatId: z.string(),
   regenerate: z.boolean().optional(),
@@ -182,6 +184,31 @@ export const completions = async (req: Request, res: Response, db: Knex) => {
             cached_input_tokens: usage.cachedInputTokens,
             model: chat.model
           })
+      }
+      const today = dayjs().format('YYYY-MM-DD')
+      const record = await db('assistant_usages')
+        .where('assistant_id', assistant.id)
+        .where('created_at', today)
+        .first()
+      if (record) {
+        await db('assistant_usages').where('id', record.id).increment({
+          input_tokens: usage.inputTokens!,
+          output_tokens: usage.outputTokens!,
+          total_tokens: usage.totalTokens!,
+          reasoning_tokens: usage.reasoningTokens!,
+          cached_input_tokens: usage.cachedInputTokens!
+        })
+      } else {
+        await db('assistant_usages').insert({
+          id: tid(),
+          assistant_id: assistant.id,
+          input_tokens: usage.inputTokens!,
+          output_tokens: usage.outputTokens!,
+          total_tokens: usage.totalTokens!,
+          reasoning_tokens: usage.reasoningTokens!,
+          cached_input_tokens: usage.cachedInputTokens!,
+          created_at: today
+        })
       }
     },
     onError: async (error: any) => {

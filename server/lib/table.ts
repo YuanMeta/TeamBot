@@ -160,6 +160,20 @@ export const tableSchema = async (db: Knex) => {
       table.unique(['provider_id', 'provider_user_id'])
     })
   }
+  if (!(await db.schema.hasTable('assistant_usages'))) {
+    await db.schema.createTable('assistant_usages', (table) => {
+      table.string('id').primary().notNullable()
+      table.string('assistant_id').notNullable()
+      table.integer('input_tokens').notNullable().defaultTo(0)
+      table.integer('output_tokens').notNullable().defaultTo(0)
+      table.integer('total_tokens').notNullable().defaultTo(0)
+      table.integer('reasoning_tokens').notNullable().defaultTo(0)
+      table.integer('cached_input_tokens').notNullable().defaultTo(0)
+      table.date('created_at').defaultTo(db.fn.now())
+      table.index('created_at')
+      table.unique(['assistant_id', 'created_at'])
+    })
+  }
 
   const user = await db('users').first()
   if (!user) {
