@@ -34,6 +34,16 @@ import {
 import { useLocalState } from '~/hooks/localState'
 import { ModelIcon } from '~/lib/ModelIcon'
 
+// 格式化tokens显示
+const formatTokens = (tokens: number): string => {
+  if (tokens >= 1000000) {
+    return (tokens / 1000000).toFixed(2) + 'M'
+  } else if (tokens >= 1000) {
+    return (tokens / 1000).toFixed(2) + 'K'
+  }
+  return tokens.toString()
+}
+
 type UsageRecord = {
   assistantName: string
   assistantMode: string
@@ -66,35 +76,45 @@ export const Usage = observer(
           accessorKey: 'inputTokens',
           header: '输入Tokens',
           cell: ({ row }) => (
-            <div className='lowercase'>{row.getValue('inputTokens')}</div>
+            <div className='lowercase'>
+              {formatTokens(row.getValue('inputTokens'))}
+            </div>
           )
         },
         {
           accessorKey: 'outputTokens',
           header: '输出Tokens',
           cell: ({ row }) => (
-            <div className='lowercase'>{row.getValue('outputTokens')}</div>
+            <div className='lowercase'>
+              {formatTokens(row.getValue('outputTokens'))}
+            </div>
           )
         },
         {
           accessorKey: 'reasoningTokens',
           header: '推理Tokens',
           cell: ({ row }) => (
-            <div className='lowercase'>{row.getValue('reasoningTokens')}</div>
+            <div className='lowercase'>
+              {formatTokens(row.getValue('reasoningTokens'))}
+            </div>
           )
         },
         {
           accessorKey: 'cachedInputTokens',
           header: '缓存输入Tokens',
           cell: ({ row }) => (
-            <div className='lowercase'>{row.getValue('cachedInputTokens')}</div>
+            <div className='lowercase'>
+              {formatTokens(row.getValue('cachedInputTokens'))}
+            </div>
           )
         },
         {
           accessorKey: 'totalTokens',
           header: '总Tokens',
           cell: ({ row }) => (
-            <div className='lowercase'>{row.getValue('totalTokens')}</div>
+            <div className='lowercase'>
+              {formatTokens(row.getValue('totalTokens'))}
+            </div>
           )
         }
       ] as ColumnDef<UsageRecord>[]
