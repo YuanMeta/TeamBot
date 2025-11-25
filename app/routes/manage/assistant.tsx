@@ -7,7 +7,7 @@ import {
   getSortedRowModel,
   useReactTable
 } from '@tanstack/react-table'
-import { PencilLine, Plus, Trash } from 'lucide-react'
+import { CircleGauge, PencilLine, Plus, Trash } from 'lucide-react'
 
 import {
   Table,
@@ -130,7 +130,8 @@ export default observer(() => {
     <div className='w-full'>
       <div className={`${state.openProviderForm ? 'hidden' : ''}`}>
         <div className='flex items-center pb-4 justify-between'>
-          <div>
+          <div></div>
+          <div className={'flex gap-3'}>
             <Button
               onClick={() => {
                 setState({
@@ -140,7 +141,19 @@ export default observer(() => {
               }}
             >
               <Plus />
-              Assistant
+              助手
+            </Button>
+            <Button
+              variant='outline'
+              onClick={() => {
+                setState({
+                  selectedProviderId: null,
+                  openProviderForm: true
+                })
+              }}
+            >
+              <CircleGauge />
+              用量
             </Button>
           </div>
         </div>

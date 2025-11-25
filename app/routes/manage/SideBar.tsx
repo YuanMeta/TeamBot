@@ -30,7 +30,7 @@ import {
   SidebarMenuItem
 } from '~/components/ui/sidebar'
 import { AdminConfirmDialog } from '~/components/project/confirm-dialog'
-import type { ReactNode } from 'react'
+import { useEffect, type ReactNode } from 'react'
 import {
   DropdownMenu,
   DropdownMenuCheckboxItem,
@@ -48,8 +48,9 @@ import {
 import { Avatar, AvatarFallback } from '~/components/ui/avatar'
 import { Github } from '@lobehub/icons'
 import { Theme, useTheme } from 'remix-themes'
+import { useLocalState } from '~/hooks/localState'
+import { trpc } from '~/.client/trpc'
 
-// Menu items.
 const items = [
   {
     title: 'AI助手',
@@ -72,6 +73,18 @@ export const ManageSideBar = observer((props: { children: ReactNode }) => {
   let location = useLocation()
   let navigate = useNavigate()
   const [theme, setTheme, meta] = useTheme()
+  const [state, setState] = useLocalState({
+    userInfo: null as null | {
+      name: string
+      email: string
+      role: string
+    }
+  })
+  useEffect(() => {
+    trpc.chat.getUserInfo.query().then((data) => {
+      setState({ userInfo: (data as any) || null })
+    })
+  }, [])
   return (
     <SidebarProvider>
       <Sidebar variant={'sidebar'} collapsible={'icon'}>
@@ -126,7 +139,7 @@ export const ManageSideBar = observer((props: { children: ReactNode }) => {
                     </Avatar>
                     <div className='grid flex-1 text-left text-sm leading-tight'>
                       <span className='truncate font-medium'>
-                        414542240@qq.com
+                        {state.userInfo?.email || state.userInfo?.name}
                       </span>
                     </div>
                     <EllipsisVertical className={'ml-auto size-4'} />

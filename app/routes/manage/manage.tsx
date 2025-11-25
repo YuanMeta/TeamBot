@@ -1,6 +1,4 @@
-import { BotMessageSquare, Users, CircleGauge, Wrench } from 'lucide-react'
 import { Outlet } from 'react-router'
-import { SidebarTrigger } from '~/components/ui/sidebar'
 import { observer } from 'mobx-react-lite'
 import { ManageSideBar } from './SideBar'
 
