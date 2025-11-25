@@ -117,7 +117,7 @@ export default observer(() => {
             setState({ tab: value as 'member' | 'sso' })
           }
         >
-          <div className='flex items-center justify-between'>
+          <div className='flex items-center justify-between pb-2'>
             <TabsList>
               <TabsTrigger value='member'>
                 <Users />

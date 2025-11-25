@@ -153,7 +153,7 @@ export default observer(() => {
               }}
             >
               <CircleGauge />
-              用量
+              用量查询
             </Button>
           </div>
         </div>

@@ -1,6 +1,6 @@
 import { Outlet } from 'react-router'
 import { observer } from 'mobx-react-lite'
-import { ManageSideBar } from './SideBar'
+import { ManageSideBar } from './ui/SideBar'
 
 export default observer(() => {
   return (
