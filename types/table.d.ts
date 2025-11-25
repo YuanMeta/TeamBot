@@ -8,6 +8,7 @@ declare module 'knex/types/tables' {
     message_files: TableMessageFile
     tools: TableTool
     assistant_tools: TableAssistantTool
+    assistant_usages: TableAssistantUsage
     models: TableModel
     auth_providers: TableAuthProvider
     oauth_accounts: TableOauthAccount

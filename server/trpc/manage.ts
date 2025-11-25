@@ -7,6 +7,7 @@ import { tid } from 'server/lib/utils'
 import { insertRecord, parseRecord } from 'server/lib/table'
 import { adminProcedure } from './core'
 import { runWebSearch } from 'server/lib/search'
+import dayjs from 'dayjs'
 export const manageRouter = {
   checkConnect: adminProcedure
     .input(
@@ -397,5 +398,86 @@ export const manageRouter = {
     .input(z.string())
     .query(async ({ input, ctx }) => {
       return ctx.db('auth_providers').where({ id: input }).select('*').first()
+    }),
+  getUsageInfo: adminProcedure
+    .input(
+      z.object({
+        date: z.string()
+      })
+    )
+    .query(async ({ input, ctx }) => {
+      const date = dayjs().startOf('day')
+      let dateStr = date.format('YYYY-MM-DD')
+      switch (input.date) {
+        case 'yesterday':
+          dateStr = date.subtract(1, 'day').format('YYYY-MM-DD')
+          break
+        case 'lastWeek':
+          dateStr = date.subtract(7, 'day').format('YYYY-MM-DD')
+          break
+        case 'lastMonth':
+          dateStr = date.subtract(30, 'day').format('YYYY-MM-DD')
+          break
+        case 'last3Months':
+          dateStr = date.subtract(90, 'day').format('YYYY-MM-DD')
+          break
+      }
+
+      const assistants = await ctx
+        .db('assistants')
+        .select('id', 'name', 'mode')
+        .orderBy('created_at', 'desc')
+
+      const usage = await ctx
+        .db('assistant_usages')
+        .where('assistant_usages.created_at', '>=', dateStr)
+        .select('assistant_usages.assistant_id')
+        .sum({
+          input_tokens: 'assistant_usages.input_tokens',
+          output_tokens: 'assistant_usages.output_tokens',
+          total_tokens: 'assistant_usages.total_tokens',
+          reasoning_tokens: 'assistant_usages.reasoning_tokens',
+          cached_input_tokens: 'assistant_usages.cached_input_tokens'
+        })
+        .groupBy('assistant_usages.assistant_id')
+
+      const usageMap = new Map(
+        usage.map((r: any) => [
+          r.assistant_id,
+          {
+            input_tokens: Number(r.input_tokens) || 0,
+            output_tokens: Number(r.output_tokens) || 0,
+            total_tokens: Number(r.total_tokens) || 0,
+            reasoning_tokens: Number(r.reasoning_tokens) || 0,
+            cached_input_tokens: Number(r.cached_input_tokens) || 0
+          }
+        ])
+      )
+
+      // 合并助手信息和使用统计
+      const result = assistants.map((assistant) => {
+        const usageData = usageMap.get(assistant.id) || {
+          input_tokens: 0,
+          output_tokens: 0,
+          total_tokens: 0,
+          reasoning_tokens: 0,
+          cached_input_tokens: 0
+        }
+
+        return {
+          assistantId: assistant.id,
+          assistantName: assistant.name,
+          assistantMode: assistant.mode,
+          inputTokens: usageData.input_tokens,
+          outputTokens: usageData.output_tokens,
+          totalTokens: usageData.total_tokens,
+          reasoningTokens: usageData.reasoning_tokens,
+          cachedInputTokens: usageData.cached_input_tokens
+        }
+      })
+
+      result.sort((a, b) => b.totalTokens - a.totalTokens)
+
+      return result
     })
 } satisfies TRPCRouterRecord

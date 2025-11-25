@@ -26,6 +26,7 @@ import { trpc } from '~/.client/trpc'
 import type { TableAssistant } from 'types/table'
 import { ModelIcon } from '~/lib/ModelIcon'
 import { adminConfirmDialog$ } from '~/components/project/confirm-dialog'
+import { Usage } from './ui/Usage'
 
 export default observer(() => {
   const columns: ColumnDef<TableAssistant>[] = useMemo(() => {
@@ -108,7 +109,8 @@ export default observer(() => {
   const [state, setState] = useLocalState({
     openProviderForm: false,
     selectedProviderId: null as null | string,
-    data: [] as TableAssistant[]
+    data: [] as TableAssistant[],
+    openUsage: false
   })
   const getAssistantsList = useCallback(() => {
     trpc.manage.getAssistants.query().then((res) => {
@@ -147,8 +149,7 @@ export default observer(() => {
               variant='outline'
               onClick={() => {
                 setState({
-                  selectedProviderId: null,
-                  openProviderForm: true
+                  openUsage: true
                 })
               }}
             >
@@ -215,6 +216,10 @@ export default observer(() => {
           onClose={() => setState({ openProviderForm: false })}
         />
       )}
+      <Usage
+        open={state.openUsage}
+        onClose={() => setState({ openUsage: false })}
+      />
     </div>
   )
 })
