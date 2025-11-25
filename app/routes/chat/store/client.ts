@@ -131,7 +131,7 @@ export class ChatClient {
             break
           }
           // @ts-ignore
-          console.log('value', value.success, value.value)
+          // console.log('value', value.success, value.value)
 
           if (value.success) {
             runInAction(() => {
