@@ -10,10 +10,11 @@ import type { Knex } from 'knex'
 import { TRPCError } from '@trpc/server'
 import { getHTTPStatusCodeFromError } from '@trpc/server/http'
 import { fetchOpenRouterModels } from './lib/openRouterModels'
-// import 'server/lib/provider/tools/web-search'
+import { getUserId } from './session'
 declare module 'react-router' {
   interface AppLoadContext {
     db: Knex
+    userId: string | null
   }
 }
 
@@ -38,9 +39,11 @@ app.use(
 app.use(
   createRequestHandler({
     build: () => import('virtual:react-router/server-build'),
-    getLoadContext() {
+    getLoadContext: async (req) => {
+      const userId = await getUserId(req)
       return {
-        db
+        db,
+        userId
       }
     }
   })

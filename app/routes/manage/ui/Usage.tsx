@@ -129,8 +129,6 @@ export const Usage = observer(
     })
     const getUsageInfo = useCallback(() => {
       trpc.manage.getUsageInfo.query({ date: state.date }).then((res) => {
-        console.log('res', res)
-
         setState({ data: res as unknown as UsageRecord[] })
       })
     }, [])

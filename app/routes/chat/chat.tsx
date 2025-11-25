@@ -5,10 +5,18 @@ import { useLayoutEffect, useMemo } from 'react'
 import { ChatInput } from './ui/ChatInput/ChatInput'
 import { Header } from './ui/Header'
 import { AiMessageList } from './ui/MessageList'
-import { useNavigate, useParams } from 'react-router'
+import { redirect, useNavigate, useParams } from 'react-router'
 import { useLocalState, useSubject } from '~/hooks/localState'
 import { SearchResult } from './ui/SearchResult'
+import type { Route } from './+types/chat'
 
+export const loader = (args: Route.LoaderArgs) => {
+  const userId = args.context.userId
+  if (!userId) {
+    return redirect('/login')
+  }
+  return null
+}
 export default observer(() => {
   const [state, setState] = useLocalState({
     moveY: 0

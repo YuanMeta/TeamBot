@@ -40,7 +40,7 @@ export const SearchResult = observer(() => {
   if (!state.open) return null
   return (
     <div
-      className={`h-full ${state.show ? 'w-[400px]' : 'w-0'} flex flex-col border-l duration-150`}
+      className={`h-full ${state.show ? 'w-[400px]' : 'w-0'} max-w-full flex flex-col border-l duration-150 shrink-0 fixed z-10 right-0 md:static bg-background`}
     >
       <div className={'flex px-3 items-center h-13 border-b justify-between'}>
         <span>引用</span>

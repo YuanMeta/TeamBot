@@ -138,15 +138,18 @@ export class ChatStore extends StructStore<typeof state> {
   client = new ChatClient(this)
   loadMoreChats = true
   loadMoreMessages = true
-  constructor() {
+  constructor(preview = false) {
     super(state)
     if (isClient) {
-      this.init()
+      this.init(preview)
     }
   }
-  async init() {
+  async init(preview: boolean) {
     this.state.cacheModel = localStorage.getItem('last_assistant_model')
     await this.loadTools()
+    if (preview) {
+      return this.setState((state) => (state.ready = true))
+    }
     await this.loadAssistants()
     await trpc.chat.getUserInfo.query().then((res) => {
       this.setState((state) => (state.userInfo = res || null))

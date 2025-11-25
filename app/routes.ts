@@ -4,6 +4,7 @@ export default [
   index('routes/home.tsx'),
   route('set-theme', 'routes/set-theme.ts'),
   route('chat/:id?', 'routes/chat/chat.tsx'),
+  route('publish/:id?', 'routes/chat/publish.tsx'),
   route('login', 'routes/login.tsx'),
   route('manage', 'routes/manage/manage.tsx', [
     index('routes/manage/index.tsx'),

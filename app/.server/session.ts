@@ -1,5 +1,6 @@
 import { createCookieSessionStorage } from 'react-router'
 import { createThemeSessionResolver } from 'remix-themes'
+import { userCookie } from 'server/session'
 
 const isProduction = process.env.NODE_ENV === 'production'
 
