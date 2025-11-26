@@ -13,7 +13,6 @@ import { markdownToPureHtml } from '~/lib/mdToHtml'
 import { useLocalState } from '~/hooks/localState'
 import type { MessagePart } from 'types'
 import { Button } from '~/components/ui/button'
-dayjs.extend(relativeTime)
 
 export const AiMessage = observer<{
   msg: MessageData

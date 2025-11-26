@@ -8,7 +8,11 @@ import type { MessagePart, SearchResult } from 'types'
 import { observable, runInAction } from 'mobx'
 import type { TableAssistant, TableMessageFile, TableTool } from 'types/table'
 import { builtInSearchMode } from '~/routes/manage/ui/data'
-
+import 'dayjs/locale/zh-cn'
+import dayjs from 'dayjs'
+import relativeTime from 'dayjs/plugin/relativeTime'
+dayjs.extend(relativeTime)
+dayjs.locale('zh-cn')
 export interface MessageData {
   id?: string
   chatId: string
