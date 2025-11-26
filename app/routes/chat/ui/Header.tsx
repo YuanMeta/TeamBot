@@ -23,7 +23,10 @@ export const Header = observer(() => {
         <DropdownMenu>
           <DropdownMenuTrigger autoFocus={false} asChild>
             <Button variant={'ghost'} autoFocus={false}>
-              <ModelIcon mode={'openai'} size={16} />
+              <ModelIcon
+                mode={store.state.assistant?.mode || 'openai'}
+                size={16}
+              />
               {store.state.ready ? (
                 <div
                   className={`flex items-center gap-1 ${store.state.ready ? '' : 'hidden'}`}

@@ -9,7 +9,7 @@ const ChatItem = observer<{
   index: number
 }>(({ msg, preview = false, index }) => {
   if (msg.role === 'user') {
-    return <UserMessage msg={msg} preview={preview} />
+    return <UserMessage msg={msg} preview={preview} index={index} />
   }
   if (msg.role === 'assistant') {
     return <AiMessage msg={msg} preview={preview} index={index} />

@@ -360,8 +360,12 @@ export class ChatClient {
     const offset = index + 1
     const message = chat.messages!.slice(0, offset)
     const removeMessages = chat.messages!.slice(offset)
+    const [userMessage, aiMessage] = message.slice(-2)
     this.store.setState((state) => {
       state.messages = message
+      if (userPrompt) {
+        userMessage.text = userPrompt
+      }
       chat.messages = message
       const lastMessage = message[message.length - 1]
       lastMessage.parts = undefined
@@ -369,7 +373,6 @@ export class ChatClient {
       lastMessage.error = undefined
     })
     this.store.scrollToActiveMessage$.next()
-    const [userMessage, aiMessage] = message.slice(-2)
     await trpc.chat.regenerate.mutate({
       chatId: chat.id!,
       removeMessages: removeMessages.map((m) => m.id!),
@@ -378,7 +381,7 @@ export class ChatClient {
       userMessage: userPrompt
         ? {
             msgId: userMessage.id!,
-            prompt: userMessage.text!
+            prompt: userPrompt
           }
         : undefined
     })
