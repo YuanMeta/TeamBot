@@ -34,6 +34,8 @@ import {
 import { NavUser } from './SidebarFooter'
 import { Skeleton } from '~/components/ui/skeleton'
 import { useRef, useEffect } from 'react'
+import { copyToClipboard } from '~/.client/copy'
+import { toast } from 'sonner'
 
 const Item = observer(
   ({
@@ -91,7 +93,14 @@ const Item = observer(
               e.stopPropagation()
             }}
           >
-            <DropdownMenuItem>
+            <DropdownMenuItem
+              onClick={() => {
+                copyToClipboard({
+                  text: `${location.origin}/publish/${item.id}`
+                })
+                toast.success('链接已复制到剪贴板')
+              }}
+            >
               <SquareArrowOutUpRight />
               <span>共享</span>
             </DropdownMenuItem>
