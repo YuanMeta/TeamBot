@@ -13,7 +13,6 @@ import { ModelIcon } from '~/lib/ModelIcon'
 import { useStore } from '../store/store'
 import { Fragment } from 'react/jsx-runtime'
 import { Skeleton } from '~/components/ui/skeleton'
-import OpenAI from 'openai'
 import { copyToClipboard } from '~/.client/copy'
 import { toast } from 'sonner'
 export const Header = observer(() => {

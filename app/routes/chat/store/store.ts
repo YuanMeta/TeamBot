@@ -134,6 +134,7 @@ export class ChatStore extends StructStore<typeof state> {
   transList$ = new Subject<void>()
   navigate$ = new Subject<string>()
   moveChatInput$ = new Subject<void>()
+  renameChatTitle$ = new Subject<(typeof this.state.chats)[number]>()
   abortController: AbortController | null = null
   client = new ChatClient(this)
   loadMoreChats = true

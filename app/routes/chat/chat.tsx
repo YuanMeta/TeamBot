@@ -9,6 +9,7 @@ import { redirect, useNavigate, useParams } from 'react-router'
 import { useLocalState, useSubject } from '~/hooks/localState'
 import { SearchResult } from './ui/SearchResult'
 import type { Route } from './+types/chat'
+import { ChatRename } from './ui/Rename'
 
 export const loader = (args: Route.LoaderArgs) => {
   const userId = args.context.userId
@@ -81,6 +82,7 @@ export default observer(() => {
         </div>
         <SearchResult />
       </div>
+      <ChatRename />
     </StoreContext>
   )
 })

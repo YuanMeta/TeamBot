@@ -49,6 +49,7 @@ const Item = observer(
     onClick: () => void
     onDelete: () => void
   }) => {
+    const store = useStore()
     const [state, setState] = useLocalState({
       hovered: false,
       showMenu: false
@@ -104,7 +105,11 @@ const Item = observer(
               <SquareArrowOutUpRight />
               <span>共享</span>
             </DropdownMenuItem>
-            <DropdownMenuItem>
+            <DropdownMenuItem
+              onClick={() => {
+                store.renameChatTitle$.next(item)
+              }}
+            >
               <PencilLine />
               <span>重命名</span>
             </DropdownMenuItem>
