@@ -157,11 +157,20 @@ export const chatRouter = {
       })
     )
     .mutation(async ({ input, ctx }) => {
-      return ctx
-        .db('chats')
-        .where({ id: input.id, user_id: ctx.userId })
-        .update({ deleted: true })
-        .returning(['id', 'title', 'deleted'])
+      return ctx.db.transaction(async (trx) => {
+        // const files = await trx('message_files')
+        //   .where({ chat_id: input.id, user_id: ctx.userId })
+        //   .select('id')
+        // if (files.length > 0) {
+        //   await trx('messages')
+        //     .where({ chat_id: input.id, user_id: ctx.userId })
+        //     .delete()
+        // }
+        await trx('messages')
+          .where({ chat_id: input.id, user_id: ctx.userId })
+          .delete()
+        await trx('chats').where({ id: input.id, user_id: ctx.userId }).delete()
+      })
     }),
   getAssistants: procedure.query(async ({ ctx }) => {
     const assistants = await ctx
@@ -325,7 +334,12 @@ export const chatRouter = {
         removeMessages: z.string().array(),
         offset: z.number(),
         aiMessageId: z.string(),
-        userPrompt: z.string().optional()
+        userMessage: z
+          .object({
+            msgId: z.string(),
+            prompt: z.string()
+          })
+          .optional()
       })
     )
     .mutation(async ({ input, ctx }) => {
@@ -348,10 +362,24 @@ export const chatRouter = {
             .where({ id: input.chatId })
             .update({ message_offset: offset })
         }
-        await trx('messages')
-          .where({ chat_id: input.chatId, user_id: ctx.userId })
-          .whereIn('id', input.removeMessages)
-          .delete()
+        if (input.removeMessages.length) {
+          await trx('messages')
+            .where({ chat_id: input.chatId, user_id: ctx.userId })
+            .whereIn('id', input.removeMessages)
+            .delete()
+        }
+        if (input.userMessage) {
+          await trx('messages')
+            .where({
+              id: input.userMessage.msgId,
+              user_id: ctx.userId,
+              chat_id: input.chatId,
+              role: 'user'
+            })
+            .update({
+              text: input.userMessage.prompt
+            })
+        }
         await trx('messages')
           .where({
             id: input.aiMessageId,

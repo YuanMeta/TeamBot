@@ -91,7 +91,8 @@ export interface TableMessageFile {
   id: string
   name: string
   user_id: string
-  message_id: string
+  message_id?: string
+  chat_id?: string
   path: string
   size: number
   origin: 'file'

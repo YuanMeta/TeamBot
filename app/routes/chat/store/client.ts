@@ -354,10 +354,12 @@ export class ChatClient {
       }
     }
   }
-  async regenerate(index: number) {
+  async regenerate(index: number, userPrompt?: string) {
     const chat = this.store.state.selectedChat
     if (!chat) return
-    const message = chat.messages!.slice(0, index + 1)
+    const offset = index + 1
+    const message = chat.messages!.slice(0, offset)
+    const removeMessages = chat.messages!.slice(offset)
     this.store.setState((state) => {
       state.messages = message
       chat.messages = message
@@ -366,14 +368,26 @@ export class ChatClient {
       lastMessage.terminated = false
       lastMessage.error = undefined
     })
-    const removeMessages = chat.messages!.slice(index + 1)
     this.store.scrollToActiveMessage$.next()
-    // const userMessage = chat.messages[chat.messages.length - 1]
-    // if (!userMessage) return
-    // const aiMessage = chat.messages[chat.messages.length - 2]
-    // if (!aiMessage) return
-    // const res = await fetch('/api/completions', {
-    //   method: 'POST',
-    // })
+    const [userMessage, aiMessage] = message.slice(-2)
+    await trpc.chat.regenerate.mutate({
+      chatId: chat.id!,
+      removeMessages: removeMessages.map((m) => m.id!),
+      offset,
+      aiMessageId: aiMessage.id!,
+      userMessage: userPrompt
+        ? {
+            msgId: userMessage.id!,
+            prompt: userMessage.text!
+          }
+        : undefined
+    })
+    const assistantId = this.store.state.assistant!.id
+    const model = this.store.state.model!
+    return this.completion(chat, {
+      assistantId,
+      model,
+      tools: this.store.state.selectedTools[chat.id! || 'default'] || []
+    })
   }
 }

@@ -16,7 +16,6 @@ import { tid } from '../lib/utils'
 import dayjs from 'dayjs'
 const InputSchema = z.object({
   chatId: z.string(),
-  regenerate: z.boolean().optional(),
   assistantId: z.string(),
   model: z.string(),
   tools: z.string().array(),
