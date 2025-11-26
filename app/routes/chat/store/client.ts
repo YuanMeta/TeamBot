@@ -1,5 +1,5 @@
 import dayjs from 'dayjs'
-import type { ChatStore, MessageData } from './store'
+import type { ChatData, ChatStore, MessageData } from './store'
 import { trpc } from '~/.client/trpc'
 import { parseJsonEventStream } from 'ai'
 import type { MessagePart, ReasonPart, TextPart, ToolPart } from 'types'
@@ -86,6 +86,55 @@ export class ChatClient {
         pending: true,
         abortController
       }
+      chat.messages = state.messages
+    })
+    return this.completion(chat, {
+      assistantId,
+      model,
+      tools: data.tools,
+      onFinish: () => {
+        data.onFinish?.()
+        if (!chat.title && !this.generateTitleSet.has(chat.id)) {
+          this.streamTitle({
+            chat: chat,
+            userPrompt: data.text,
+            aiResponse:
+              findLast(
+                chat.messages?.[chat.messages.length - 1].parts!,
+                (item) => item.type === 'text'
+              )?.text || ''
+          })
+        }
+      },
+      onGenerateTitle: (userPrompt, aiResponse) => {
+        if (!chat.title && !this.generateTitleSet.has(chat.id)) {
+          this.streamTitle({
+            chat: chat,
+            userPrompt,
+            aiResponse
+          })
+        }
+      }
+    })
+  }
+  private async completion(
+    chat: ChatData,
+    options: {
+      assistantId: string
+      model: string
+      tools: string[]
+      onFinish?: () => void
+      onGenerateTitle?: (userPrompt: string, aiResponse: string) => void
+      onChunk?: (chunk: TemaMessageChunk) => void
+    }
+  ) {
+    const abortController = new AbortController()
+    const [userMessage, aiMessage] = chat.messages!.slice(-2)
+    this.store.setState((state) => {
+      state.chatPending[chat.id!] = {
+        pending: true,
+        abortController
+      }
     })
     const res = await fetch('/api/completions', {
       method: 'POST',
@@ -94,10 +143,10 @@ export class ChatClient {
       },
       signal: abortController.signal,
       body: JSON.stringify({
-        chatId: this.store.state.selectedChat?.id,
-        assistantId: assistantId,
-        model: model,
-        tools: data.tools,
+        chatId: chat.id,
+        assistantId: options.assistantId,
+        model: options.model,
+        tools: options.tools,
         repoIds: undefined,
         regenerate: undefined,
         webSearch: this.store.state.openWebSearch
@@ -116,24 +165,10 @@ export class ChatClient {
         while (true) {
           const { done, value } = await reader.read()
           if (done) {
-            if (!chat.title && !this.generateTitleSet.has(chat.id)) {
-              this.streamTitle({
-                chat: chat,
-                chatId: chat.id,
-                userPrompt: data.text,
-                aiResponse:
-                  findLast(
-                    chat.messages?.[chat.messages.length - 1].parts!,
-                    (item) => item.type === 'text'
-                  )?.text || ''
-              })
-            }
             break
           }
-          // @ts-ignore
-          // console.log('value', value.success, value.value)
-
           if (value.success) {
+            options.onChunk?.(value.value)
             runInAction(() => {
               switch (value.value.type) {
                 case 'tool-input-start':
@@ -207,12 +242,7 @@ export class ChatClient {
                     ) {
                       const content = text.match(/^[\s\S]*(?=\n[^\n]*$)/)
                       if (content?.[0]?.length && content[0].length > 100) {
-                        this.streamTitle({
-                          chat: chat,
-                          chatId: chat.id,
-                          userPrompt: data.text,
-                          aiResponse: content[0]
-                        })
+                        options.onGenerateTitle?.(userMessage.text!, content[0])
                       }
                     }
                   }
@@ -244,7 +274,7 @@ export class ChatClient {
                   })
                   break
                 case 'finish':
-                  data.onFinish?.()
+                  options.onFinish?.()
                   break
               }
             })
@@ -278,20 +308,19 @@ export class ChatClient {
     })
   }
   async streamTitle(data: {
-    chat: ChatStore['state']['selectedChat']
-    chatId: string
+    chat: ChatData
     userPrompt: string
     aiResponse: string
   }) {
-    if (this.generateTitleSet.has(data.chatId)) return
-    this.generateTitleSet.add(data.chatId)
+    if (this.generateTitleSet.has(data.chat.id) || data.chat.title) return
+    this.generateTitleSet.add(data.chat.id)
     const res = await fetch('/api/title', {
       method: 'POST',
       headers: {
         'Content-Type': 'application/json'
       },
       body: JSON.stringify({
-        chatId: data.chatId,
+        chatId: data.chat.id,
         userPrompt: data.userPrompt,
         aiResponse: data.aiResponse,
         assistantId: this.store.state.assistant!.id,
@@ -320,9 +349,31 @@ export class ChatClient {
       } catch (e) {
         console.error(e)
       } finally {
-        this.generateTitleSet.delete(data.chatId)
+        this.generateTitleSet.delete(data.chat.id)
         reader.releaseLock()
       }
     }
+  }
+  async regenerate(index: number) {
+    const chat = this.store.state.selectedChat
+    if (!chat) return
+    const message = chat.messages!.slice(0, index + 1)
+    this.store.setState((state) => {
+      state.messages = message
+      chat.messages = message
+      const lastMessage = message[message.length - 1]
+      lastMessage.parts = undefined
+      lastMessage.terminated = false
+      lastMessage.error = undefined
+    })
+    const removeMessages = chat.messages!.slice(index + 1)
+    this.store.scrollToActiveMessage$.next()
+    // const userMessage = chat.messages[chat.messages.length - 1]
+    // if (!userMessage) return
+    // const aiMessage = chat.messages[chat.messages.length - 2]
+    // if (!aiMessage) return
+    // const res = await fetch('/api/completions', {
+    //   method: 'POST',
+    // })
   }
 }

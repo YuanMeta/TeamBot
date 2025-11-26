@@ -10,6 +10,7 @@ export const AiMessageList = observer(() => {
   const scrollRef = useRef<HTMLDivElement>(null)
   const listRef = useRef<HTMLDivElement>(null)
   const scrollTimer = useRef(0)
+  const pauseLoadRef = useRef(false)
   const [state, setState] = useLocalState({
     atBottom: false,
     isScrolling: false,
@@ -56,8 +57,9 @@ export const AiMessageList = observer(() => {
         store.loadMoreMessages &&
         store.state.selectedChat?.id
       ) {
+        if (pauseLoadRef.current) return
         const previousScrollHeight = listRef.current!.scrollHeight
-        store.loadMessages(store.state.selectedChat.id).then(() => {
+        store.loadMessages(store.state.selectedChat).then(() => {
           requestAnimationFrame(() => {
             if (scrollRef.current && listRef.current) {
               const newScrollHeight = listRef.current.scrollHeight
@@ -92,7 +94,11 @@ export const AiMessageList = observer(() => {
       })
     }, 50)
   })
-  useEffect(() => {
+  useLayoutEffect(() => {
+    pauseLoadRef.current = true
+    setTimeout(() => {
+      pauseLoadRef.current = false
+    }, 100)
     setState({
       showScrollToBottom: false
     })
@@ -108,8 +114,8 @@ export const AiMessageList = observer(() => {
           ref={listRef}
           className={`chat-list ${state.visible ? 'animate-show' : 'opacity-0'} ${store.state.chatPending[store.state.selectedChat?.id!]?.pending ? 'pending' : ''}`}
         >
-          {store.state.messages.map((m) => (
-            <ChatItem key={m.id} msg={m} />
+          {store.state.messages.map((m, i) => (
+            <ChatItem key={m.id} msg={m} index={i} />
           ))}
         </div>
       </div>

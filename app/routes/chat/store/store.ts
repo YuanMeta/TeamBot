@@ -28,14 +28,16 @@ export interface AssistantData extends TableAssistant {
   tools: string[]
 }
 
+export interface ChatData {
+  id: string
+  title: string
+  last_chat_time: Date
+  assistant_id: string | null
+  model: string | null
+  messages?: MessageData[]
+}
 const state = {
-  chats: [] as {
-    id: string
-    title: string
-    last_chat_time: Date
-    assistant_id: string | null
-    model: string | null
-  }[],
+  chats: [] as ChatData[],
   chatPending: {} as Record<
     string,
     {
@@ -206,18 +208,19 @@ export class ChatStore extends StructStore<typeof state> {
         this.setState((state) => (state.loadingChats = false))
       })
   }
-  async loadMessages(chatId: string) {
+  async loadMessages(chat: (typeof this.state.chats)[number]) {
     if (!this.loadMoreMessages || this.state.loadingMessages) return
     try {
       this.setState((state) => (state.loadingMessages = true))
       const { messages, loadMore } = await trpc.chat.getMessages.query({
-        chatId,
+        chatId: chat.id,
         offset: this.state.messages.length
       })
       this.setState((state) => {
         state.messages.unshift(
           ...(messages as unknown as MessageData[]).reverse()
         )
+        chat.messages = state.messages
       })
       if (!loadMore) {
         this.loadMoreMessages = false
@@ -253,7 +256,16 @@ export class ChatStore extends StructStore<typeof state> {
       state.selectedChat = chat as unknown as typeof this.state.selectedChat
       state.messages = []
     })
-    await this.loadMessages(chat!.id)
+
+    if (!chat!.messages?.length) {
+      await this.loadMessages(
+        chat as unknown as (typeof this.state.chats)[number]
+      )
+    } else {
+      this.setState((state) => {
+        state.messages = chat!.messages!
+      })
+    }
     this.transList$.next()
     this.scrollToBottom$.next()
   }
@@ -267,7 +279,7 @@ export class ChatStore extends StructStore<typeof state> {
         id: this.state.selectedChat.id,
         data: {
           model,
-          assistantId
+          assistant_id: assistantId
         }
       })
     }

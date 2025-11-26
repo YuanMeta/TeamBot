@@ -296,10 +296,10 @@ export const chatRouter = {
         id: z.string(),
         data: z.object({
           model: z.string().optional(),
-          assistantId: z.string().optional(),
+          assistant_id: z.string().optional(),
           title: z.string().optional(),
           public: z.boolean().optional(),
-          messageOffset: z.number().optional(),
+          message_offset: z.number().optional(),
           summary: z.string().optional()
         })
       })
@@ -317,5 +317,62 @@ export const chatRouter = {
       .where({ id: ctx.userId })
       .select('name', 'email', 'role')
       .first()
-  })
+  }),
+  regenerate: procedure
+    .input(
+      z.object({
+        chatId: z.string(),
+        removeMessages: z.string().array(),
+        offset: z.number(),
+        aiMessageId: z.string(),
+        userPrompt: z.string().optional()
+      })
+    )
+    .mutation(async ({ input, ctx }) => {
+      return ctx.db.transaction(async (trx) => {
+        const chat = await trx('chats')
+          .where({
+            user_id: ctx.userId,
+            id: input.chatId
+          })
+          .first()
+        if (!chat) {
+          throw new TRPCError({
+            code: 'NOT_FOUND',
+            message: 'Chat not found'
+          })
+        }
+        if (chat.message_offset >= input.offset) {
+          const offset = input.offset > 2 ? input.offset - 2 : 0
+          await trx('chats')
+            .where({ id: input.chatId })
+            .update({ message_offset: offset })
+        }
+        await trx('messages')
+          .where({ chat_id: input.chatId, user_id: ctx.userId })
+          .whereIn('id', input.removeMessages)
+          .delete()
+        await trx('messages')
+          .where({
+            id: input.aiMessageId,
+            user_id: ctx.userId,
+            role: 'assistant',
+            chat_id: input.chatId
+          })
+          .update(
+            insertRecord({
+              terminated: false,
+              error: null,
+              parts: null,
+              steps: {},
+              text: null,
+              input_tokens: 0,
+              output_tokens: 0,
+              total_tokens: 0,
+              reasoning_tokens: 0,
+              cached_input_tokens: 0
+            })
+          )
+      })
+    })
 } satisfies TRPCRouterRecord

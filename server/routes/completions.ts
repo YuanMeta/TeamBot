@@ -191,7 +191,7 @@ export const completions = async (req: Request, res: Response, db: Knex) => {
         .where('created_at', today)
         .first()
       if (record) {
-        await db('assistant_usages').where('id', record.id).increment({
+        await db('assistant_usages').where({ id: record.id }).increment({
           input_tokens: usage.inputTokens!,
           output_tokens: usage.outputTokens!,
           total_tokens: usage.totalTokens!,
