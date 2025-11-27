@@ -85,12 +85,14 @@
     "ky": "^1.14.0",
     "lexical": "^0.37.0",
     "lucide-react": "^0.545.0",
+    "mammoth": "^1.11.0",
     "mermaid": "^11.12.0",
     "mobx": "^6.15.0",
     "mobx-react-lite": "^4.1.1",
     "morgan": "^1.10.1",
     "nanoid": "^5.1.6",
     "openai": "^6.9.1",
+    "pdfjs-dist": "^5.4.394",
     "react": "^19.1.1",
     "react-day-picker": "^9.11.1",
     "react-dom": "^19.1.1",
@@ -119,6 +121,7 @@
     "unist": "^0.0.1",
     "unist-util-visit": "^5.0.0",
     "vaul": "^1.1.2",
+    "xlsx": "^0.18.5",
     "zod": "^4.1.12"
   },
   "devDependencies": {
