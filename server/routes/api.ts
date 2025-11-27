@@ -54,9 +54,10 @@ export const registerRoutes = (app: Express, db: Knex) => {
       const remainingMinutes = Math.ceil(
         (attempts.lockedUntil - Date.now()) / 60000
       )
-      throw new Response(`账户已被锁定，请在 ${remainingMinutes} 分钟后重试`, {
-        status: 429
-      })
+      return res
+        .status(429)
+        .send(`账户已被锁定，请在 ${remainingMinutes} 分钟后重试`)
+        .end()
     }
 
     if (attempts.lockedUntil > 0 && attempts.lockedUntil <= Date.now()) {
@@ -68,17 +69,15 @@ export const registerRoutes = (app: Express, db: Knex) => {
       .first()
     if (!user) {
       recordFailedAttempt(attemptKey)
-      throw new Response(`用户名或密码错误`, {
-        status: 429
-      })
+      return res.status(429).send('用户名或密码错误').end()
     }
 
     if (user.deleted) {
-      throw new Response('该账户已被禁用', { status: 401 })
+      return res.status(401).send('该账户已被禁用').end()
     }
 
     if (!user.password) {
-      throw new Response('该账户未设置密码，请联系管理员', { status: 401 })
+      return res.status(401).send('该账户未设置密码，请联系管理员').end()
     }
 
     const isPasswordValid = await PasswordManager.verifyPassword(
@@ -88,7 +87,7 @@ export const registerRoutes = (app: Express, db: Knex) => {
 
     if (!isPasswordValid) {
       recordFailedAttempt(attemptKey)
-      throw new Response('用户名或密码错误', { status: 401 })
+      return res.status(401).send('用户名或密码错误').end()
     }
 
     // 登录成功，清除失败记录

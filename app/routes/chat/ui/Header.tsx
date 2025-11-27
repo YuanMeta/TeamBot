@@ -22,7 +22,11 @@ export const Header = observer(() => {
       <div>
         <DropdownMenu>
           <DropdownMenuTrigger autoFocus={false} asChild>
-            <Button variant={'ghost'} autoFocus={false}>
+            <Button
+              variant={'ghost'}
+              autoFocus={false}
+              disabled={!store.state.assistants.length}
+            >
               <ModelIcon
                 mode={store.state.assistant?.mode || 'openai'}
                 size={16}

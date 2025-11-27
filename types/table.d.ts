@@ -70,7 +70,7 @@ export interface TableMessage {
   role: 'user' | 'assistant' | 'system'
   user_id: string
   chat_id: string
-  context: Record<string, any> | null
+  docs: { name: string; content: string }[] | null
   error: string | null
   model: string | null
   reasoning_duration: number

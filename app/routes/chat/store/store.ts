@@ -271,7 +271,9 @@ export class ChatStore extends StructStore<typeof state> {
       })
     }
     this.transList$.next()
-    this.scrollToBottom$.next()
+    setTimeout(() => {
+      this.scrollToBottom$.next()
+    }, 16)
   }
   async selectModel(assistantId: string, model: string) {
     if (this.state.selectedChat) {

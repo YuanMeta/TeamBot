@@ -16,13 +16,12 @@ export const kdb = async () => {
       mkdirSync(dbDir, { recursive: true })
     }
     const db = Knex.knex({
-      client: 'better-sqlite3',
+      client: 'pg',
       connection: {
-        filename: './db/db.sqlite'
+        connectionString: process.env.DATABASE_URL
       },
       useNullAsDefault: true
     })
-    await db.raw('PRAGMA journal_mode = WAL;')
     await tableSchema(db)
     globalForKnex.knex = db
     return db

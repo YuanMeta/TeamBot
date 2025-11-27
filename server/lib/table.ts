@@ -2,9 +2,6 @@ import type { Knex } from 'knex'
 import { isJsonObject, tid } from './utils'
 import { PasswordManager } from './password'
 export const tableSchema = async (db: Knex) => {
-  await db.schema.alterTable('users', (table: any) => {
-    table.string('id').notNullable().alter()
-  })
   if (!(await db.schema.hasTable('users'))) {
     await db.schema.createTable('users', (table) => {
       table.string('id').primary().notNullable()
@@ -59,7 +56,7 @@ export const tableSchema = async (db: Knex) => {
       table.string('role').notNullable()
       table.string('user_id').notNullable()
       table.string('chat_id').notNullable()
-      table.json('context').nullable()
+      table.json('docs').nullable()
       table.string('error').nullable()
       table.string('model').nullable()
       table.string('assistant_id').nullable()

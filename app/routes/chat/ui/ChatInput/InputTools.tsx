@@ -21,7 +21,7 @@ import {
 } from '~/components/ui/dropdown-menu'
 import { useStore } from '../../store/store'
 import { useMemo } from 'react'
-import { chooseFile } from '~/lib/parser/ChooseFile'
+import { chooseFile } from '~/lib/parser/chooseFile'
 
 export const InputTools = observer(
   (props: {
