@@ -21,61 +21,74 @@ import {
 } from '~/components/ui/dropdown-menu'
 import { useStore } from '../../store/store'
 import { useMemo } from 'react'
+import { chooseFile } from '~/lib/parser/ChooseFile'
 
-export const InputTools = observer(() => {
-  const store = useStore()
-  const tools = useMemo(() => {
-    if (store.state.assistant) {
-      return store.state.assistant.tools
-        .map((t) => store.state.toolsMap.get(t)!)
-        .filter(Boolean)
-    }
-    return []
-  }, [store.state.tools, store.state.assistant])
-  return (
-    <DropdownMenu>
-      <DropdownMenuTrigger asChild>
-        <Button size={'icon-sm'} variant={'ghost'}>
-          <Sparkle />
-        </Button>
-      </DropdownMenuTrigger>
-      <DropdownMenuContent className='w-36' align='start'>
-        <DropdownMenuGroup>
-          <DropdownMenuItem>
-            <FileText />
-            文档
-          </DropdownMenuItem>
-          <DropdownMenuItem>
-            <Image />
-            图片
-          </DropdownMenuItem>
-        </DropdownMenuGroup>
-        {!!tools.length && (
+export const InputTools = observer(
+  (props: {
+    onSelectFile: (file: { name: string; content: string }) => void
+  }) => {
+    const store = useStore()
+    const tools = useMemo(() => {
+      if (store.state.assistant) {
+        return store.state.assistant.tools
+          .map((t) => store.state.toolsMap.get(t)!)
+          .filter(Boolean)
+      }
+      return []
+    }, [store.state.tools, store.state.assistant])
+    return (
+      <DropdownMenu>
+        <DropdownMenuTrigger asChild>
+          <Button size={'icon-sm'} variant={'ghost'}>
+            <Sparkle />
+          </Button>
+        </DropdownMenuTrigger>
+        <DropdownMenuContent className='w-36' align='start'>
           <DropdownMenuGroup>
-            <DropdownMenuSub>
-              <DropdownMenuSubTrigger>
-                <Wrench />
-                工具
-              </DropdownMenuSubTrigger>
-              <DropdownMenuPortal>
-                <DropdownMenuSubContent>
-                  {tools.map((t) => (
-                    <DropdownMenuItem
-                      key={t.id}
-                      onClick={() => {
-                        store.addTool(t.id)
-                      }}
-                    >
-                      {t.type === 'http' ? <GitBranchPlus /> : <Earth />}
-                      {t.name}
-                    </DropdownMenuItem>
-                  ))}
-                </DropdownMenuSubContent>
-              </DropdownMenuPortal>
-            </DropdownMenuSub>
+            <DropdownMenuItem
+              onClick={() => {
+                chooseFile().then((res) => {
+                  if (res.content) {
+                    props.onSelectFile(res)
+                  }
+                })
+              }}
+            >
+              <FileText />
+              文档
+            </DropdownMenuItem>
+            <DropdownMenuItem>
+              <Image />
+              图片
+            </DropdownMenuItem>
           </DropdownMenuGroup>
-        )}
-      </DropdownMenuContent>
-    </DropdownMenu>
-  )
-})
+          {!!tools.length && (
+            <DropdownMenuGroup>
+              <DropdownMenuSub>
+                <DropdownMenuSubTrigger>
+                  <Wrench />
+                  工具
+                </DropdownMenuSubTrigger>
+                <DropdownMenuPortal>
+                  <DropdownMenuSubContent>
+                    {tools.map((t) => (
+                      <DropdownMenuItem
+                        key={t.id}
+                        onClick={() => {
+                          store.addTool(t.id)
+                        }}
+                      >
+                        {t.type === 'http' ? <GitBranchPlus /> : <Earth />}
+                        {t.name}
+                      </DropdownMenuItem>
+                    ))}
+                  </DropdownMenuSubContent>
+                </DropdownMenuPortal>
+              </DropdownMenuSub>
+            </DropdownMenuGroup>
+          )}
+        </DropdownMenuContent>
+      </DropdownMenu>
+    )
+  }
+)

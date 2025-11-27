@@ -161,6 +161,9 @@ dependencies:
   better-sqlite3:
     specifier: ^12.4.1
     version: 12.4.1
+  browser-fs-access:
+    specifier: ^0.38.0
+    version: 0.38.0
   class-variance-authority:
     specifier: ^0.7.1
     version: 0.7.1
@@ -5447,6 +5450,10 @@ packages:
     resolution: {integrity: sha512-Jt0vHyM+jmUBqojB7E1NIYadt0vI0Qxjxd2TErW94wDz+E2LAm5vKMXXwg6ZZBTHPuUlDgQHKXvjGBdfcF1ZDQ==}
     dependencies:
       balanced-match: 1.0.2
+
+  /browser-fs-access@0.38.0:
+    resolution: {integrity: sha512-JveqW2w6pEZqFEEfMgCszXzYpE89dG+nPsmOdcs741mFFAROeL+iqjGEpR07RI+s0YY0EFr+4KnOoACprJTpOw==}
+    dev: false
 
   /browserslist@4.26.3:
     resolution: {integrity: sha512-lAUU+02RFBuCKQPj/P6NgjlbCnLBMp4UtgTx7vNHd3XSIJF87s9a5rA3aH2yw3GS9DqZAUbOtZdCCiZeVRqt0w==}

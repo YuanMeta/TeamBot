@@ -11,7 +11,7 @@ import { toast } from 'sonner'
 export const ChatInput = observer(() => {
   const store = useStore()
   const [state, setState] = useLocalState({
-    files: [] as File[],
+    files: [] as { name: string; content: string }[],
     images: [] as File[],
     prompt: '',
     webSearch: false
@@ -78,7 +78,7 @@ export const ChatInput = observer(() => {
                         {f.name.split('.').pop()}
                       </span>
                       <div
-                        className='absolute bg-black/50 rounded-lg text-white p-1 right-0.5 top-0.5  flex items-center group-hover:opacity-100 opacity-0'
+                        className='absolute bg-black/60 rounded-lg text-white p-[3px] right-0.5 top-0.5  flex items-center group-hover:opacity-100 opacity-0'
                         onMouseDown={(e) => {
                           e.preventDefault()
                         }}
@@ -88,7 +88,7 @@ export const ChatInput = observer(() => {
                           })
                         }}
                       >
-                        <CircleX size={14} />
+                        <CircleX size={13} />
                       </div>
                     </div>
                   </div>
@@ -143,7 +143,13 @@ export const ChatInput = observer(() => {
           }
         >
           <div className={'flex gap-2 flex-1 w-0'}>
-            <InputTools />
+            <InputTools
+              onSelectFile={(file) => {
+                setState((state) => {
+                  state.files.push(file)
+                })
+              }}
+            />
             {store.state.enableWebSearch && (
               <div
                 onClick={() => {

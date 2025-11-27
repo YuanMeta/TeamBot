@@ -1,4 +1,4 @@
-import type { ChatStore } from '../../store/store'
+import { fileOpen } from 'browser-fs-access'
 
 const programmingFileExtensions = [
   '.py',
@@ -120,48 +120,51 @@ const programmingFileExtensions = [
   '.properties' // Java属性文件
 ]
 
-export const chooseFile = (
-  store: ChatStore,
-  type: 'file' | 'image'
-): Promise<File> => {
-  return new Promise((resolve, reject) => {
-    // store.api
-    //   .showOpenDialog({
-    //     canChooseFiles: true,
-    //     allowsMultipleSelection: false,
-    //     filters: [
-    //       {
-    //         name: 'extensions',
-    //         extensions:
-    //           type === 'file'
-    //             ? ['pdf', 'doc', 'docx', ...programmingFileExtensions]
-    //             : ['jpg', 'jpeg', 'png', 'webp']
-    //       }
-    //     ]
-    //   })
-    //   .then(async (res) => {
-    //     if (res.success && res.filePaths.length > 0) {
-    //       const file = res.filePaths[0]
-    //       const base64 = await store.rpc.getFileBase64(file)
-    //       const match = base64.data.base64.match(/^data:(.*?);base64,(.*)$/)
-    //       if (!match) {
-    //         reject(new Error('Invalid base64 format'))
-    //         return
-    //       }
-    //       const mime = match[1]
-    //       const b64data = match[2]
-    //       const byteCharacters = atob(b64data)
-    //       const byteNumbers = new Array(byteCharacters.length)
-    //       for (let i = 0; i < byteCharacters.length; i++) {
-    //         byteNumbers[i] = byteCharacters.charCodeAt(i)
-    //       }
-    //       const byteArray = new Uint8Array(byteNumbers)
-    //       const fileName = file.split(/[\\/]/).pop() || 'file'
-    //       const fileObj = new File([byteArray], fileName, { type: mime })
-    //       resolve(fileObj)
-    //     } else {
-    //       reject()
-    //     }
-    //   })
+export const chooseFile = async () => {
+  const file = await fileOpen({
+    extensions: [
+      '.csv',
+      '.xlsx',
+      '.xls',
+      '.pdf',
+      '.docx',
+      ...programmingFileExtensions
+    ],
+    multiple: false
   })
+  const extension = file.name.split('.').pop()
+  if (programmingFileExtensions.includes(`.${extension}`)) {
+    return {
+      content: await file.text(),
+      name: file.name
+    }
+  } else {
+    try {
+      if (/\.(pdf)$/.test(file.name)) {
+        return import('./pdfParser').then(async ({ PDFParser }) => {
+          const res = await PDFParser.parsePDF(file)
+          return { content: res.text, name: file.name }
+        })
+      } else if (/\.(xlsx|xls|csv)$/.test(file.name)) {
+        return import('./excelParser').then(async ({ excelToCsv }) => {
+          const res = await excelToCsv(file, { format: 'markdown' })
+          return {
+            content: res.map((v) => v.content).join('\n\n'),
+            name: file.name
+          }
+        })
+      } else if (/\.docx$/.test(file.name)) {
+        return import('./wordParser').then(async ({ WordParser }) => {
+          return {
+            content: await WordParser.processForLLM(file),
+            name: file.name
+          }
+        })
+      }
+    } catch (error) {
+      console.error(`Parse file ${file.name} error`, error)
+      return { content: null, name: null }
+    }
+  }
+  return { content: null, name: null }
 }
