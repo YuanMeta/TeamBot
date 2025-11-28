@@ -56,6 +56,7 @@ Output only the summarized version of the conversation.`,
       userId: string
       assistantId: string
       model: string
+      images?: string[]
     }
   ) {
     const { chatId, userId } = data
@@ -176,7 +177,7 @@ Output only the summarized version of the conversation.`,
         uiMessages.push(msg)
       })
     }
-    uiMessages.push({
+    const userMsg: UIMessage = {
       id: userMessage.id,
       role: 'user',
       parts: [
@@ -185,18 +186,35 @@ Output only the summarized version of the conversation.`,
           text: addDocsContext(userMessage.text!, userMessage.docs)
         }
       ]
-    })
+    }
+    if (data.images?.length) {
+      userMsg.parts.push({
+        type: 'file',
+        url: data.images[0],
+        mediaType: 'image/png',
+        filename: 'photo.png'
+      })
+    }
+    uiMessages.push(userMsg)
     return { uiMessages, summary, chat, client, assistantMessage, assistant }
   }
 
-  static getSystemPromp(ctx: { summary?: string | null; tools?: string[] }) {
+  static getSystemPromp(ctx: {
+    summary?: string | null
+    tools?: string[]
+    images?: string[]
+  }) {
     let prompt = ''
+    if (ctx.images?.length) {
+      prompt += `\nIf the user provides an image, please return detailed information such as a summary of the content, key objects, scene, colors, layout, and text content to facilitate use in subsequent conversations.`
+    }
     if (ctx.summary) {
       prompt += `This is a summary of the previous conversation: ${ctx.summary}`
     }
     if (ctx.tools?.length) {
       prompt += `\n\nThe user requires you to use the following tools to answer the questions: [${ctx.tools.join(',')}]`
     }
+
     //     if (ctx.tools?.['webSearch']) {
     //       prompt += `\n\nIf you need the latest information to answer user questions, you can choose to use "webSearch" tools. When you call the "webSearch" tool, please follow the following format to output the answer:
     // When using a search result, mark the source address after the corresponding sentence, such as: [source](https://apple.com/mackbook)

@@ -22,10 +22,12 @@ import {
 import { useStore } from '../../store/store'
 import { useMemo } from 'react'
 import { chooseFile } from '~/lib/parser/chooseFile'
+import { fileOpen } from 'browser-fs-access'
 
 export const InputTools = observer(
   (props: {
     onSelectFile: (file: { name: string; content: string }) => void
+    onSelectImage: (image: File) => void
   }) => {
     const store = useStore()
     const tools = useMemo(() => {
@@ -57,7 +59,15 @@ export const InputTools = observer(
               <FileText />
               文档
             </DropdownMenuItem>
-            <DropdownMenuItem>
+            <DropdownMenuItem
+              onClick={async () => {
+                const file = await fileOpen({
+                  extensions: ['.png', '.jpg', '.jpeg', '.webp', '.gif'],
+                  multiple: false
+                })
+                props.onSelectImage(file)
+              }}
+            >
               <Image />
               图片
             </DropdownMenuItem>

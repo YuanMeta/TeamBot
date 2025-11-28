@@ -19,6 +19,7 @@ const InputSchema = z.object({
   assistantId: z.string(),
   model: z.string(),
   tools: z.string().array(),
+  images: z.string().array().optional(),
   webSearch: z.boolean().optional()
 })
 
@@ -44,7 +45,8 @@ export const completions = async (req: Request, res: Response, db: Knex) => {
       chatId: json.chatId,
       userId: uid,
       assistantId: json.assistantId,
-      model: json.model
+      model: json.model,
+      images: json.images
     })
 
   const tools = await composeTools(db, assistant, json.tools, {
@@ -80,7 +82,8 @@ export const completions = async (req: Request, res: Response, db: Knex) => {
     abortSignal: controller.signal,
     system: MessageManager.getSystemPromp({
       summary: summary,
-      tools: json.tools
+      tools: json.tools,
+      images: json.images
     }),
     providerOptions: {
       qwen:

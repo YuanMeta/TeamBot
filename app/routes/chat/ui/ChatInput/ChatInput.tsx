@@ -8,6 +8,7 @@ import { InputTools } from './InputTools'
 import { Button } from '~/components/ui/button'
 import { Badge } from '~/components/ui/badge'
 import { toast } from 'sonner'
+import { mediaType } from '~/lib/utils'
 export const ChatInput = observer(() => {
   const store = useStore()
   const [state, setState] = useLocalState({
@@ -24,16 +25,18 @@ export const ChatInput = observer(() => {
     if (!state.prompt || store.state.pending) return
     store.chat({
       text: state.prompt,
-      docs: state.docs
+      docs: state.docs,
+      images: state.images
     })
-    setState({ prompt: '', docs: [] })
+    setState({ prompt: '', docs: [], images: [] })
   }, [])
   const onAddFile = useCallback((file: File) => {
-    // setState((state) => {
-    //   mediaType(file.name) === 'image'
-    //     ? state.images.push(file)
-    //     : state.files.push(file)
-    // })
+    setState((state) => {
+      if (mediaType(file.name) === 'image') {
+        state.images = [file]
+      } else {
+      }
+    })
   }, [])
   return (
     <div className={'chat-input w-full relative px-8'}>
@@ -105,7 +108,7 @@ export const ChatInput = observer(() => {
                         })
                       }}
                       className={
-                        'absolute p-1 right-1 top-0.5 bg-black/50 rounded-lg flex items-center justify-center group-hover:opacity-100 opacity-0 duration-150 stroke-white cursor-pointer'
+                        'absolute p- right-1 top-0.5 bg-black/50 rounded-lg flex items-center justify-center group-hover:opacity-100 opacity-0 duration-150 stroke-white cursor-pointer'
                       }
                     >
                       <CircleX size={14} className={'stroke-inherit'} />
@@ -133,6 +136,11 @@ export const ChatInput = observer(() => {
         >
           <div className={'flex gap-2 flex-1 w-0'}>
             <InputTools
+              onSelectImage={(file) => {
+                setState((state) => {
+                  state.images = [file]
+                })
+              }}
               onSelectFile={(file) => {
                 setState((state) => {
                   state.docs.push(file)

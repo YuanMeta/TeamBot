@@ -4,7 +4,7 @@ import { trpc } from '~/.client/trpc'
 import { parseJsonEventStream } from 'ai'
 import type { MessagePart, ReasonPart, TextPart, ToolPart } from 'types'
 import { observable, runInAction } from 'mobx'
-import { cid, findLast } from '../../../lib/utils'
+import { cid, fileToBase64, findLast } from '../../../lib/utils'
 import { uiMessageChunkSchema, type TemaMessageChunk } from './msgSchema'
 export class ChatClient {
   private generateTitleSet = new Set<string>()
@@ -13,6 +13,7 @@ export class ChatClient {
     text: string
     tools: string[]
     docs: { name: string; content: string }[]
+    images: File[]
     onFinish?: () => void
   }) {
     const assistantId = this.store.state.assistant!.id
@@ -91,10 +92,16 @@ export class ChatClient {
       }
       chat.messages = state.messages
     })
+    const images: string[] = []
+    if (data.images?.length) {
+      const base64 = await fileToBase64(data.images[0])
+      images.push(base64)
+    }
     return this.completion(chat, {
       assistantId,
       model,
       tools: data.tools,
+      images,
       onFinish: () => {
         data.onFinish?.()
         if (!chat.title && !this.generateTitleSet.has(chat.id)) {
@@ -126,6 +133,7 @@ export class ChatClient {
       assistantId: string
       model: string
       tools: string[]
+      images?: string[]
       onFinish?: () => void
       onGenerateTitle?: (userPrompt: string, aiResponse: string) => void
       onChunk?: (chunk: TemaMessageChunk) => void
@@ -152,6 +160,7 @@ export class ChatClient {
         tools: options.tools,
         repoIds: undefined,
         regenerate: undefined,
+        images: options.images,
         webSearch: this.store.state.openWebSearch
       }),
       credentials: 'include'

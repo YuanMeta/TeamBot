@@ -102,3 +102,64 @@ const nanoid = customAlphabet(
   21
 )
 export const cid = () => nanoid()
+
+export const mediaType = (name?: string) => {
+  name = name || ''
+  name = name.split('?')[0]
+  const ext = name.toLowerCase().match(/\.\w+$/)?.[0]
+  if (!ext) return 'other'
+  if (['.md', '.markdown'].includes(ext)) return 'markdown'
+  if (['.png', '.jpg', '.gif', '.svg', '.jpeg', '.webp'].includes(ext))
+    return 'image'
+  if (['.mp3', '.ogg', '.aac', '.wav', '.oga', '.m4a'].includes(ext))
+    return 'audio'
+  if (
+    [
+      '.mpg',
+      '.mp4',
+      '.webm',
+      '.mpeg',
+      '.ogv',
+      '.wmv',
+      '.m4v',
+      '.ogg',
+      '.av1'
+    ].includes(ext)
+  )
+    return 'video'
+  if (
+    [
+      '.pdf',
+      '.doc',
+      '.docx',
+      '.xls',
+      '.xlsx',
+      '.ppt',
+      '.pptx',
+      '.txt',
+      '.html'
+    ].includes(ext)
+  )
+    return 'document'
+  return 'other'
+}
+
+export const fileToBase64 = (file: File): Promise<string> => {
+  return new Promise<string>((resolve, reject) => {
+    const reader = new FileReader()
+    reader.onload = () => {
+      const result = reader.result
+      console.log('reader', reader)
+
+      if (typeof result === 'string') {
+        resolve(result)
+      } else {
+        reject(new Error('Failed to convert file to Base64 string'))
+      }
+    }
+    reader.onerror = (error) => {
+      reject(error)
+    }
+    reader.readAsDataURL(file)
+  })
+}

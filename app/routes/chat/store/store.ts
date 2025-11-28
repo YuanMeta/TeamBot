@@ -297,11 +297,13 @@ export class ChatStore extends StructStore<typeof state> {
   async chat(data: {
     text: string
     docs: { name: string; content: string }[]
+    images: File[]
   }) {
     try {
       await this.client.complete({
         text: data.text,
         docs: data.docs,
+        images: data.images,
         tools:
           this.state.selectedTools[this.state.selectedChat?.id! || 'default'] ||
           []
