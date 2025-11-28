@@ -131,7 +131,6 @@ export default observer(() => {
             <div>
               {state.tab === 'member' && (
                 <Button
-                  variant={'outline'}
                   onClick={() => {
                     setState({ openAddMember: true, selectedMemberId: null })
                   }}
@@ -142,7 +141,6 @@ export default observer(() => {
               )}
               {state.tab === 'sso' && (
                 <Button
-                  variant={'outline'}
                   onClick={() => {
                     ssoInstance.current.add?.()
                   }}

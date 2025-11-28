@@ -69,7 +69,7 @@ export const AddAssistant = observer(
         base_url: null as string | null,
         options: {
           builtin_search: 'off',
-          maxContextTokens: 20000,
+          maxContextTokens: 30000,
           maxOutputTokens: 0
         } as Record<string, any>,
         tools: [] as string[]
@@ -566,7 +566,7 @@ export const AddAssistant = observer(
                             <FieldLabel
                               htmlFor={field.name}
                               help={
-                                '上下文越长记住的内容越多，但消耗的输入token也越多，建议设置为20000-50000之间。\n当上下文超出该值，TeamBot将自动压缩之前的对话内容，保留关键信息'
+                                '上下文越长模型记住的内容越多，但消耗的输入token也越多。\n建议设置为20000-50000之间。\n当上下文超出该值，TeamBot将自动压缩之前的对话内容，保留关键信息。'
                               }
                             >
                               最大上下文Token数
@@ -597,7 +597,7 @@ export const AddAssistant = observer(
                           }
                           if (Number(value) < 500 && Number(value) !== 0) {
                             return {
-                              message: '最大输出Token数至少应大约500'
+                              message: '最大输出Token数至少应大于500'
                             }
                           }
                           return undefined

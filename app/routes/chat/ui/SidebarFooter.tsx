@@ -23,6 +23,7 @@ import {
   DropdownMenuSubTrigger,
   DropdownMenuTrigger
 } from '~/components/ui/dropdown-menu'
+import { useStore } from '../store/store'
 
 export function NavUser({
   user
@@ -34,6 +35,7 @@ export function NavUser({
 }) {
   const navigate = useNavigate()
   const [theme, setTheme, meta] = useTheme()
+  const store = useStore()
   return (
     <DropdownMenu>
       <DropdownMenuTrigger asChild>
@@ -103,7 +105,12 @@ export function NavUser({
               </DropdownMenuSubContent>
             </DropdownMenuPortal>
           </DropdownMenuSub>
-          <DropdownMenuItem disabled={true}>
+          <DropdownMenuItem
+            disabled={store.state.userInfo?.role !== 'admin'}
+            onClick={() => {
+              navigate('/manage')
+            }}
+          >
             <UserStar />
             管理中心
           </DropdownMenuItem>
