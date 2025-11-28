@@ -13,12 +13,11 @@ export const chatRouter = {
         assistantMessageId: z.string().min(1),
         assistantId: z.string().min(1),
         model: z.string().optional(),
-        files: z
+        docs: z
           .array(
             z.object({
-              path: z.string(),
               name: z.string(),
-              size: z.number()
+              content: z.string()
             })
           )
           .optional(),
@@ -46,14 +45,17 @@ export const chatRouter = {
             'last_chat_time'
           ])
         const userMessage = await trx('messages')
-          .insert({
-            id: input.userMessageId,
-            chat_id: chat[0].id,
-            role: 'user',
-            text: input.userPrompt,
-            user_id: ctx.userId,
-            created_at: date
-          })
+          .insert(
+            insertRecord({
+              id: input.userMessageId,
+              chat_id: chat[0].id,
+              role: 'user',
+              text: input.userPrompt,
+              docs: input.docs,
+              user_id: ctx.userId,
+              created_at: date
+            })
+          )
           .returning('*')
 
         let userFiles: Array<{
@@ -62,23 +64,6 @@ export const chatRouter = {
           path: string
           size: number
         }> = []
-        if (input.files) {
-          const insertedFiles = await trx('message_files')
-            .insert(
-              input.files.map((file) => {
-                return {
-                  message_id: userMessage[0].id,
-                  user_id: ctx.userId,
-                  name: file.name,
-                  path: file.path,
-                  size: file.size,
-                  origin: 'file'
-                }
-              })
-            )
-            .returning(['id', 'name', 'path', 'size'])
-          userFiles = insertedFiles
-        }
 
         const assistantMessage = await trx('messages')
           .insert({
@@ -198,12 +183,11 @@ export const chatRouter = {
         userPrompt: z.string().optional(),
         userMessageId: z.string().min(1),
         assistantMessageId: z.string().min(1),
-        files: z
+        docs: z
           .array(
             z.object({
-              path: z.string(),
-              size: z.number(),
-              name: z.string()
+              name: z.string(),
+              content: z.string()
             })
           )
           .optional()
@@ -232,7 +216,8 @@ export const chatRouter = {
             role: 'user',
             user_id: ctx.userId,
             created_at: date,
-            text: input.userPrompt
+            text: input.userPrompt,
+            docs: input.docs
           })
           .returning('*')
 
@@ -242,24 +227,6 @@ export const chatRouter = {
           path: string
           size: number
         }> = []
-        if (input.files && input.files.length > 0) {
-          const insertedFiles = await trx('message_files')
-            .insert(
-              input.files.map((file) => {
-                return {
-                  message_id: userMessage[0].id,
-                  user_id: ctx.userId,
-                  name: file.name,
-                  path: file.path,
-                  size: file.size,
-                  origin: 'file'
-                }
-              })
-            )
-            .returning(['id', 'name', 'path', 'size'])
-          userFiles = insertedFiles
-        }
-
         const aiMessage = await trx('messages')
           .insert({
             id: input.assistantMessageId,

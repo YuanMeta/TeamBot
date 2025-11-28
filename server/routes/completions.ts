@@ -20,12 +20,6 @@ const InputSchema = z.object({
   model: z.string(),
   tools: z.string().array(),
   webSearch: z.boolean().optional()
-  // docs: z
-  //   .object({
-  //     name: z.string(),
-  //     content: z.string()
-  //   })
-  //   .array()
 })
 
 export const completions = async (req: Request, res: Response, db: Knex) => {

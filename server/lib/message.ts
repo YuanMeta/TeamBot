@@ -7,6 +7,15 @@ import type { Knex } from 'knex'
 import { parseRecord } from './table'
 import type { TableMessage } from 'types/table'
 
+function addDocsContext(
+  text: string,
+  docs?: { name: string; content: string }[] | null
+): string {
+  if (docs?.length) {
+    text = `User Questions: ${text}\nThe following are relevant reference documents.\n\n${docs.map((d) => `file: ${d.name}\n${d.content}`).join('\n\n')}`
+  }
+  return text
+}
 export class MessageManager {
   static async compreTokena(data: {
     model: LanguageModel
@@ -124,9 +133,11 @@ Output only the summarized version of the conversation.`,
           parts: []
         }
         if (m.role === 'user') {
+          let text = m.text
+          text = addDocsContext(text!, m.docs)
           msg.parts.push({
             type: 'text',
-            text: m.text!
+            text: text
           })
         } else {
           let parts = (m.parts as unknown as MessagePart[]) || []
@@ -171,7 +182,7 @@ Output only the summarized version of the conversation.`,
       parts: [
         {
           type: 'text',
-          text: userMessage.text!
+          text: addDocsContext(userMessage.text!, userMessage.docs)
         }
       ]
     })

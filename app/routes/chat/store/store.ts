@@ -18,13 +18,13 @@ export interface MessageData {
   chatId: string
   role: 'user' | 'assistant' | 'system'
   model?: string
+  docs?: { name: string; content: string }[]
   terminated?: boolean
   parts?: MessagePart[] | null
   text?: string | null
   reasoningDuration?: number | null
   context?: Record<string, any> | null
   error?: string | null
-  files?: TableMessageFile[]
   updatedAt: Date
 }
 
@@ -294,10 +294,14 @@ export class ChatStore extends StructStore<typeof state> {
       localStorage.setItem('last_assistant_model', state.cacheModel)
     })
   }
-  async chat(data: { text: string }) {
+  async chat(data: {
+    text: string
+    docs: { name: string; content: string }[]
+  }) {
     try {
       await this.client.complete({
         text: data.text,
+        docs: data.docs,
         tools:
           this.state.selectedTools[this.state.selectedChat?.id! || 'default'] ||
           []

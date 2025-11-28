@@ -11,7 +11,7 @@ import { toast } from 'sonner'
 export const ChatInput = observer(() => {
   const store = useStore()
   const [state, setState] = useLocalState({
-    files: [] as { name: string; content: string }[],
+    docs: [] as { name: string; content: string }[],
     images: [] as File[],
     prompt: '',
     webSearch: false
@@ -23,21 +23,10 @@ export const ChatInput = observer(() => {
     }
     if (!state.prompt || store.state.pending) return
     store.chat({
-      text: state.prompt
+      text: state.prompt,
+      docs: state.docs
     })
-    setState({ prompt: '' })
-    // let files: MessageFile[] = []
-    // let images: MessageFile[] = []
-    // for (let f of state.files) {
-    //   files.push({ name: f.name, content: await fileToBase64(f), type: 'file' })
-    // }
-    // for (let f of state.images) {
-    //   images.push({ name: f.name, content: await fileToBase64(f), type: 'image' })
-    // }
-    // store.completion(text, {
-    //   files,
-    //   images
-    // })
+    setState({ prompt: '', docs: [] })
   }, [])
   const onAddFile = useCallback((file: File) => {
     // setState((state) => {
@@ -56,9 +45,9 @@ export const ChatInput = observer(() => {
       >
         <div className={'overflow-y-auto h-0 flex-1 max-h-52'}>
           <div>
-            {!!state.files.length && (
+            {!!state.docs.length && (
               <div className={'pb-2 flex items-center flex-wrap'}>
-                {state.files.map((f, i) => (
+                {state.docs.map((f, i) => (
                   <div
                     className={
                       'max-w-[200px] py-1 rounded-xl mr-2 mb-1 dark:bg-white/10 bg-black/10 pl-2 pr-1 relative group'
@@ -84,7 +73,7 @@ export const ChatInput = observer(() => {
                         }}
                         onClick={() => {
                           setState((state) => {
-                            state.files.splice(i, 1)
+                            state.docs.splice(i, 1)
                           })
                         }}
                       >
@@ -146,7 +135,7 @@ export const ChatInput = observer(() => {
             <InputTools
               onSelectFile={(file) => {
                 setState((state) => {
-                  state.files.push(file)
+                  state.docs.push(file)
                 })
               }}
             />

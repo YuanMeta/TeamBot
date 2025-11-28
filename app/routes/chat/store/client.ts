@@ -12,6 +12,7 @@ export class ChatClient {
   async complete(data: {
     text: string
     tools: string[]
+    docs: { name: string; content: string }[]
     onFinish?: () => void
   }) {
     const assistantId = this.store.state.assistant!.id
@@ -24,6 +25,7 @@ export class ChatClient {
       chatId: this.store.state.selectedChat?.id || tChatId,
       text: data.text,
       role: 'user',
+      docs: data.docs,
       model: this.store.state.model!,
       updatedAt: dayjs().toDate()
     })
@@ -60,7 +62,8 @@ export class ChatClient {
         assistantMessageId: aiMessage.id!,
         assistantId: this.store.state.assistant!.id,
         model: this.store.state.model!,
-        userPrompt: data.text
+        userPrompt: data.text,
+        docs: data.docs
       })
       const openSearch = this.store.state.openWebSearch
       this.store.setState((state) => {
