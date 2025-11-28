@@ -8,6 +8,7 @@ import { copyToClipboard } from '~/.client/copy'
 import { Textarea } from '~/components/ui/textarea'
 import { Button } from '~/components/ui/button'
 import { useLocalState } from '~/hooks/localState'
+import { Badge } from '~/components/ui/badge'
 const fileTypeIconMap = [
   [/\.pdf$/i, 'pdf', '#F54838'],
   [/\.docx$/i, 'doc', '#0078D4'],
@@ -163,21 +164,23 @@ export const UserMessage = observer<{
         </Dropdown>
       )} */}
 
-      {!!msg.files?.length && (
+      {!!msg.docs?.length && (
         <div className={'mt-1.5 space-x-2 flex justify-end flex-wrap'}>
-          {msg.files.map((f, i) => {
-            const [type, color] = getFileTypeIcon(f.path)
+          {msg.docs.map((f, i) => {
             return (
-              <div
+              <Badge
                 key={i}
                 title={f.name!}
                 className={
-                  'max-w-[300px] flex items-center truncate rounded-lg bg-blue-500/20 text-[13px] px-2 py-1.5 mb-0.5'
+                  'max-w-[200px] bg-sky-500/10 hover:bg-sky-500/10 dark:bg-sky-500/15 dark:hover:bg-sky-500/15'
                 }
+                variant={'secondary'}
               >
-                <span style={{ color }}>{type}</span>
-                <span className={'truncate w-full ml-1'}>{f.name}</span>
-              </div>
+                <span className={'truncate w-full ml-1'}>
+                  {f.name.split('.')[0]}
+                </span>
+                <span>.{f.name.split('.').pop()}</span>
+              </Badge>
             )
           })}
         </div>

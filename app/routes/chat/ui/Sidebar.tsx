@@ -1,7 +1,6 @@
 import { observer } from 'mobx-react-lite'
 import { OpenAI } from '@lobehub/icons'
 import {
-  BookMarked,
   Ellipsis,
   PanelLeftClose,
   PencilLine,
@@ -183,12 +182,12 @@ export const ChatSidebar = observer(() => {
               </div>
               <span>搜索聊天</span>
             </div>
-            <div className={'sidebar-item'}>
+            {/* <div className={'sidebar-item'}>
               <div className={'w-9 flex justify-center items-center'}>
                 <BookMarked className={'size-[17px]'} />
               </div>
               <span>文档库</span>
-            </div>
+            </div> */}
           </div>
         </div>
         <div
