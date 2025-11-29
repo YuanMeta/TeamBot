@@ -130,7 +130,8 @@ export const ChatSidebar = observer(() => {
   const scrollContainerRef = useRef<HTMLDivElement>(null)
   const [state, setState] = useLocalState({
     showDeleteDialog: false,
-    selectedChatId: null as null | string
+    selectedChatId: null as null | string,
+    collapsed: false
   })
 
   useEffect(() => {
@@ -153,20 +154,45 @@ export const ChatSidebar = observer(() => {
   }, [store])
 
   return (
-    <div className={'w-[260px] h-full border-r border-border bg-sidebar'}>
-      <div className={'w-[260px] h-full flex flex-col'}>
+    <div
+      className={
+        'h-full border-r border-border bg-sidebar duration-150 overflow-hidden'
+      }
+      style={{
+        width: state.collapsed ? 52 : 260
+      }}
+    >
+      <div className={'h-full flex flex-col w-[260px]'}>
         <div className={'pb-3'}>
-          <div className={'pt-2 pb-3 flex items-center px-2 justify-between'}>
-            <div className={'sidebar-action'}>
-              <OpenAI size={22} />
+          <div
+            className={`pt-2 pb-3 flex items-center justify-between duration-150 pr-2`}
+          >
+            <div className={'flex items-center px-2 gap-1'}>
+              <div
+                className={'sidebar-action'}
+                onClick={() => {
+                  setState({ collapsed: !state.collapsed })
+                }}
+              >
+                <OpenAI size={20} />
+              </div>
+              <div className={`${state.collapsed ? 'hidden' : ''}`}>
+                <span className={'text-sm font-medium'}>Team Bot</span>
+              </div>
             </div>
-            <div className={'sidebar-action'}>
+
+            <div
+              className={'sidebar-action'}
+              onClick={() => {
+                setState({ collapsed: !state.collapsed })
+              }}
+            >
               <PanelLeftClose className={'size-[18px] text-primary/70'} />
             </div>
           </div>
           <div className={'px-2'}>
             <div
-              className={'sidebar-item'}
+              className={`sidebar-item ${state.collapsed ? 'w-9 px-2' : ''} duration-150`}
               onClick={() => {
                 navigate('/chat')
               }}
@@ -174,10 +200,12 @@ export const ChatSidebar = observer(() => {
               <div className={'w-9 flex justify-center items-center'}>
                 <SquarePen className={'size-[17px]'} />
               </div>
-              <span>新聊天</span>
+              <span className={`${state.collapsed ? 'hidden' : ''}`}>
+                新聊天
+              </span>
             </div>
             <div
-              className={'sidebar-item'}
+              className={`sidebar-item ${state.collapsed ? 'w-9 px-2' : ''}`}
               onClick={() => {
                 store.setState((state) => (state.openSearchModal = true))
               }}
@@ -185,7 +213,9 @@ export const ChatSidebar = observer(() => {
               <div className={'w-9 flex justify-center items-center'}>
                 <Search className={'size-[17px]'} />
               </div>
-              <span>搜索聊天</span>
+              <span className={`${state.collapsed ? 'hidden' : ''}`}>
+                搜索聊天
+              </span>
             </div>
             {/* <div className={'sidebar-item'}>
               <div className={'w-9 flex justify-center items-center'}>
@@ -197,7 +227,7 @@ export const ChatSidebar = observer(() => {
         </div>
         <div
           ref={scrollContainerRef}
-          className={'flex-1 h-0 pt-2 overflow-auto pb-5'}
+          className={`flex-1 h-0 pt-2 overflow-auto pb-5 duration-150 ${state.collapsed ? 'opacity-0 pointer-events-none' : 'opacity-100'}`}
         >
           <div className={'text-primary/60 text-sm pl-4 mb-2'}>聊天</div>
           <div className={'px-1.5'}>
@@ -232,6 +262,7 @@ export const ChatSidebar = observer(() => {
           </div>
         </div>
         <NavUser
+          collapsed={state.collapsed}
           user={{
             name: store.state.userInfo?.name || '',
             email: store.state.userInfo?.email || ''

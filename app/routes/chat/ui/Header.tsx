@@ -80,13 +80,6 @@ export const Header = observer(() => {
       <div className={'flex gap-1'}>
         <Button
           variant={'ghost'}
-          onClick={() => setSearchModalOpen(true)}
-        >
-          <Search />
-          搜索
-        </Button>
-        <Button
-          variant={'ghost'}
           disabled={!store.state.selectedChat?.id}
           onClick={async () => {
             copyToClipboard({
@@ -99,7 +92,6 @@ export const Header = observer(() => {
           共享
         </Button>
       </div>
-      <SearchModal open={searchModalOpen} onOpenChange={setSearchModalOpen} />
     </div>
   )
 })

@@ -26,8 +26,10 @@ import {
 import { useStore } from '../store/store'
 
 export function NavUser({
+  collapsed,
   user
 }: {
+  collapsed: boolean
   user: {
     name: string
     email: string
@@ -39,15 +41,21 @@ export function NavUser({
   return (
     <DropdownMenu>
       <DropdownMenuTrigger asChild>
-        <div className={'w-full px-2 justify-center flex py-2 border-t'}>
-          <div className='w-full flex-1 px-2 flex items-center justify-between py-1 rounded-md dark:hover:bg-accent/40 duration-150 hover:bg-accent-foreground/5 cursor-pointer'>
+        <div
+          className={`px-2 justify-center flex py-2 border-t ${collapsed ? 'w-13' : 'w-full'}`}
+        >
+          <div
+            className={`flex-1 ${collapsed ? 'justify-center' : 'px-2'} flex items-center justify-between py-1 rounded-md dark:hover:bg-accent/40 hover:bg-accent-foreground/5 cursor-pointer`}
+          >
             <div className={'flex items-center gap-2'}>
               <Avatar className='h-7 w-7 rounded-lg grayscale'>
                 <AvatarFallback className='rounded-lg'>
                   <UserRound className={'size-4'} />
                 </AvatarFallback>
               </Avatar>
-              <div className='grid flex-1 text-left text-sm leading-tight'>
+              <div
+                className={`grid flex-1 text-left text-sm leading-tight ${collapsed ? 'hidden' : ''}`}
+              >
                 <span className='truncate font-medium'>{user.name}</span>
                 {!!user.email && (
                   <span className='text-muted-foreground truncate text-xs'>
@@ -57,7 +65,9 @@ export function NavUser({
               </div>
             </div>
 
-            <EllipsisVertical className={'size-4'} />
+            <EllipsisVertical
+              className={`size-4  ${collapsed ? 'hidden' : ''}`}
+            />
           </div>
         </div>
       </DropdownMenuTrigger>

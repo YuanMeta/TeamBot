@@ -3,7 +3,6 @@ import { observer } from 'mobx-react-lite'
 import {
   BotMessageSquare,
   Users,
-  CircleGauge,
   Wrench,
   Bot,
   EllipsisVertical,
@@ -37,7 +36,6 @@ import {
   DropdownMenuContent,
   DropdownMenuGroup,
   DropdownMenuItem,
-  DropdownMenuLabel,
   DropdownMenuPortal,
   DropdownMenuSeparator,
   DropdownMenuSub,
