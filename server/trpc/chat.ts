@@ -369,5 +369,76 @@ export const chatRouter = {
             })
           )
       })
+    }),
+  searchChat: procedure
+    .input(
+      z.object({
+        query: z.string(),
+        page: z.number()
+      })
+    )
+    .mutation(async ({ input, ctx }) => {
+      const record = await ctx
+        .db('chats')
+        .join('messages', 'chats.id', '=', 'messages.chat_id')
+        .where('chats.user_id', ctx.userId)
+        .andWhere((builder) => {
+          builder
+            .where('messages.text', 'like', `%${input.query}%`)
+            .orWhere('chats.title', 'like', `%${input.query}%`)
+        })
+        .orderBy('chats.last_chat_time', 'desc')
+        .offset((input.page - 1) * 10)
+        .limit(10)
+        .select({
+          chat_id: 'chats.id',
+          message_id: 'messages.id',
+          title: 'chats.title',
+          text: 'messages.text',
+          last_chat_time: 'chats.last_chat_time',
+          updated_at: 'messages.updated_at',
+          role: 'messages.role'
+        })
+      const chats: {
+        id: string
+        title: string
+        last_chat_time: Date
+        messages: {
+          id: string
+          text: string
+          updated_at: Date
+          role: 'user' | 'assistant'
+        }[]
+      }[] = []
+      const chatMap = new Map<string, (typeof chats)[number]>()
+      for (let r of record) {
+        if (!chatMap.has(r.chat_id)) {
+          chatMap.set(r.chat_id, {
+            id: r.chat_id,
+            title: r.title,
+            last_chat_time: r.last_chat_time,
+            messages: r.text?.toLowerCase().includes(input.query.toLowerCase())
+              ? [
+                  {
+                    id: r.message_id,
+                    text: r.text,
+                    updated_at: r.updated_at,
+                    role: r.role
+                  }
+                ]
+              : []
+          })
+        } else {
+          if (r.text?.toLowerCase().includes(input.query.toLowerCase())) {
+            chatMap.get(r.chat_id)!.messages.push({
+              id: r.message_id,
+              text: r.text,
+              updated_at: r.updated_at,
+              role: r.role
+            })
+          }
+        }
+      }
+      return Array.from(chatMap.values())
     })
 } satisfies TRPCRouterRecord

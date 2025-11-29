@@ -21,6 +21,7 @@ export const kdb = async () => {
         connectionString: process.env.DATABASE_URL
       },
       useNullAsDefault: true
+      // debug: process.env.NODE_ENV === 'development'
     })
     await tableSchema(db)
     globalForKnex.knex = db

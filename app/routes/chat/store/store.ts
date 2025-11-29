@@ -52,6 +52,7 @@ const state = {
   messages: [] as MessageData[],
   selectedTools: {} as Record<string, string[]>,
   openWebSearchData: {} as Record<string, boolean>,
+  openSearchModal: false,
   ready: false,
   tools: [] as TableTool[],
   userInfo: null as null | {

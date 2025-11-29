@@ -176,7 +176,12 @@ export const ChatSidebar = observer(() => {
               </div>
               <span>新聊天</span>
             </div>
-            <div className={'sidebar-item'}>
+            <div
+              className={'sidebar-item'}
+              onClick={() => {
+                store.setState((state) => (state.openSearchModal = true))
+              }}
+            >
               <div className={'w-9 flex justify-center items-center'}>
                 <Search className={'size-[17px]'} />
               </div>
