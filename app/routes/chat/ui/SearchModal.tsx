@@ -22,11 +22,6 @@ import { cn } from '~/lib/utils'
 import { useLocalState } from '~/hooks/localState'
 import { useStore } from '../store/store'
 
-interface SearchModalProps {
-  open: boolean
-  onOpenChange: (open: boolean) => void
-}
-
 interface MessageItem {
   id: string
   text: string

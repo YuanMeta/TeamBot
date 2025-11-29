@@ -35,7 +35,12 @@ import { Checkbox } from '~/components/ui/checkbox'
 import { TextHelp } from '~/components/project/text-help'
 
 export const AddAssistant = observer(
-  (props: { open: boolean; onClose: () => void; id: string | null }) => {
+  (props: {
+    open: boolean
+    onClose: () => void
+    id: string | null
+    onChange: () => void
+  }) => {
     const [state, setState] = useLocalState({
       submitting: false,
       tools: [] as TableTool[],
@@ -109,6 +114,9 @@ export const AddAssistant = observer(
               tools: value.tools
             })
           }
+          toast.success('添加助手成功')
+          props.onChange()
+          props.onClose()
         } catch (e) {
           console.log('e', e)
 

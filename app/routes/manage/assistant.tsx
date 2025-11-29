@@ -213,6 +213,9 @@ export default observer(() => {
         <AddAssistant
           open={state.openProviderForm}
           id={state.selectedProviderId}
+          onChange={() => {
+            getAssistantsList()
+          }}
           onClose={() => setState({ openProviderForm: false })}
         />
       )}
