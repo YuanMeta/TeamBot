@@ -2,6 +2,13 @@ import type { Knex } from 'knex'
 import { isJsonObject, tid } from './utils'
 import { PasswordManager } from './password'
 export const tableSchema = async (db: Knex) => {
+  // try {
+  //   await db.raw('CREATE EXTENSION IF NOT EXISTS vector')
+  //   console.log('pgvector extension enabled')
+  // } catch (error) {
+  //   console.warn('Failed to create pgvector extension:', error)
+  // }
+
   // await db.schema.dropTableIfExists('message_files')
   // await db.schema.dropTableIfExists('messages')
   // await db.schema.dropTableIfExists('chats')

@@ -1,3 +1,4 @@
 {
-  "debug.javascript.autoAttachFilter": "onlyWithFlag"
+  "debug.javascript.autoAttachFilter": "onlyWithFlag",
+  "makefile.configureOnOpen": false
 }

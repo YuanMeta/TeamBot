@@ -1,0 +1,23 @@
+services:
+  app:
+    build:
+      context: .
+      dockerfile: Dockerfile
+    container_name: team-bot-app
+    restart: unless-stopped
+    environment:
+      NODE_ENV: ${NODE_ENV:-production}
+      PORT: ${PORT:-3000}
+      DATABASE_URL: ${DATABASE_URL}
+      JWT_SECRET: ${JWT_SECRET}
+      COOKIE_SECRET: ${COOKIE_SECRET}
+    volumes:
+      - ./logs:/app/logs
+    ports:
+      - '${PORT:-3000}:3000'
+    networks:
+      - team-bot-network
+
+networks:
+  team-bot-network:
+    driver: bridge

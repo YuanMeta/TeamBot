@@ -1,7 +1,13 @@
 import { createCookie } from 'react-router'
 import { verifyToken } from './lib/password'
 import type { Request } from 'express'
-// const isProduction = process.env.NODE_ENV === 'production'
+
+const isProduction = process.env.NODE_ENV === 'production'
+
+// 生产环境必须设置 COOKIE_SECRET
+if (isProduction && !process.env.COOKIE_SECRET) {
+  throw new Error('COOKIE_SECRET environment variable must be set in production')
+}
 
 export const userCookie = createCookie('user', {
   httpOnly: true,

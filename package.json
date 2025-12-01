@@ -2,12 +2,14 @@
   "name": "app",
   "private": true,
   "type": "module",
+  "version": "0.1.0",
+  "packageManager": "pnpm@10.24.0",
   "scripts": {
     "build": "react-router build",
+    "build:prod": "node scripts/build-production.js",
     "dev": "dotenv -e .env.dev -- node server.js",
     "start": "dotenv -e .env -- node server.js",
-    "typecheck": "react-router typegen && tsc",
-    "deploy": "node deploy.cjs"
+    "typecheck": "react-router typegen && tsc"
   },
   "dependencies": {
     "@ai-sdk/anthropic": "^2.0.45",
@@ -69,6 +71,7 @@
     "cross-env": "^10.1.0",
     "date-fns": "^4.1.0",
     "dayjs": "^1.11.18",
+    "dotenv-cli": "^10.0.0",
     "exa-js": "^2.0.0",
     "express": "^5.1.0",
     "flat-cache": "^6.1.18",
@@ -141,8 +144,6 @@
     "@types/turndown": "^5.0.5",
     "@types/unist": "^3.0.3",
     "archiver": "^7.0.1",
-    "dotenv-cli": "^10.0.0",
-    "ssh2": "^1.17.0",
     "tailwindcss": "^4.1.13",
     "tw-animate-css": "^1.4.0",
     "typescript": "^5.9.2",
