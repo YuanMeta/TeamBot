@@ -1,9 +1,10 @@
+name: teambot-standalone
 services:
   app:
     build:
       context: .
       dockerfile: Dockerfile
-    container_name: team-bot-app
+    container_name: teambot-standalone-app
     restart: unless-stopped
     environment:
       NODE_ENV: ${NODE_ENV:-production}
@@ -16,8 +17,8 @@ services:
     ports:
       - '${PORT:-3000}:3000'
     networks:
-      - team-bot-network
+      - teambot-network
 
 networks:
-  team-bot-network:
+  teambot-network:
     driver: bridge

@@ -1,9 +1,9 @@
-name: team-bot
+name: teambot
 
 services:
   postgres:
     image: pgvector/pgvector:pg18
-    container_name: team-bot-postgres
+    container_name: teambot-postgres
     restart: unless-stopped
     environment:
       POSTGRES_USER: ${POSTGRES_USER:-postgres}
@@ -11,7 +11,7 @@ services:
       POSTGRES_DB: ${POSTGRES_DB:-teambot}
       PGDATA: /var/lib/postgresql/data/pgdata
     volumes:
-      - team-bot-postgres-data:/var/lib/postgresql/data
+      - postgres_data:/var/lib/postgresql/data
     ports:
       - '${POSTGRES_PORT:-5432}:5432'
     healthcheck:
@@ -20,13 +20,13 @@ services:
       timeout: 5s
       retries: 5
     networks:
-      - team-bot-network
+      - teambot-network
 
   app:
     build:
       context: .
       dockerfile: Dockerfile
-    container_name: team-bot-app
+    container_name: teambot-app
     restart: unless-stopped
     environment:
       NODE_ENV: ${NODE_ENV:-production}
@@ -42,12 +42,12 @@ services:
       postgres:
         condition: service_healthy
     networks:
-      - team-bot-network
+      - teambot-network
 
 volumes:
-  team-bot-postgres-data:
+  postgres_data:
     driver: local
 
 networks:
-  team-bot-network:
+  teambot-network:
     driver: bridge
