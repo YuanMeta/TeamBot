@@ -1,7 +1,7 @@
 module.exports = {
   apps: [
     {
-      name: 'team-bot',
+      name: 'teambot',
       script: 'npm',
       args: 'start',
       cwd: './',
