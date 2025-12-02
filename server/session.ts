@@ -67,3 +67,7 @@ export const verifyUser = async (cookie: string, admin = false) => {
   }
   return user
 }
+
+export const deleteUserCache = async (userId: string) => {
+  return await cacheable.delete(`user:${userId}`)
+}

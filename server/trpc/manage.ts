@@ -8,6 +8,7 @@ import { insertRecord, parseRecord } from 'server/lib/table'
 import { adminProcedure } from './core'
 import { runWebSearch } from 'server/lib/search'
 import dayjs from 'dayjs'
+import { deleteUserCache } from 'server/session'
 export const manageRouter = {
   checkConnect: adminProcedure
     .input(
@@ -212,6 +213,8 @@ export const manageRouter = {
       await ctx.db('users').where({ id: input.memberId }).update({
         deleted: true
       })
+      await deleteUserCache(input.memberId)
+      return { success: true }
     }),
   createTool: adminProcedure
     .input(
