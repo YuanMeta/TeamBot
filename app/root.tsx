@@ -71,6 +71,8 @@ const App = observer(() => {
       <head>
         <meta charSet='utf-8' />
         <meta name='viewport' content='width=device-width,initial-scale=1' />
+        <title>TeamBot</title>
+        <link rel='icon' href='/logo-64.png' type='image/png' />
         <Meta />
         <PreventFlashOnWrongTheme ssrTheme={Boolean(data.theme)} />
         <Links />
