@@ -4,6 +4,7 @@ import SyntaxHighlighter from './SyntaxHighlighter'
 import { copyToClipboard } from '~/.client/copy'
 import { observer } from 'mobx-react-lite'
 import { useLocalState } from '~/hooks/localState'
+import { Button } from '~/components/ui/button'
 export interface HighlighterProps {
   actionsRender?: (props: {
     content: string
@@ -54,8 +55,7 @@ export const Highlighter = observer<HighlighterProps>(
     const tirmedChildren = children.trim()
 
     const [state, setState] = useLocalState({
-      copied: false,
-      expand: true
+      copied: false
     })
 
     return (
@@ -67,25 +67,16 @@ export const Highlighter = observer<HighlighterProps>(
       >
         <div
           className={
-            'justify-between flex items-center h-8 dark:bg-gray-700/5 px-2 bg-gray-50'
+            'justify-between flex items-center h-10 pl-4 pr-2 absolute left-0 top-0 w-full'
           }
         >
-          <div
-            className={
-              'p-1 rounded-sm hover:bg-black/10 duration-200 cursor-pointer dark:hover:bg-white/10 select-none'
-            }
-            onClick={() => setState({ expand: !state.expand })}
-          >
-            <ChevronDown
-              className={`duration-200 stroke-gray-500 dark:stroke-gray-400 ${!state.expand ? '-rotate-90' : ''}`}
-              size={16}
-            />
+          <div className={'leading-normal text-secondary-foreground/70'}>
+            {language}
           </div>
-          <div className={'leading-normal'}>{language}</div>
-          <div
-            className={
-              'p-1 rounded-sm hover:bg-black/10 duration-200 cursor-pointer dark:hover:bg-white/10 select-none'
-            }
+          <Button
+            size={'sm'}
+            variant={'ghost'}
+            className={'text-secondary-foreground/70'}
             onClick={() => {
               copyToClipboard(tirmedChildren)
               setState({ copied: true })
@@ -94,20 +85,11 @@ export const Highlighter = observer<HighlighterProps>(
               }, 1000)
             }}
           >
-            {!state.copied ? (
-              <Copy
-                className={`duration-200 stroke-gray-500 dark:stroke-gray-400`}
-                size={14}
-              />
-            ) : (
-              <Check
-                className={`duration-200 stroke-gray-500 dark:stroke-gray-400`}
-                size={14}
-              />
-            )}
-          </div>
+            {!state.copied ? <Copy size={14} /> : <Check size={14} />}
+            <span>复制</span>
+          </Button>
         </div>
-        <div style={state.expand ? {} : { height: 0, overflow: 'hidden' }}>
+        <div>
           <SyntaxHighlighter language={language?.toLowerCase()}>
             {tirmedChildren}
           </SyntaxHighlighter>

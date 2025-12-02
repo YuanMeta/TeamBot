@@ -23,7 +23,7 @@ const SyntaxHighlighter = memo<SyntaxHighlighterProps>(
     useEffect(() => {
       codeToHtml(children, {
         lang: matchedLanguage,
-        theme: theme === 'dark' ? 'github-dark' : 'one-light'
+        theme: theme === 'dark' ? 'dark-plus' : 'one-light'
       }).then((res) => {
         setDom(res)
       })
