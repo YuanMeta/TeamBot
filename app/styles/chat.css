@@ -5,7 +5,7 @@
 .sidebar-item {
   @apply flex h-9 select-none items-center text-primary/90 text-sm hover:bg-sidebar-accent/70 rounded-lg transition-colors duration-150 cursor-pointer;
   &.active {
-    @apply bg-sidebar-accent;
+    @apply bg-sidebar-accent dark:text-white text-black;
   }
 }
 

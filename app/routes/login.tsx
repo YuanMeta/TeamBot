@@ -79,7 +79,7 @@ export default observer(() => {
       >
         <div className={'-mt-32'}>
           <div className={'flex items-center justify-center mb-5 gap-3'}>
-            <ModelIcon mode={'deepseek'} size={42} />
+            <img src='/logo-256.png' className='size-11' />
             <div className={'title'}>
               <span>Team Bot</span>
             </div>
