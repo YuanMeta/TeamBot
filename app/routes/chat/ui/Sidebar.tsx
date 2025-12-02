@@ -1,5 +1,4 @@
 import { observer } from 'mobx-react-lite'
-import { OpenAI } from '@lobehub/icons'
 import {
   Ellipsis,
   PanelLeftClose,

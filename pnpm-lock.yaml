@@ -164,6 +164,9 @@ importers:
       browser-fs-access:
         specifier: ^0.38.0
         version: 0.38.0
+      cacheable:
+        specifier: ^2.3.0
+        version: 2.3.0
       class-variance-authority:
         specifier: ^0.7.1
         version: 0.7.1
@@ -194,9 +197,6 @@ importers:
       express:
         specifier: ^5.1.0
         version: 5.1.0
-      flat-cache:
-        specifier: ^6.1.18
-        version: 6.1.19
       framer-motion:
         specifier: ^12.23.24
         version: 12.23.24(react-dom@19.2.0(react@19.2.0))(react@19.2.0)
@@ -3471,12 +3471,6 @@ packages:
 
   find-root@1.1.0:
     resolution: {integrity: sha512-NKfW6bec6GfKc0SGx1e07QZY9PE99u0Bft/0rzSD5k3sO/vwkVUpDUKVm5Gpp5Ue3YfShPFTX2070tDs5kB9Ng==}
-
-  flat-cache@6.1.19:
-    resolution: {integrity: sha512-l/K33newPTZMTGAnnzaiqSl6NnH7Namh8jBNjrgjprWxGmZUuxx/sJNIRaijOh3n7q7ESbhNZC+pvVZMFdeU4A==}
-
-  flatted@3.3.3:
-    resolution: {integrity: sha512-GX+ysw4PBCz0PzosHDepZGANEuFCMLrnRTiEy9McGjmkCQYwRq4A/X786G/fjM/+OjsWSU1ZrY5qyARZmO/uwg==}
 
   follow-redirects@1.15.11:
     resolution: {integrity: sha512-deG2P0JfjrTxl50XGCDyfI97ZGVCxIpfKYmfyrQ54n5FO/0gfIES8C/Psl6kWVDolizcaaxZJnTS0QSMxvnsBQ==}
@@ -9591,14 +9585,6 @@ snapshots:
       - supports-color
 
   find-root@1.1.0: {}
-
-  flat-cache@6.1.19:
-    dependencies:
-      cacheable: 2.3.0
-      flatted: 3.3.3
-      hookified: 1.13.0
-
-  flatted@3.3.3: {}
 
   follow-redirects@1.15.11: {}
 

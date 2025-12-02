@@ -1,8 +1,7 @@
 import { initTRPC, TRPCError } from '@trpc/server'
 import z, { ZodError } from 'zod'
 import superjson from 'superjson'
-import { userCookie } from '../session'
-import { verifyToken } from '../lib/password'
+import { verifyUser } from '../session'
 import { kdb } from '../lib/knex'
 import * as trpcExpress from '@trpc/server/adapters/express'
 
@@ -36,45 +35,25 @@ export const createTRPCRouter = t.router
 export const publicProcedure = t.procedure
 
 export const procedure = t.procedure.use(async ({ ctx, next }) => {
-  const token = await userCookie.parse(ctx.req.headers.cookie || '')
-  if (!token) {
-    throw new TRPCError({ code: 'UNAUTHORIZED' })
-  }
-  const data = verifyToken(token)
-  if (!data) {
-    throw new TRPCError({ code: 'UNAUTHORIZED' })
-  }
-  const user = await ctx.db('users').where({ id: data.uid }).first()
+  const user = await verifyUser(ctx.req.headers.cookie || '')
   if (!user) {
     throw new TRPCError({ code: 'UNAUTHORIZED' })
   }
   return next({
     ctx: {
-      userId: data.uid
+      userId: user.id
     }
   })
 })
 
 export const adminProcedure = t.procedure.use(async ({ ctx, next }) => {
-  const token = await userCookie.parse(ctx.req.headers.cookie || '')
-  if (!token) {
-    throw new TRPCError({ code: 'UNAUTHORIZED' })
-  }
-  const data = verifyToken(token)
-  if (!data) {
-    throw new TRPCError({ code: 'UNAUTHORIZED' })
-  }
-  const user = await ctx
-    .db('users')
-    .where({ id: data.uid })
-    .select('id', 'role', 'deleted')
-    .first()
-  if (!user || user.role !== 'admin' || user.deleted) {
+  const user = await verifyUser(ctx.req.headers.cookie || '', true)
+  if (!user) {
     throw new TRPCError({ code: 'UNAUTHORIZED' })
   }
   return next({
     ctx: {
-      userId: data.uid
+      userId: user.id
     }
   })
 })

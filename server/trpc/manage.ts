@@ -199,36 +199,19 @@ export const manageRouter = {
   deleteMember: adminProcedure
     .input(
       z.object({
-        memberId: z.string(),
-        deleteData: z.boolean().optional()
+        memberId: z.string()
       })
     )
     .mutation(async ({ input, ctx }) => {
-      if (input.deleteData) {
-        while (true) {
-          const files = await ctx
-            .db('message_files')
-            .where({ user_id: input.memberId })
-            .select('id')
-            .limit(100)
-          if (files.length > 0) {
-            await ctx
-              .db('messages')
-              .whereIn(
-                'id',
-                files.map((files) => files.id)
-              )
-              .delete()
-          }
-          if (files.length < 100) {
-            break
-          }
-        }
-      } else {
-        return ctx.db('users').where({ id: input.memberId }).update({
-          deleted: true
+      if (ctx.userId === input.memberId) {
+        throw new TRPCError({
+          code: 'BAD_REQUEST',
+          message: '不可删除自己的账号'
         })
       }
+      await ctx.db('users').where({ id: input.memberId }).update({
+        deleted: true
+      })
     }),
   createTool: adminProcedure
     .input(
