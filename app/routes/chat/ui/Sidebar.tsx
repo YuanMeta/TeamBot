@@ -55,7 +55,9 @@ const Item = observer(
     })
     return (
       <div
-        className={`sidebar-item group justify-between pl-2.5 ${state.hovered || state.showMenu ? 'pr-1.5' : 'pr-2.5'} ${active ? 'active' : ''}`}
+        className={`sidebar-item group justify-between pl-2.5 ${
+          state.hovered || state.showMenu ? 'pr-1.5' : 'pr-2.5'
+        } ${active ? 'active' : ''}`}
         key={item.id}
         onClick={onClick}
         onMouseEnter={() => {
@@ -81,7 +83,9 @@ const Item = observer(
             <Button
               size={'icon-sm'}
               variant={'ghost'}
-              className={`ml-1 ${state.hovered || state.showMenu ? '' : 'hidden'}`}
+              className={`ml-1 ${
+                state.hovered || state.showMenu ? '' : 'hidden'
+              }`}
             >
               <Ellipsis />
             </Button>
@@ -174,7 +178,10 @@ export const ChatSidebar = observer(() => {
                   setState({ collapsed: !state.collapsed })
                 }}
               >
-                <OpenAI size={20} />
+                <img
+                  src='/logo-128.png'
+                  className='size-5 shadow-sm shadow-neutral-200 dark:shadow-none rounded-xs'
+                />
               </div>
               <div className={`${state.collapsed ? 'hidden' : ''}`}>
                 <span className={'text-sm font-medium'}>Team Bot</span>
@@ -192,7 +199,9 @@ export const ChatSidebar = observer(() => {
           </div>
           <div className={'px-2'}>
             <div
-              className={`sidebar-item ${state.collapsed ? 'w-9 px-2' : ''} duration-150`}
+              className={`sidebar-item ${
+                state.collapsed ? 'w-9 px-2' : ''
+              } duration-150`}
               onClick={() => {
                 navigate('/chat')
               }}
@@ -227,7 +236,9 @@ export const ChatSidebar = observer(() => {
         </div>
         <div
           ref={scrollContainerRef}
-          className={`flex-1 h-0 pt-2 overflow-auto pb-5 duration-150 ${state.collapsed ? 'opacity-0 pointer-events-none' : 'opacity-100'}`}
+          className={`flex-1 h-0 pt-2 overflow-auto pb-5 duration-150 ${
+            state.collapsed ? 'opacity-0 pointer-events-none' : 'opacity-100'
+          }`}
         >
           <div className={'text-primary/60 text-sm pl-4 mb-2'}>聊天</div>
           <div className={'px-1.5'}>

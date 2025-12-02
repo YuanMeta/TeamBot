@@ -10,7 +10,9 @@ import {
   Sun,
   Moon,
   LogOut,
-  UserRound
+  UserRound,
+  Bath,
+  MessageCircleMore
 } from 'lucide-react'
 import { NavLink, useLocation, useNavigate } from 'react-router'
 import {
@@ -19,7 +21,8 @@ import {
   SidebarHeader,
   SidebarInset,
   SidebarProvider,
-  SidebarTrigger
+  SidebarTrigger,
+  useSidebar
 } from '~/components/ui/sidebar'
 import {
   Sidebar,
@@ -67,6 +70,29 @@ const items = [
   }
 ]
 
+function Header() {
+  const { toggleSidebar } = useSidebar()
+  return (
+    <SidebarHeader>
+      <SidebarMenu>
+        <SidebarMenuItem>
+          <SidebarMenuButton
+            onClick={() => {
+              toggleSidebar()
+            }}
+            className='data-[slot=sidebar-menu-button]:!p-1.5'
+          >
+            <img
+              src='/logo-128.png'
+              className='size-5 shadow-sm shadow-neutral-200 dark:shadow-none rounded-xs'
+            />
+            <span className='text-base font-semibold'>Team Bot</span>
+          </SidebarMenuButton>
+        </SidebarMenuItem>
+      </SidebarMenu>
+    </SidebarHeader>
+  )
+}
 export const ManageSideBar = observer((props: { children: ReactNode }) => {
   let location = useLocation()
   let navigate = useNavigate()
@@ -86,21 +112,7 @@ export const ManageSideBar = observer((props: { children: ReactNode }) => {
   return (
     <SidebarProvider>
       <Sidebar variant={'sidebar'} collapsible={'icon'}>
-        <SidebarHeader>
-          <SidebarMenu>
-            <SidebarMenuItem>
-              <SidebarMenuButton
-                onClick={() => {
-                  navigate('/chat')
-                }}
-                className='data-[slot=sidebar-menu-button]:!p-1.5'
-              >
-                <Bot className='!size-5' />
-                <span className='text-base font-semibold'>Team Bot</span>
-              </SidebarMenuButton>
-            </SidebarMenuItem>
-          </SidebarMenu>
-        </SidebarHeader>
+        <Header />
         <SidebarContent>
           <SidebarGroup>
             <SidebarMenu>
@@ -191,6 +203,14 @@ export const ManageSideBar = observer((props: { children: ReactNode }) => {
                         </DropdownMenuSubContent>
                       </DropdownMenuPortal>
                     </DropdownMenuSub>
+                    <DropdownMenuItem
+                      onClick={() => {
+                        navigate('/chat')
+                      }}
+                    >
+                      <MessageCircleMore />
+                      Chat
+                    </DropdownMenuItem>
                     <DropdownMenuItem
                       onClick={() => {
                         window.open('https://github.com/YuanMeta/TeamBot')
