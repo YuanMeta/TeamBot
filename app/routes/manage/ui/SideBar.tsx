@@ -4,14 +4,12 @@ import {
   BotMessageSquare,
   Users,
   Wrench,
-  Bot,
   EllipsisVertical,
   MonitorCog,
   Sun,
   Moon,
   LogOut,
   UserRound,
-  Bath,
   MessageCircleMore
 } from 'lucide-react'
 import { NavLink, useLocation, useNavigate } from 'react-router'

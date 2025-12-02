@@ -1,11 +1,4 @@
-import {
-  Earth,
-  FileText,
-  GitBranchPlus,
-  Image,
-  Sparkle,
-  Wrench
-} from 'lucide-react'
+import { FileText, GitBranchPlus, Image, Sparkle } from 'lucide-react'
 import { observer } from 'mobx-react-lite'
 import { Button } from '~/components/ui/button'
 import {
@@ -13,10 +6,7 @@ import {
   DropdownMenuContent,
   DropdownMenuGroup,
   DropdownMenuItem,
-  DropdownMenuPortal,
-  DropdownMenuSub,
-  DropdownMenuSubContent,
-  DropdownMenuSubTrigger,
+  DropdownMenuSeparator,
   DropdownMenuTrigger
 } from '~/components/ui/dropdown-menu'
 import { useStore } from '../../store/store'
@@ -72,30 +62,25 @@ export const InputTools = observer(
               图片
             </DropdownMenuItem>
           </DropdownMenuGroup>
-          {!!tools.length && (
-            <DropdownMenuGroup>
-              <DropdownMenuSub>
-                <DropdownMenuSubTrigger>
-                  <Wrench />
-                  工具
-                </DropdownMenuSubTrigger>
-                <DropdownMenuPortal>
-                  <DropdownMenuSubContent>
-                    {tools.map((t) => (
-                      <DropdownMenuItem
-                        key={t.id}
-                        onClick={() => {
-                          store.addTool(t.id)
-                        }}
-                      >
-                        {t.type === 'http' ? <GitBranchPlus /> : <Earth />}
-                        {t.name}
-                      </DropdownMenuItem>
-                    ))}
-                  </DropdownMenuSubContent>
-                </DropdownMenuPortal>
-              </DropdownMenuSub>
-            </DropdownMenuGroup>
+          {!!tools.filter((t) => t.type === 'http').length && (
+            <>
+              <DropdownMenuSeparator />
+              <DropdownMenuGroup>
+                {tools
+                  .filter((t) => t.type === 'http')
+                  .map((t) => (
+                    <DropdownMenuItem
+                      key={t.id}
+                      onClick={() => {
+                        store.addTool(t.id)
+                      }}
+                    >
+                      <GitBranchPlus />
+                      {t.name}
+                    </DropdownMenuItem>
+                  ))}
+              </DropdownMenuGroup>
+            </>
           )}
         </DropdownMenuContent>
       </DropdownMenu>

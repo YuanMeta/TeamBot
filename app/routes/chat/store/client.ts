@@ -1,7 +1,7 @@
 import dayjs from 'dayjs'
 import type { ChatData, ChatStore, MessageData } from './store'
 import { trpc } from '~/.client/trpc'
-import { parseJsonEventStream } from 'ai'
+import { parseJsonEventStream, type UIMessageChunk } from 'ai'
 import type { MessagePart, ReasonPart, TextPart, ToolPart } from 'types'
 import { observable, runInAction } from 'mobx'
 import { cid, fileToBase64, findLast } from '../../../lib/utils'
@@ -340,9 +340,9 @@ export class ChatClient {
       }),
       credentials: 'include'
     })
-    const p = parseJsonEventStream<TemaMessageChunk>({
+    const p = parseJsonEventStream<UIMessageChunk>({
       stream: res.body as any,
-      schema: uiMessageChunkSchema
+      schema: uiMessageChunkSchema as any
     })
     const reader = p?.getReader()
     if (reader) {

@@ -68,6 +68,7 @@ export const completions = async (req: Request, res: Response, db: Knex) => {
     messages: convertToModelMessages(uiMessages),
     stopWhen: stepCountIs(20),
     tools,
+    toolChoice: json.tools?.length ? 'required' : 'auto',
     maxOutputTokens: Number(assistant.options?.maxOutputTokens) || undefined,
     temperature: Number(assistant.options?.temperature) || undefined,
     topP: assistant.options.top_p.open

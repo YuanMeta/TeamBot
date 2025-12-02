@@ -3,7 +3,6 @@ import { observer } from 'mobx-react-lite'
 import { useEffect, useMemo } from 'react'
 import z from 'zod'
 import { trpc } from '~/.client/trpc'
-import { TextHelp } from '~/components/project/text-help'
 import { Button } from '~/components/ui/button'
 import {
   Dialog,
@@ -132,10 +131,12 @@ export const AddTool = observer(
       defaultValues: {
         name: '',
         description: '',
-        type: 'web_search',
+        type: 'http',
         auto: true,
         id: '',
-        params: {} as Record<string, any>
+        params: {
+          http: texts.http_json
+        } as Record<string, any>
       },
       onSubmit: async ({ value }) => {
         if (value.type === 'web_search') {
@@ -353,7 +354,7 @@ export const AddTool = observer(
                           htmlFor={field.name}
                           required={true}
                           help={
-                            '模型将根据工具描述与用户提问，自动选择是否使用该工具。'
+                            '开启后，工具不会显示在对话菜单栏中，模型将根据工具描述与用户提问，自动选择是否使用该工具。若未开启，则需要成员对话时手动添加该工具调用。'
                           }
                         >
                           自动调用{' '}
@@ -398,12 +399,12 @@ export const AddTool = observer(
                           }}
                         >
                           <div className='flex items-center gap-3'>
-                            <RadioGroupItem value='web_search' id='r1' />
-                            <Label htmlFor='r1'>网络搜索</Label>
-                          </div>
-                          <div className='flex items-center gap-3'>
                             <RadioGroupItem value='http' id='r2' />
                             <Label htmlFor='r2'>HTTP请求</Label>
+                          </div>
+                          <div className='flex items-center gap-3'>
+                            <RadioGroupItem value='web_search' id='r1' />
+                            <Label htmlFor='r1'>网络搜索</Label>
                           </div>
                         </RadioGroup>
                       </Field>
