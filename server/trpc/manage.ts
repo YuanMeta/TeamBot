@@ -395,8 +395,8 @@ export const manageRouter = {
       const date = dayjs().startOf('day')
       let dateStr = date.format('YYYY-MM-DD')
       switch (input.date) {
-        case 'yesterday':
-          dateStr = date.subtract(1, 'day').format('YYYY-MM-DD')
+        case 'last3Days':
+          dateStr = date.subtract(3, 'day').format('YYYY-MM-DD')
           break
         case 'lastWeek':
           dateStr = date.subtract(7, 'day').format('YYYY-MM-DD')

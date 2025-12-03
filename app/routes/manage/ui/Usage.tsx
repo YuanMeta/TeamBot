@@ -146,7 +146,7 @@ export const Usage = observer(
           }
         }}
       >
-        <DialogContent className={'!max-w-[700px] !w-[700px]'}>
+        <DialogContent className={'max-w-[700px]! w-[700px]!'}>
           <DialogHeader>
             <DialogTitle className={'flex items-center gap-3'}>
               用量查询
@@ -159,7 +159,7 @@ export const Usage = observer(
                 </SelectTrigger>
                 <SelectContent>
                   <SelectItem value='today'>今天</SelectItem>
-                  <SelectItem value='yesterday'>昨天</SelectItem>
+                  <SelectItem value='last3Days'>最近3天</SelectItem>
                   <SelectItem value='lastWeek'>最近1周</SelectItem>
                   <SelectItem value='lastMonth'>最近1月</SelectItem>
                   <SelectItem value='last3Months'>最近3月</SelectItem>
