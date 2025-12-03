@@ -1,11 +1,9 @@
 import {
   Check,
   ChevronRight,
-  Earth,
   FileSearch2,
   GitBranchPlus,
   Search,
-  Wrench,
   X
 } from 'lucide-react'
 import { observer } from 'mobx-react-lite'
@@ -64,41 +62,46 @@ export const WebSearchTool = observer(({ tool }: { tool: ToolPart }) => {
     return (
       <TextHelp text={tool.input?.query} delay={1000}>
         <Badge variant={'destructive'} className={'text-sm'}>
-          <Earth />
-          {tool.errorText}
+          <Search />
+          {tool.errorText || '未知错误'}
         </Badge>
       </TextHelp>
     )
   }
   return (
-    <TextHelp
-      text={tool.input?.query || tool.output?.action?.query}
-      delay={1000}
+    <div
+      className={
+        'cursor-pointer text flex items-center justify-between border rounded-md px-2 h-9 hover:bg-neutral-50 duration-150 dark:hover:bg-neutral-400/10'
+      }
+      onClick={() => {
+        if (tool.output instanceof Array) {
+          store.setState((draft) => {
+            draft.selectSearchResult = tool.output
+          })
+        }
+      }}
     >
-      <Badge
-        variant={'secondary'}
-        className={'cursor-pointer text-sm'}
-        onClick={() => {
-          if (tool.output instanceof Array) {
-            store.setState((draft) => {
-              draft.selectSearchResult = tool.output
-            })
-          }
-        }}
+      <div className={'flex items-center gap-2 flex-1'}>
+        <Search className={'size-4 text-neutral-500 dark:text-neutral-400'} />
+        <span
+          className={'text-sm text-secondary-foreground/80 truncate flex-1 w-0'}
+        >
+          {tool.input?.query || tool.output?.action?.query || '已搜索相关内容'}
+        </span>
+      </div>
+      <div
+        className={
+          'flex items-center gap-1 text-secondary-foreground/60 shrink-0 ml-10'
+        }
       >
-        <Earth />
-        {tool.output instanceof Array ? (
+        {tool.output instanceof Array && (
           <>
-            <span>{tool.output?.length}个网页</span>
-            <ChevronRight className={'size-7'} strokeWidth={3} />
+            <span className={'text-sm'}>{tool.output?.length}个结果</span>
+            <ChevronRight className={'size-4'} />
           </>
-        ) : (
-          <span>
-            {tool.output?.action?.query || (String(tool.output) as string)}
-          </span>
         )}
-      </Badge>
-    </TextHelp>
+      </div>
+    </div>
   )
 })
 

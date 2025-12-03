@@ -9,8 +9,6 @@
 
 /generated/prisma
 test-client.ts
-*.db-wal
-*.db-shm
 # PM2 logs
 /logs/*.log
 /logs/*.pid

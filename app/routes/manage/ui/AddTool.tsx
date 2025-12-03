@@ -175,10 +175,7 @@ export const AddTool = observer(
     useEffect(() => {
       if (props.open) {
         form.reset()
-        form.setFieldValue(
-          'description',
-          '通过搜索引擎获取最新网页内容，用于补充或验证模型的知识。如果你认为需要最新的信息来回答用户的问题，请使用此工具。'
-        )
+        form.setFieldValue('description', texts.http_desc)
         if (props.id) {
           trpc.manage.getTool.query(props.id).then((res) => {
             if (res) {
@@ -308,6 +305,46 @@ export const AddTool = observer(
                   }}
                 />
                 <form.Field
+                  name={'type'}
+                  children={(field) => {
+                    return (
+                      <Field>
+                        <FieldLabel htmlFor={field.name} required>
+                          工具类型
+                        </FieldLabel>
+                        <RadioGroup
+                          value={field.state.value}
+                          disabled={!!props.id}
+                          onValueChange={(value) => {
+                            field.setValue(value)
+                            if (value === 'http') {
+                              form.setFieldValue('params', {
+                                http: texts.http_json
+                              })
+                              form.setFieldValue('description', texts.http_desc)
+                            } else {
+                              form.setFieldValue('params', {})
+                              form.setFieldValue(
+                                'description',
+                                texts.web_search_desc
+                              )
+                            }
+                          }}
+                        >
+                          <div className='flex items-center gap-3'>
+                            <RadioGroupItem value='http' id='r2' />
+                            <Label htmlFor='r2'>HTTP请求</Label>
+                          </div>
+                          <div className='flex items-center gap-3'>
+                            <RadioGroupItem value='web_search' id='r1' />
+                            <Label htmlFor='r1'>网络搜索</Label>
+                          </div>
+                        </RadioGroup>
+                      </Field>
+                    )
+                  }}
+                />
+                <form.Field
                   name={'description'}
                   validators={{
                     onSubmit: ({ value }) => {
@@ -371,46 +408,7 @@ export const AddTool = observer(
                     )
                   }}
                 />
-                <form.Field
-                  name={'type'}
-                  children={(field) => {
-                    return (
-                      <Field>
-                        <FieldLabel htmlFor={field.name} required>
-                          工具类型
-                        </FieldLabel>
-                        <RadioGroup
-                          value={field.state.value}
-                          disabled={!!props.id}
-                          onValueChange={(value) => {
-                            field.setValue(value)
-                            if (value === 'http') {
-                              form.setFieldValue('params', {
-                                http: texts.http_json
-                              })
-                              form.setFieldValue('description', texts.http_desc)
-                            } else {
-                              form.setFieldValue('params', {})
-                              form.setFieldValue(
-                                'description',
-                                texts.web_search_desc
-                              )
-                            }
-                          }}
-                        >
-                          <div className='flex items-center gap-3'>
-                            <RadioGroupItem value='http' id='r2' />
-                            <Label htmlFor='r2'>HTTP请求</Label>
-                          </div>
-                          <div className='flex items-center gap-3'>
-                            <RadioGroupItem value='web_search' id='r1' />
-                            <Label htmlFor='r1'>网络搜索</Label>
-                          </div>
-                        </RadioGroup>
-                      </Field>
-                    )
-                  }}
-                />
+
                 <form.Subscribe
                   selector={(state) => [
                     state.values.type,
@@ -602,8 +600,7 @@ export const AddTool = observer(
                                 <FieldLabel
                                   htmlFor={field.name}
                                   required
-                                  help={`url和method是必填项，其他参数为可选，如果为POST请求，将以Application/json格式发送body参数。
-                                    如果希望大模型在请求时加入动态参数，请填写input参数，参数将附加在params中， input参数仅支持number和string类型，请准确填写参数描述以让大模型理解参数含义。`}
+                                  help={`url和method是必填项，其他参数为可选，\n如果为POST请求，将以Application/json格式发送body参数。\n如果希望大模型在请求时加入动态参数，请填写input参数，参数将附加在params中， \ninput参数仅支持number和string类型，请准确填写参数描述以让大模型理解参数含义。`}
                                 >
                                   请求参数
                                 </FieldLabel>
