@@ -201,7 +201,7 @@ export const UserMessage = observer<{
                   )
                 }}
                 className={
-                  'w-36 h-auto flex items-center rounded-lg mb-0.5 overflow-hidden cursor-pointer max-h-96'
+                  'w-36 h-auto flex items-center rounded-lg mb-0.5 overflow-hidden cursor-pointer max-h-96 shadow shadow-black/10 dark:shadow-black/50'
                 }
               >
                 <img

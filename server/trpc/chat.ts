@@ -5,6 +5,8 @@ import dayjs from 'dayjs'
 import { tid } from 'server/lib/utils'
 import { insertRecord, parseRecord } from 'server/lib/table'
 import { getMessagesWithFiles } from './query'
+import { unlink } from 'fs/promises'
+import { join } from 'path'
 export const chatRouter = {
   createChat: procedure
     .input(
@@ -149,14 +151,21 @@ export const chatRouter = {
     )
     .mutation(async ({ input, ctx }) => {
       return ctx.db.transaction(async (trx) => {
-        // const files = await trx('message_files')
-        //   .where({ chat_id: input.id, user_id: ctx.userId })
-        //   .select('id')
-        // if (files.length > 0) {
-        //   await trx('messages')
-        //     .where({ chat_id: input.id, user_id: ctx.userId })
-        //     .delete()
-        // }
+        const messages = await trx('messages')
+          .where({ chat_id: input.id, user_id: ctx.userId })
+          .select('files')
+        for (let m of messages) {
+          if (m.files) {
+            try {
+              const files = JSON.parse(m.files as any) as string[]
+              for (let f of files) {
+                await unlink(join(process.cwd(), 'files', f))
+              }
+            } catch (e) {
+              console.error(e)
+            }
+          }
+        }
         await trx('messages')
           .where({ chat_id: input.id, user_id: ctx.userId })
           .delete()
