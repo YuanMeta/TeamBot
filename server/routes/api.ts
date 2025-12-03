@@ -41,70 +41,67 @@ const LoginInputSchema = z.object({
 })
 
 export const registerRoutes = (app: Express, db: Knex) => {
-  app.post(
-    '/api/login',
-    routeInterceptor(async (req, res) => {
-      const input: { nameOrEmail: string; password: string } = req.body
-      try {
-        LoginInputSchema.parse(input)
-      } catch (e) {
-        throw new Response((e as Error).message, { status: 400 })
-      }
-      const attemptKey = `login:${input.nameOrEmail}`
-      const attempts = loginAttempts.get(attemptKey) || {
-        count: 0,
-        lockedUntil: 0
-      }
+  app.post('/api/login', async (req, res) => {
+    const input: { nameOrEmail: string; password: string } = req.body
+    try {
+      LoginInputSchema.parse(input)
+    } catch (e) {
+      throw new Response((e as Error).message, { status: 400 })
+    }
+    const attemptKey = `login:${input.nameOrEmail}`
+    const attempts = loginAttempts.get(attemptKey) || {
+      count: 0,
+      lockedUntil: 0
+    }
 
-      if (attempts.lockedUntil > Date.now()) {
-        const remainingMinutes = Math.ceil(
-          (attempts.lockedUntil - Date.now()) / 60000
-        )
-        return res
-          .status(429)
-          .send(`账户已被锁定，请在 ${remainingMinutes} 分钟后重试`)
-          .end()
-      }
-
-      if (attempts.lockedUntil > 0 && attempts.lockedUntil <= Date.now()) {
-        loginAttempts.delete(attemptKey)
-      }
-      const user = await db('users')
-        .where({ name: input.nameOrEmail })
-        .orWhere({ email: input.nameOrEmail })
-        .first()
-      if (!user) {
-        recordFailedAttempt(attemptKey)
-        return res.status(429).send('用户名或密码错误').end()
-      }
-
-      if (user.deleted) {
-        return res.status(401).send('该账户已被禁用').end()
-      }
-
-      if (!user.password) {
-        return res.status(401).send('该账户未设置密码，请联系管理员').end()
-      }
-
-      const isPasswordValid = await PasswordManager.verifyPassword(
-        input.password,
-        user.password
+    if (attempts.lockedUntil > Date.now()) {
+      const remainingMinutes = Math.ceil(
+        (attempts.lockedUntil - Date.now()) / 60000
       )
+      return res
+        .status(429)
+        .send(`账户已被锁定，请在 ${remainingMinutes} 分钟后重试`)
+        .end()
+    }
 
-      if (!isPasswordValid) {
-        recordFailedAttempt(attemptKey)
-        return res.status(401).send('用户名或密码错误').end()
-      }
-
-      // 登录成功，清除失败记录
+    if (attempts.lockedUntil > 0 && attempts.lockedUntil <= Date.now()) {
       loginAttempts.delete(attemptKey)
-      const token = generateToken({ uid: user.id })
-      res.setHeader('Set-Cookie', await userCookie.serialize(token))
-      res.json({
-        success: true
-      })
+    }
+    const user = await db('users')
+      .where({ name: input.nameOrEmail })
+      .orWhere({ email: input.nameOrEmail })
+      .first()
+    if (!user) {
+      recordFailedAttempt(attemptKey)
+      return res.status(429).send('用户名或密码错误').end()
+    }
+
+    if (user.deleted) {
+      return res.status(401).send('该账户已被禁用').end()
+    }
+
+    if (!user.password) {
+      return res.status(401).send('该账户未设置密码，请联系管理员').end()
+    }
+
+    const isPasswordValid = await PasswordManager.verifyPassword(
+      input.password,
+      user.password
+    )
+
+    if (!isPasswordValid) {
+      recordFailedAttempt(attemptKey)
+      return res.status(401).send('用户名或密码错误').end()
+    }
+
+    // 登录成功，清除失败记录
+    loginAttempts.delete(attemptKey)
+    const token = generateToken({ uid: user.id })
+    res.setHeader('Set-Cookie', await userCookie.serialize(token))
+    res.json({
+      success: true
     })
-  )
+  })
 
   app.post(
     '/api/logout',
@@ -253,10 +250,47 @@ The historical dialogue is as follows: \n${messages
     })
   )
 
-  app.get(
-    '/oauth/login/:provider',
-    routeInterceptor(async (req, res) => {
-      const state = randomString(24)
+  app.get('/oauth/login/:provider', async (req, res) => {
+    const state = randomString(24)
+    const provider = await db('auth_providers')
+      .where('id', req.params.provider)
+      .first()
+    if (!provider) {
+      res.status(404).json({ error: 'Provider not found' })
+      return
+    }
+    const origin = `${req.protocol}://${req.get('host')}`
+    const oauthState: Record<string, any> = {
+      state,
+      provider: provider.id,
+      createdAt: Date.now()
+    }
+    let codeChallenge: string | undefined, codeVerifier: string | undefined
+    if (provider.use_pkce) {
+      codeVerifier = randomString(64)
+      const digest = createHash('sha256').update(codeVerifier).digest()
+      codeChallenge = digest.toString('base64url')
+      oauthState.codeVerifier = codeVerifier
+    }
+    res.setHeader('Set-Cookie', await oauthStateCookie.serialize(oauthState))
+    const params = new URLSearchParams({
+      response_type: 'code',
+      client_id: provider.client_id,
+      redirect_uri: `${origin}/oauth/callback/${provider.id}`,
+      scope: provider.scopes || '',
+      state
+    })
+    if (codeChallenge) {
+      params.set('code_challenge', codeChallenge)
+      params.set('code_challenge_method', 'S256')
+    }
+    const redirectUrl = `${provider.auth_url}?${params.toString()}`
+    res.redirect(redirectUrl)
+  })
+
+  app.get('/oauth/callback/:provider', async (req, res) => {
+    try {
+      const { code, state } = req.query
       const provider = await db('auth_providers')
         .where('id', req.params.provider)
         .first()
@@ -264,151 +298,109 @@ The historical dialogue is as follows: \n${messages
         res.status(404).json({ error: 'Provider not found' })
         return
       }
+
+      const cookieHeader = req.headers.cookie
+      const oauthState = cookieHeader
+        ? await oauthStateCookie.parse(cookieHeader)
+        : null
+
+      if (!oauthState || oauthState.state !== state) {
+        res.status(400).json({ error: 'Invalid state parameter' })
+        return
+      }
+
+      // 验证 provider 是否匹配
+      if (oauthState.provider !== provider.id) {
+        res.status(400).json({ error: 'Provider mismatch' })
+        return
+      }
+
+      if (Date.now() - oauthState.createdAt > 10 * 60 * 1000) {
+        res.status(400).json({ error: 'State expired' })
+        return
+      }
+
       const origin = `${req.protocol}://${req.get('host')}`
-      const oauthState: Record<string, any> = {
-        state,
-        provider: provider.id,
-        createdAt: Date.now()
-      }
-      let codeChallenge: string | undefined, codeVerifier: string | undefined
-      if (provider.use_pkce) {
-        codeVerifier = randomString(64)
-        const digest = createHash('sha256').update(codeVerifier).digest()
-        codeChallenge = digest.toString('base64url')
-        oauthState.codeVerifier = codeVerifier
-      }
-      res.setHeader('Set-Cookie', await oauthStateCookie.serialize(oauthState))
-      const params = new URLSearchParams({
-        response_type: 'code',
-        client_id: provider.client_id,
-        redirect_uri: `${origin}/oauth/callback/${provider.id}`,
-        scope: provider.scopes || '',
-        state
-      })
-      if (codeChallenge) {
-        params.set('code_challenge', codeChallenge)
-        params.set('code_challenge_method', 'S256')
-      }
-      const redirectUrl = `${provider.auth_url}?${params.toString()}`
-      res.redirect(redirectUrl)
-    })
-  )
-
-  app.get(
-    '/oauth/callback/:provider',
-    routeInterceptor(async (req, res) => {
-      try {
-        const { code, state } = req.query
-        const provider = await db('auth_providers')
-          .where('id', req.params.provider)
+      const tokenResp = await ky
+        .post(provider.token_url, {
+          json: {
+            client_id: provider.client_id,
+            client_secret: provider.client_secret,
+            code,
+            redirect_uri: `${origin}/oauth/callback/${provider.id}`,
+            code_verifier: oauthState.codeVerifier || undefined
+          }
+        })
+        .json<{ access_token: string }>()
+      const access_token = tokenResp.access_token
+      const userResp = await ky
+        .get(provider.userinfo_url, {
+          headers: {
+            Authorization: `Bearer ${access_token}`
+          }
+        })
+        .json<{ id: string; email?: string; phone?: string; name?: string }>()
+      if (userResp?.id) {
+        const user = await db('oauth_accounts')
+          .where({
+            provider_id: provider.id,
+            provider_user_id: userResp.id
+          })
           .first()
-        if (!provider) {
-          res.status(404).json({ error: 'Provider not found' })
-          return
-        }
-
-        const cookieHeader = req.headers.cookie
-        const oauthState = cookieHeader
-          ? await oauthStateCookie.parse(cookieHeader)
-          : null
-
-        if (!oauthState || oauthState.state !== state) {
-          res.status(400).json({ error: 'Invalid state parameter' })
-          return
-        }
-
-        // 验证 provider 是否匹配
-        if (oauthState.provider !== provider.id) {
-          res.status(400).json({ error: 'Provider mismatch' })
-          return
-        }
-
-        if (Date.now() - oauthState.createdAt > 10 * 60 * 1000) {
-          res.status(400).json({ error: 'State expired' })
-          return
-        }
-
-        const origin = `${req.protocol}://${req.get('host')}`
-        const tokenResp = await ky
-          .post(provider.token_url, {
-            json: {
-              client_id: provider.client_id,
-              client_secret: provider.client_secret,
-              code,
-              redirect_uri: `${origin}/oauth/callback/${provider.id}`,
-              code_verifier: oauthState.codeVerifier || undefined
+        if (user) {
+          const token = generateToken({ uid: user.user_id })
+          res.setHeader('Set-Cookie', await userCookie.serialize(token))
+        } else {
+          if (userResp.email || userResp.phone) {
+            const handle = db('users')
+            let user: TableUser | undefined
+            if (userResp.email) {
+              user = await handle.where({ email: userResp.email }).first()
             }
-          })
-          .json<{ access_token: string }>()
-        const access_token = tokenResp.access_token
-        const userResp = await ky
-          .get(provider.userinfo_url, {
-            headers: {
-              Authorization: `Bearer ${access_token}`
+            if (userResp.phone) {
+              user = await handle.where({ phone: userResp.phone }).first()
             }
-          })
-          .json<{ id: string; email?: string; phone?: string; name?: string }>()
-        if (userResp?.id) {
-          const user = await db('oauth_accounts')
-            .where({
-              provider_id: provider.id,
-              provider_user_id: userResp.id
-            })
-            .first()
-          if (user) {
-            const token = generateToken({ uid: user.user_id })
-            res.setHeader('Set-Cookie', await userCookie.serialize(token))
-          } else {
-            if (userResp.email || userResp.phone) {
-              const handle = db('users')
-              let user: TableUser | undefined
-              if (userResp.email) {
-                user = await handle.where({ email: userResp.email }).first()
-              }
-              if (userResp.phone) {
-                user = await handle.where({ phone: userResp.phone }).first()
-              }
-              if (user) {
-                await db('oauth_accounts').insert({
+            if (user) {
+              await db('oauth_accounts').insert({
+                id: tid(),
+                provider_id: provider.id,
+                provider_user_id: userResp.id,
+                user_id: user.id,
+                profile_json: JSON.stringify(userResp) as any
+              })
+            } else {
+              const user = await db.transaction(async (trx) => {
+                const user = await trx('users')
+                  .insert({
+                    id: tid(),
+                    email: userResp.email,
+                    phone: userResp.phone,
+                    name: userResp.name,
+                    password: null,
+                    role: 'member'
+                  })
+                  .returning('*')
+                await trx('oauth_accounts').insert({
                   id: tid(),
                   provider_id: provider.id,
                   provider_user_id: userResp.id,
-                  user_id: user.id,
+                  user_id: user[0].id!,
                   profile_json: JSON.stringify(userResp) as any
                 })
-              } else {
-                const user = await db.transaction(async (trx) => {
-                  const user = await trx('users')
-                    .insert({
-                      id: tid(),
-                      email: userResp.email,
-                      phone: userResp.phone,
-                      name: userResp.name,
-                      password: null,
-                      role: 'member'
-                    })
-                    .returning('*')
-                  await trx('oauth_accounts').insert({
-                    id: tid(),
-                    provider_id: provider.id,
-                    provider_user_id: userResp.id,
-                    user_id: user[0].id!,
-                    profile_json: JSON.stringify(userResp) as any
-                  })
-                  return user
-                })
-                const token = generateToken({ uid: user[0].id! })
-                res.setHeader('Set-Cookie', await userCookie.serialize(token))
-              }
-            } else {
-              res
-                .json({
-                  error: 'Missing email or phone'
-                })
-                .status(400)
+                return user
+              })
+              const token = generateToken({ uid: user[0].id! })
+              res.setHeader('Set-Cookie', await userCookie.serialize(token))
             }
+          } else {
+            res
+              .json({
+                error: 'Missing email or phone'
+              })
+              .status(400)
           }
-          res.send(`
+        }
+        res.send(`
   <!DOCTYPE html>
   <html>
   <head>
@@ -428,17 +420,16 @@ The historical dialogue is as follows: \n${messages
   </body>
   </html>
 `)
-        } else {
-          res.json({
-            error: 'Failed to get user info'
-          })
-        }
-        res.json({ userResp })
-      } catch (e: any) {
+      } else {
         res.json({
-          error: e.message || 'Authorization failed'
+          error: 'Failed to get user info'
         })
       }
-    })
-  )
+      res.json({ userResp })
+    } catch (e: any) {
+      res.json({
+        error: e.message || 'Authorization failed'
+      })
+    }
+  })
 }
