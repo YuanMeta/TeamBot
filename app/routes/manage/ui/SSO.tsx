@@ -76,7 +76,7 @@ export const SSO = observer(({ instance }: SSOProps) => {
   const [state, setState] = useLocalState({
     data: [] as TableAuthProvider[],
     openAddSsoProvider: false,
-    selectedSsoProviderId: null as null | string
+    selectedSsoProviderId: null as null | number
   })
   const getProviders = useCallback(() => {
     trpc.manage.getAuthProviders.query().then((res) => {

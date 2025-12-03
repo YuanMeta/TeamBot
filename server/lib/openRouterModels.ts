@@ -15,7 +15,6 @@ export const fetchOpenRouterModels = async (db: Knex) => {
       .map((model: any) => {
         const [provider, modelId] = model.id.split('/')
         return {
-          id: tid(),
           model: modelId.split(':')[0],
           provider: providerMap.get(provider) ?? provider,
           options: JSON.stringify(model)

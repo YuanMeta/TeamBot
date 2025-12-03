@@ -45,7 +45,7 @@ export const AddAssistant = observer(
   (props: {
     open: boolean
     onClose: () => void
-    id: string | null
+    id: number | null
     onChange: () => void
   }) => {
     const [state, setState] = useLocalState({
@@ -71,7 +71,7 @@ export const AddAssistant = observer(
           value: 1
         }
       },
-      remoteModels: [] as { id: string; model: string; provider: string }[]
+      remoteModels: [] as { id: number; model: string; provider: string }[]
     })
     const toolsOptions = useMemo(() => {
       return [
@@ -132,7 +132,7 @@ export const AddAssistant = observer(
           }
           if (props.id) {
             await trpc.manage.updateAssistant.mutate({
-              id: props.id as string,
+              id: props.id,
               data,
               tools: value.tools
             })
@@ -159,7 +159,7 @@ export const AddAssistant = observer(
         }
       }
     })
-    const init = useCallback(async (id: string | null) => {
+    const init = useCallback(async () => {
       await trpc.manage.getTools
         .query({
           page: 1,
@@ -177,11 +177,12 @@ export const AddAssistant = observer(
         }
       })
       if (props.id) {
-        trpc.manage.getAssistant.query(props.id as string).then((res) => {
+        trpc.manage.getAssistant.query(props.id).then((res) => {
           if (res) {
             Object.keys(res).forEach((key) => {
               form.setFieldValue(
                 key as keyof typeof form.state.values,
+                // @ts-ignore
                 res[key as keyof typeof res]
               )
               setState({
@@ -224,7 +225,7 @@ export const AddAssistant = observer(
         })
     }, [state.remoteModels.length, state.update])
     useEffect(() => {
-      init(props.id)
+      init()
       trpc.manage.getModels.query({}).then((res) => {
         setState({ remoteModels: res })
       })

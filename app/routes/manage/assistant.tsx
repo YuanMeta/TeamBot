@@ -108,7 +108,7 @@ export default observer(() => {
   }, [])
   const [state, setState] = useLocalState({
     openProviderForm: false,
-    selectedProviderId: null as null | string,
+    selectedProviderId: null as null | number,
     data: [] as TableAssistant[],
     openUsage: false
   })

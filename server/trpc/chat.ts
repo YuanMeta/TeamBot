@@ -12,7 +12,7 @@ export const chatRouter = {
       z.object({
         userMessageId: z.string().min(1),
         assistantMessageId: z.string().min(1),
-        assistantId: z.string().min(1),
+        assistantId: z.number(),
         model: z.string().optional(),
         docs: z
           .array(
@@ -290,7 +290,7 @@ export const chatRouter = {
         id: z.string(),
         data: z.object({
           model: z.string().optional(),
-          assistant_id: z.string().optional(),
+          assistant_id: z.number().nullish(),
           title: z.string().optional(),
           public: z.boolean().optional(),
           message_offset: z.number().optional(),

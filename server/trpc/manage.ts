@@ -31,7 +31,7 @@ export const manageRouter = {
     })
   }),
   getAssistant: adminProcedure
-    .input(z.string())
+    .input(z.number())
     .query(async ({ input, ctx }) => {
       const record = await ctx.db('assistants').where({ id: input }).first()
       if (!record) return null
@@ -47,7 +47,7 @@ export const manageRouter = {
   updateAssistant: adminProcedure
     .input(
       z.object({
-        id: z.string().min(1),
+        id: z.number(),
         tools: z.string().array(),
         data: z.object({
           name: z.string().min(1),
@@ -90,7 +90,7 @@ export const manageRouter = {
   deleteAssistant: adminProcedure
     .input(
       z.object({
-        assistantId: z.string().min(1)
+        assistantId: z.number()
       })
     )
     .mutation(async ({ input, ctx }) => {
@@ -119,10 +119,7 @@ export const manageRouter = {
     .mutation(async ({ input, ctx }) => {
       await ctx.db.transaction(async (trx) => {
         const [assistant] = await trx('assistants')
-          .insert({
-            ...insertRecord(input.data as any),
-            id: tid()
-          })
+          .insert(insertRecord(input.data as any))
           .returning('id')
         if (input.tools.length) {
           await trx('assistant_tools').insert(
@@ -155,7 +152,6 @@ export const manageRouter = {
     )
     .mutation(async ({ input, ctx }) => {
       return ctx.db('users').insert({
-        id: tid(),
         email: input.email,
         password: await PasswordManager.hashPassword(input.password),
         name: input.name,
@@ -165,7 +161,7 @@ export const manageRouter = {
   updateMember: adminProcedure
     .input(
       z.object({
-        userId: z.string(),
+        userId: z.number(),
         email: z.email().optional(),
         password: z.string().min(8).max(50).optional(),
         name: z.string().min(1).optional(),
@@ -185,13 +181,23 @@ export const manageRouter = {
           role: input.role
         })
     }),
-  getMember: adminProcedure.input(z.string()).query(async ({ input, ctx }) => {
-    return ctx
-      .db('users')
-      .where({ id: input })
-      .select('id', 'email', 'avatar', 'name', 'role', 'created_at', 'deleted')
-      .first()
-  }),
+  getMember: adminProcedure
+    .input(z.object({ id: z.number() }))
+    .query(async ({ input, ctx }) => {
+      return ctx
+        .db('users')
+        .where({ id: input.id })
+        .select(
+          'id',
+          'email',
+          'avatar',
+          'name',
+          'role',
+          'created_at',
+          'deleted'
+        )
+        .first()
+    }),
   getMembers: adminProcedure
     .input(
       z.object({
@@ -221,7 +227,7 @@ export const manageRouter = {
   deleteMember: adminProcedure
     .input(
       z.object({
-        memberId: z.string()
+        memberId: z.number()
       })
     )
     .mutation(async ({ input, ctx }) => {
@@ -369,15 +375,12 @@ export const manageRouter = {
       })
     )
     .mutation(async ({ input, ctx }) => {
-      return ctx.db('auth_providers').insert({
-        id: tid(),
-        ...input
-      })
+      return ctx.db('auth_providers').insert(input)
     }),
   updateAuthProvider: adminProcedure
     .input(
       z.object({
-        id: z.string().min(1),
+        id: z.number(),
         data: z.object({
           name: z.string().min(1).optional(),
           issuer: z.string().optional(),
@@ -399,7 +402,7 @@ export const manageRouter = {
   deleteAuthProvider: adminProcedure
     .input(
       z.object({
-        providerId: z.string().min(1)
+        providerId: z.number()
       })
     )
     .mutation(async ({ input, ctx }) => {
@@ -411,7 +414,7 @@ export const manageRouter = {
       })
     }),
   getAuthProvider: adminProcedure
-    .input(z.string())
+    .input(z.number())
     .query(async ({ input, ctx }) => {
       return ctx.db('auth_providers').where({ id: input }).select('*').first()
     }),

@@ -1,4 +1,4 @@
-import type { Express, Request, Response, NextFunction } from 'express'
+import type { Express } from 'express'
 import type { Knex } from 'knex'
 import z from 'zod'
 import { generateToken, PasswordManager } from '../lib/password'
@@ -7,7 +7,7 @@ import { completions } from './completions'
 import { TRPCError } from '@trpc/server'
 import { createClient } from 'server/lib/checkConnect'
 import { APICallError, streamText } from 'ai'
-import { randomString, tid } from 'server/lib/utils'
+import { randomString } from 'server/lib/utils'
 import ky from 'ky'
 import { createHash } from 'crypto'
 import type { TableUser } from 'types/table'
@@ -188,7 +188,7 @@ export const registerRoutes = (app: Express, db: Knex) => {
         chatId: z.string(),
         userPrompt: z.string(),
         aiResponse: z.string(),
-        assistantId: z.string(),
+        assistantId: z.number(),
         model: z.string()
       })
       const json: z.infer<typeof InputSchema> = req.body
@@ -362,7 +362,6 @@ The historical dialogue is as follows: \n${messages
             }
             if (user) {
               await db('oauth_accounts').insert({
-                id: tid(),
                 provider_id: provider.id,
                 provider_user_id: userResp.id,
                 user_id: user.id,
@@ -372,7 +371,6 @@ The historical dialogue is as follows: \n${messages
               const user = await db.transaction(async (trx) => {
                 const user = await trx('users')
                   .insert({
-                    id: tid(),
                     email: userResp.email,
                     phone: userResp.phone,
                     name: userResp.name,
@@ -381,7 +379,6 @@ The historical dialogue is as follows: \n${messages
                   })
                   .returning('*')
                 await trx('oauth_accounts').insert({
-                  id: tid(),
                   provider_id: provider.id,
                   provider_user_id: userResp.id,
                   user_id: user[0].id!,

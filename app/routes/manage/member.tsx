@@ -85,7 +85,7 @@ export default observer(() => {
     keyword: '',
     tab: 'member',
     openAddMember: false,
-    selectedMemberId: null as null | string,
+    selectedMemberId: null as null | number,
     data: [] as TableUser[],
     total: 0
   })

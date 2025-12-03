@@ -15,7 +15,7 @@ declare module 'knex/types/tables' {
 }
 
 export interface TableUser {
-  id: string
+  id: number
   email: string | null
   phone: string | null
   avatar: string | null
@@ -29,7 +29,7 @@ export interface TableUser {
 }
 
 export interface TableAssistant {
-  id: string
+  id: number
   name: string
   mode: string
   api_key: string | null
@@ -52,8 +52,8 @@ export interface TableAssistant {
 export interface TableChat {
   id: string
   title: string
-  user_id: string
-  assistant_id: string
+  user_id: number
+  assistant_id: number | null
   public: boolean
   model: string | null
   deleted: boolean
@@ -67,7 +67,7 @@ export interface TableChat {
 export interface TableMessage {
   id: string
   role: 'user' | 'assistant' | 'system'
-  user_id: string
+  user_id: number
   chat_id: string
   docs: { name: string; content: string }[] | null
   files: string[] | null
@@ -101,21 +101,20 @@ export interface TableTool {
 }
 
 export interface TableAssistantTool {
-  id: string
-  assistant_id: string
+  assistant_id: number
   tool_id: string | null
   system_tool_id: string | null
 }
 
 export interface TableModel {
-  id: string
+  id: number
   model: string
   provider: string
   options: Record<string, any>
 }
 
 export interface TableAuthProvider {
-  id: string
+  id: number
   name: string
   issuer: string
   auth_url: string
@@ -131,29 +130,38 @@ export interface TableAuthProvider {
 }
 
 export interface TableOauthAccount {
-  id: string
-  provider_id: string
+  provider_id: number
   provider_user_id: string
-  user_id: string
+  user_id: number
   profile_json: Record<string, any>
-}
-
-export interface TokenLog {
-  id: string
-  input_tokens: number
-  output_tokens: number
-  total_tokens: number
-  reasoning_tokens: number
-  cached_input_tokens: number
 }
 
 export interface TableAssistantUsage {
   id: string
-  assistant_id: string
+  assistant_id: number
   input_tokens: number
   output_tokens: number
   total_tokens: number
   reasoning_tokens: number
   cached_input_tokens: number
+  created_at: string
+}
+
+export interface TableRole {
+  id: number
+  name: string
+  remark: string | null
+}
+
+export interface TableAccessRole {
+  role_id: number
+  access_id: number
+}
+
+export interface TableAccess {
+  id: number
+  name: string
+  trpcAccess: string[] | null
+  routeAccess: string[] | null
   created_at: string
 }

@@ -49,7 +49,7 @@ export const verifyUser = async (cookie: string, admin = false) => {
   }
   const db = await kdb()
   let user = await cacheable.get<{
-    id: string
+    id: number
     role: 'admin' | 'member'
     deleted: boolean
   }>(`user:${data.uid}`)
@@ -68,6 +68,6 @@ export const verifyUser = async (cookie: string, admin = false) => {
   return user
 }
 
-export const deleteUserCache = async (userId: string) => {
+export const deleteUserCache = async (userId: number) => {
   return await cacheable.delete(`user:${userId}`)
 }

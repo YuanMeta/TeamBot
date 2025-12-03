@@ -37,7 +37,7 @@ export interface ChatData {
   id: string
   title: string
   last_chat_time: Date
-  assistant_id: string | null
+  assistant_id: number | null
   model: string | null
   messages?: MessageData[]
 }
@@ -71,7 +71,7 @@ const state = {
     id: string
     title: string
     last_chat_time: Date
-    assistant_id: string | null
+    assistant_id: number | null
     model: string | null
     messages?: MessageData[]
   },
@@ -104,7 +104,7 @@ const state = {
     }
     if (this.cacheModel) {
       const [assistantId, modelName] = this.cacheModel.split(':')
-      if (as?.id === assistantId && models?.includes(modelName)) {
+      if (as?.id === Number(assistantId) && models?.includes(modelName)) {
         return modelName
       }
     }
@@ -278,7 +278,7 @@ export class ChatStore extends StructStore<typeof state> {
       this.scrollToBottom$.next()
     }, 16)
   }
-  async selectModel(assistantId: string, model: string) {
+  async selectModel(assistantId: number, model: string) {
     if (this.state.selectedChat) {
       this.setState((state) => {
         state.selectedChat!.assistant_id = assistantId

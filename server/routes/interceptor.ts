@@ -12,7 +12,7 @@ export const routeInterceptor = (handler: RouteHandler) => {
     const cookie = req.headers.cookie
     const user = await verifyUser(cookie || '')
     if (!user) {
-      res.status(401).send('Unauthorized')
+      res.redirect('/login')
       return
     }
     await handler(req, res, next)

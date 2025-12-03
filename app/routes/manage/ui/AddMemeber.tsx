@@ -28,7 +28,7 @@ import { useLocalState } from '~/hooks/localState'
 export const AddMember = observer(
   (props: {
     open: boolean
-    id?: string
+    id?: number
     onClose: () => void
     onUpdate: () => void
   }) => {
@@ -65,7 +65,7 @@ export const AddMember = observer(
       if (props.open) {
         form.reset()
         if (props.id) {
-          trpc.manage.getMember.query(props.id).then((res) => {
+          trpc.manage.getMember.query({ id: props.id }).then((res) => {
             if (res) {
               form.reset({
                 email: res.email || '',

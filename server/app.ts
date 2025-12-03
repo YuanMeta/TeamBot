@@ -14,12 +14,14 @@ import { getUserId } from './session'
 declare module 'react-router' {
   interface AppLoadContext {
     db: Knex
-    userId: string | null
+    userId: number | null
   }
 }
 
 const db = await kdb()
+
 fetchOpenRouterModels(db)
+
 export const app = express()
 app.use(
   express.json({

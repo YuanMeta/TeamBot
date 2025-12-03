@@ -16,7 +16,7 @@ import { saveFileByBase64, tid } from '../lib/utils'
 import dayjs from 'dayjs'
 const InputSchema = z.object({
   chatId: z.string(),
-  assistantId: z.string(),
+  assistantId: z.number(),
   model: z.string(),
   tools: z.string().array(),
   images: z.string().array().optional(),
@@ -221,7 +221,6 @@ export const completions = async (req: Request, res: Response, db: Knex) => {
         })
       } else {
         await db('assistant_usages').insert({
-          id: tid(),
           assistant_id: assistant.id,
           input_tokens: usage.inputTokens!,
           output_tokens: usage.outputTokens!,

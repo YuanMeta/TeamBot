@@ -59,8 +59,8 @@ Output only the summarized version of the conversation.`,
     db: Knex,
     data: {
       chatId: string
-      userId: string
-      assistantId: string
+      userId: number
+      assistantId: number
       model: string
       images?: string[]
     }
@@ -79,7 +79,7 @@ Output only the summarized version of the conversation.`,
       })
     }
     let assistant = await db('assistants')
-      .where({ id: chat.assistant_id })
+      .where({ id: data.assistantId })
       .first()
     let messages = await db('messages')
       .where({ chat_id: chatId, user_id: userId })

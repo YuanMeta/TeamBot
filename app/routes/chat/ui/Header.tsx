@@ -1,4 +1,4 @@
-import { ChevronDown, SquareArrowOutUpRight, Search } from 'lucide-react'
+import { ChevronDown, SquareArrowOutUpRight } from 'lucide-react'
 import { observer } from 'mobx-react-lite'
 import { Button } from '~/components/ui/button'
 import {
@@ -15,11 +15,9 @@ import { Fragment } from 'react/jsx-runtime'
 import { Skeleton } from '~/components/ui/skeleton'
 import { copyToClipboard } from '~/.client/copy'
 import { toast } from 'sonner'
-import { SearchModal } from './SearchModal'
 import { useState } from 'react'
 export const Header = observer(() => {
   const store = useStore()
-  const [searchModalOpen, setSearchModalOpen] = useState(false)
   return (
     <div className={'h-[52px] flex items-center justify-between px-3'}>
       <div>
@@ -36,7 +34,9 @@ export const Header = observer(() => {
               />
               {store.state.ready ? (
                 <div
-                  className={`flex items-center gap-1 ${store.state.ready ? '' : 'hidden'}`}
+                  className={`flex items-center gap-1 ${
+                    store.state.ready ? '' : 'hidden'
+                  }`}
                 >
                   <span className={'text-sm'}>
                     {store.state.model || '未设置模型'}

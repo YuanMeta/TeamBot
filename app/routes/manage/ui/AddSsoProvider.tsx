@@ -25,7 +25,7 @@ import { Switch } from '~/components/ui/switch'
 export const AddSsoProvider = observer(
   (props: {
     open: boolean
-    id: string | null
+    id: number | null
     onClose: () => void
     onUpdate: () => void
   }) => {

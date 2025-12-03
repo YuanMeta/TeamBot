@@ -11,7 +11,7 @@ export const createContext = async ({
   const db = await kdb()
   return {
     db,
-    userId: null as null | string,
+    userId: null as null | number,
     req
   }
 }

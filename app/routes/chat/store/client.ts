@@ -131,7 +131,7 @@ export class ChatClient {
   private async completion(
     chat: ChatData,
     options: {
-      assistantId: string
+      assistantId: number
       model: string
       tools: string[]
       images?: string[]

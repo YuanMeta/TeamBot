@@ -30,7 +30,9 @@ export class PasswordManager {
     const salt = crypto.randomBytes(saltLength)
     const hash = await pbkdf2Async(password, salt, iterations, 64, 'sha256')
 
-    return `pbkdf2_sha256$${iterations}$${salt.toString('hex')}$${hash.toString('hex')}`
+    return `pbkdf2_sha256$${iterations}$${salt.toString('hex')}$${hash.toString(
+      'hex'
+    )}`
   }
 
   static async verifyPassword(password: string, storedHash: string) {
@@ -54,13 +56,13 @@ export class PasswordManager {
   }
 }
 
-export const generateToken = (data: { uid: string }) => {
+export const generateToken = (data: { uid: number }) => {
   return jwt.sign(data, secret, { expiresIn: '7d' })
 }
 
 export const verifyToken = (token: string) => {
   try {
-    return jwt.verify(token, secret) as { uid: string }
+    return jwt.verify(token, secret) as { uid: number }
   } catch {
     return null
   }
