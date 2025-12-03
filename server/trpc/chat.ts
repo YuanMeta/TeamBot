@@ -4,7 +4,6 @@ import z from 'zod'
 import dayjs from 'dayjs'
 import { tid } from 'server/lib/utils'
 import { insertRecord, parseRecord } from 'server/lib/table'
-import { getMessagesWithFiles } from './query'
 import { unlink } from 'fs/promises'
 import { join } from 'path'
 export const chatRouter = {

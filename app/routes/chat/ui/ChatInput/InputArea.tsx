@@ -166,7 +166,7 @@ export const InputArea = observer(
                       'absolute top-1 left-1 text-black/50 dark:text-white/50 pointer-events-none'
                     }
                   >
-                    询问任何问题，或使用 '/' 快速插入
+                    询问任何问题
                   </div>
                 }
               />
