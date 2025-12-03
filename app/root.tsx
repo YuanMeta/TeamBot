@@ -15,6 +15,7 @@ import { themeSessionResolver } from './.server/session'
 import './styles/app.css'
 import { PreventFlashOnWrongTheme, ThemeProvider, useTheme } from 'remix-themes'
 import { Toaster } from '~/components/ui/sonner'
+import 'react-photo-view/dist/react-photo-view.css'
 
 export async function loader({ request }: LoaderFunctionArgs) {
   const { getTheme } = await themeSessionResolver(request)

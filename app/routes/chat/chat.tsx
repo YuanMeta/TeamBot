@@ -11,6 +11,7 @@ import { SearchResult } from './ui/SearchResult'
 import type { Route } from './+types/chat'
 import { ChatRename } from './ui/Rename'
 import { SearchModal } from './ui/SearchModal'
+import { PreviewImage } from '~/components/project/preview'
 
 export const loader = (args: Route.LoaderArgs) => {
   const userId = args.context.userId
@@ -58,7 +59,13 @@ export default observer(() => {
             <AiMessageList />
           </div>
           <div
-            className={`${params.id ? '' : `absolute top-1/2 -mt-[128px] w-full ${state.moveY !== 0 ? 'duration-150' : ''}`}`}
+            className={`${
+              params.id
+                ? ''
+                : `absolute top-1/2 -mt-[128px] w-full ${
+                    state.moveY !== 0 ? 'duration-150' : ''
+                  }`
+            }`}
             style={{
               transform: `translateY(${state.moveY}px)`
             }}
@@ -85,6 +92,7 @@ export default observer(() => {
       </div>
       <ChatRename />
       <SearchModal />
+      <PreviewImage />
     </StoreContext>
   )
 })

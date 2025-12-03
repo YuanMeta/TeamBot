@@ -28,6 +28,7 @@ export class ChatClient {
       role: 'user',
       docs: data.docs,
       model: this.store.state.model!,
+      files: data.images,
       updatedAt: dayjs().toDate()
     })
     const aiMessage = observable<MessageData>({

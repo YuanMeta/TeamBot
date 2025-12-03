@@ -12,7 +12,7 @@ import { MessageManager } from '../lib/message'
 import { getUserId } from '../session'
 import type { Request, Response } from 'express'
 import type { Knex } from 'knex'
-import { tid } from '../lib/utils'
+import { saveFileByBase64, tid } from '../lib/utils'
 import dayjs from 'dayjs'
 const InputSchema = z.object({
   chatId: z.string(),
@@ -40,15 +40,33 @@ export const completions = async (req: Request, res: Response, db: Knex) => {
       message: (e as Error).message
     })
   }
-  const { uiMessages, summary, chat, client, assistantMessage, assistant } =
-    await MessageManager.getStreamMessage(db, {
-      chatId: json.chatId,
-      userId: uid,
-      assistantId: json.assistantId,
-      model: json.model,
-      images: json.images
-    })
-
+  const {
+    uiMessages,
+    summary,
+    chat,
+    client,
+    assistantMessage,
+    assistant,
+    userMsg
+  } = await MessageManager.getStreamMessage(db, {
+    chatId: json.chatId,
+    userId: uid,
+    assistantId: json.assistantId,
+    model: json.model,
+    images: json.images
+  })
+  if (json.images?.length) {
+    let paths: string[] = []
+    for (let image of json.images) {
+      const path = saveFileByBase64(image)
+      paths.push(path)
+    }
+    await db('messages')
+      .where('id', userMsg.id)
+      .update({
+        files: JSON.stringify(paths) as any
+      })
+  }
   const tools = await composeTools(db, assistant, json.tools, {
     builtinSearch: assistant.options.builtin_search === 'on' && !!json.webSearch
   })

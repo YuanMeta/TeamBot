@@ -11,6 +11,9 @@ import { randomString, tid } from 'server/lib/utils'
 import ky from 'ky'
 import { createHash } from 'crypto'
 import type { TableUser } from 'types/table'
+import { join, resolve } from 'path'
+import { existsSync, createReadStream, statSync } from 'fs'
+import { lookup } from 'mime-types'
 // 防暴力破解：登录尝试记录
 const loginAttempts = new Map<string, { count: number; lockedUntil: number }>()
 const MAX_ATTEMPTS = 5
@@ -113,6 +116,61 @@ export const registerRoutes = (app: Express, db: Knex) => {
     await completions(req, res, db)
   })
 
+  // 支持多级路径：使用 :path(*) 来匹配包含斜杠的路径
+  // 例如：/files/2025-12/image.png -> req.params.path = '2025-12/image.png'
+  app.get<{ path: string[] }>('/files/*path', async (req, res) => {
+    try {
+      const requestedPath = req.params.path?.join('/')
+      // 安全检查：防止路径遍历攻击
+      if (!requestedPath || requestedPath.includes('..')) {
+        return res.status(403).send('禁止访问')
+      }
+
+      const filesDir = join(process.cwd(), 'files')
+      const fullPath = join(filesDir, requestedPath)
+      const resolvedPath = resolve(fullPath)
+      const resolvedFilesDir = resolve(filesDir)
+      if (
+        !resolvedPath.startsWith(resolvedFilesDir + '/') &&
+        resolvedPath !== resolvedFilesDir
+      ) {
+        return res.status(403).send('禁止访问')
+      }
+
+      if (!existsSync(fullPath)) {
+        return res.status(404).send('文件不存在')
+      }
+
+      // 获取文件信息
+      const stat = statSync(fullPath)
+
+      // 如果是目录，返回错误
+      if (stat.isDirectory()) {
+        return res.status(400).send('不支持读取目录')
+      }
+
+      const mimeType = lookup(fullPath)
+      res.setHeader('Content-Type', mimeType || 'application/octet-stream')
+      res.setHeader('Content-Length', stat.size)
+      res.setHeader('Cache-Control', 'public, max-age=31536000')
+      const fileStream = createReadStream(fullPath)
+
+      fileStream.on('error', (error) => {
+        console.error('文件读取错误:', error)
+        if (!res.headersSent) {
+          res.status(500).send('文件读取失败')
+        }
+      })
+
+      // 将文件流传输到响应
+      fileStream.pipe(res)
+    } catch (error) {
+      console.error('处理文件请求错误:', error)
+      if (!res.headersSent) {
+        res.status(500).send('服务器错误')
+      }
+    }
+  })
   app.post('/api/title', async (req, res) => {
     const InputSchema = z.object({
       chatId: z.string(),
@@ -158,7 +216,9 @@ export const registerRoutes = (app: Express, db: Knex) => {
     const result = streamText({
       model: client(json.model!),
       prompt: `You are a conversational assistant and you need to summarize the user's conversation into a title of 10 words or less., The summary needs to maintain the original language.
-The historical dialogue is as follows: \n${messages.map((m) => `${m.role}: ${m.text}`).join('\n')}`,
+The historical dialogue is as follows: \n${messages
+        .map((m) => `${m.role}: ${m.text}`)
+        .join('\n')}`,
       onFinish: async (data) => {
         if (data.finishReason === 'stop') {
           let text = data.content.find((c) => c.type === 'text')?.text

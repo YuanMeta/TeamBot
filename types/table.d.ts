@@ -5,7 +5,6 @@ declare module 'knex/types/tables' {
     assistants: TableAssistant
     chats: TableChat
     messages: TableMessage
-    message_files: TableMessageFile
     tools: TableTool
     assistant_tools: TableAssistantTool
     assistant_usages: Partial<TableAssistantUsage>
@@ -71,6 +70,7 @@ export interface TableMessage {
   user_id: string
   chat_id: string
   docs: { name: string; content: string }[] | null
+  files: string[] | null
   error: string | null
   model: string | null
   reasoning_duration: number
@@ -87,17 +87,17 @@ export interface TableMessage {
   updated_at: Date
 }
 
-export interface TableMessageFile {
-  id: string
-  name: string
-  user_id: string
-  message_id?: string
-  chat_id?: string
-  path: string
-  size: number
-  origin: 'file'
-  created_at: string
-}
+// export interface TableMessageFile {
+//   id: string
+//   name: string
+//   user_id: string
+//   message_id?: string
+//   chat_id?: string
+//   path: string
+//   size: number
+//   origin: 'file'
+//   created_at: string
+// }
 
 export interface TableTool {
   id: string

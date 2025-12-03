@@ -185,21 +185,31 @@ export const UserMessage = observer<{
           })}
         </div>
       )}
-      {/* {!!msg.images?.length && (
+      {!!msg.files?.length && (
         <div className={'mt-2 space-x-2 flex justify-end flex-wrap'}>
-          {msg.images.map((f, i) => {
+          {msg.files.map((f, i) => {
             return (
               <div
                 key={i}
                 onClick={() => {
-                  store.api.previewMedia({ base64: f.content })
+                  store.openPreviewImages$.next(
+                    msg.files!.map((f) =>
+                      typeof f === 'object'
+                        ? URL.createObjectURL(f)
+                        : `/files/${f}`
+                    )
+                  )
                 }}
                 className={
-                  'w-36 h-auto flex items-center rounded-lg text-[13px] mb-0.5 overflow-hidden cursor-default max-h-96'
+                  'w-36 h-auto flex items-center rounded-lg mb-0.5 overflow-hidden cursor-pointer max-h-96'
                 }
               >
                 <img
-                  src={f.content!}
+                  src={
+                    typeof f === 'object'
+                      ? URL.createObjectURL(f)
+                      : `/files/${f}`
+                  }
                   className={'w-full h-full object-cover'}
                   alt=''
                 />
@@ -207,7 +217,7 @@ export const UserMessage = observer<{
             )
           })}
         </div>
-      )} */}
+      )}
     </div>
   )
 })

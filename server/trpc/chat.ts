@@ -129,11 +129,17 @@ export const chatRouter = {
       })
     )
     .query(async ({ ctx, input }) => {
-      return getMessagesWithFiles(ctx.db, {
-        chatId: input.chatId,
-        userId: ctx.userId,
-        offset: input.offset
-      })
+      const messages = await ctx
+        .db('messages')
+        .where({ chat_id: input.chatId, user_id: ctx.userId })
+        .offset(input.offset)
+        .limit(10)
+        .orderBy('created_at', 'desc')
+        .select('*')
+      return {
+        messages: messages.map((m) => parseRecord(m)),
+        loadMore: messages.length === 10
+      }
     }),
   deleteChat: procedure
     .input(

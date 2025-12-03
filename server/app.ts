@@ -23,7 +23,7 @@ fetchOpenRouterModels(db)
 export const app = express()
 app.use(
   express.json({
-    limit: '10mb'
+    limit: '20mb'
   })
 )
 registerRoutes(app, db)

@@ -6,7 +6,7 @@ import { Subject } from 'rxjs'
 import { ChatClient } from './client'
 import type { MessagePart, SearchResult } from 'types'
 import { observable, runInAction } from 'mobx'
-import type { TableAssistant, TableMessageFile, TableTool } from 'types/table'
+import type { TableAssistant, TableTool } from 'types/table'
 import { builtInSearchMode } from '~/routes/manage/ui/data'
 import 'dayjs/locale/zh-cn'
 import dayjs from 'dayjs'
@@ -19,6 +19,7 @@ export interface MessageData {
   role: 'user' | 'assistant' | 'system'
   model?: string
   docs?: { name: string; content: string }[]
+  files?: (string | File)[]
   terminated?: boolean
   parts?: MessagePart[] | null
   text?: string | null
@@ -142,6 +143,7 @@ export class ChatStore extends StructStore<typeof state> {
   navigate$ = new Subject<string>()
   moveChatInput$ = new Subject<void>()
   renameChatTitle$ = new Subject<(typeof this.state.chats)[number]>()
+  openPreviewImages$ = new Subject<string[]>()
   abortController: AbortController | null = null
   client = new ChatClient(this)
   loadMoreChats = true

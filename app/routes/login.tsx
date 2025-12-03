@@ -17,7 +17,6 @@ import {
   FieldLabel
 } from '~/components/ui/field'
 import { Spinner } from '~/components/ui/spinner'
-import { ModelIcon } from '~/lib/ModelIcon'
 import { toast } from 'sonner'
 import { useLoaderData, useNavigate } from 'react-router'
 import type { Route } from './+types/login'

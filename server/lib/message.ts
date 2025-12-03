@@ -12,7 +12,9 @@ function addDocsContext(
   docs?: { name: string; content: string }[] | null
 ): string {
   if (docs?.length) {
-    text = `User Questions: ${text}\nThe following are relevant reference documents.\n\n${docs.map((d) => `file: ${d.name}\n${d.content}`).join('\n\n')}`
+    text = `User Questions: ${text}\nThe following are relevant reference documents.\n\n${docs
+      .map((d) => `file: ${d.name}\n${d.content}`)
+      .join('\n\n')}`
   }
   return text
 }
@@ -44,7 +46,11 @@ Your task:
 
 Output only the summarized version of the conversation.`,
       maxOutputTokens: 2000,
-      prompt: `${data.previousSummary ? `Previous summary:\n ${data.previousSummary}\n\n` : ''}Conversation:\n ${JSON.stringify(conversation)}`
+      prompt: `${
+        data.previousSummary
+          ? `Previous summary:\n ${data.previousSummary}\n\n`
+          : ''
+      }Conversation:\n ${JSON.stringify(conversation)}`
     })
     return res.text
   }
@@ -196,7 +202,15 @@ Output only the summarized version of the conversation.`,
       })
     }
     uiMessages.push(userMsg)
-    return { uiMessages, summary, chat, client, assistantMessage, assistant }
+    return {
+      uiMessages,
+      summary,
+      chat,
+      client,
+      assistantMessage,
+      assistant,
+      userMsg
+    }
   }
 
   static getSystemPromp(ctx: {
@@ -212,7 +226,9 @@ Output only the summarized version of the conversation.`,
       prompt += `This is a summary of the previous conversation: ${ctx.summary}`
     }
     if (ctx.tools?.length) {
-      prompt += `\n\nThe user requires you to use the following tools to answer the questions: [${ctx.tools.join(',')}]`
+      prompt += `\n\nThe user requires you to use the following tools to answer the questions: [${ctx.tools.join(
+        ','
+      )}]`
     }
 
     //     if (ctx.tools?.['webSearch']) {

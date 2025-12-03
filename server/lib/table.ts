@@ -81,6 +81,7 @@ export const tableSchema = async (db: Knex) => {
       table.string('assistant_id').nullable()
       table.integer('reasoning_duration').nullable()
       table.text('parts').nullable()
+      table.text('files').nullable()
       table.text('text').nullable()
       table.integer('input_tokens').notNullable().defaultTo(0)
       table.integer('output_tokens').notNullable().defaultTo(0)
@@ -96,25 +97,7 @@ export const tableSchema = async (db: Knex) => {
       table.index(['user_id', 'chat_id'])
     })
   }
-  if (!(await db.schema.hasTable('message_files'))) {
-    await db.schema.createTable('message_files', (table) => {
-      table.string('id').primary().notNullable()
-      table.string('name').notNullable()
-      table.string('user_id').notNullable()
-      table.string('message_id').nullable()
-      table.string('chat_id').nullable()
-      table.string('path').notNullable()
-      table.integer('size').notNullable()
-      table.string('origin').notNullable()
-      table.timestamp('created_at').defaultTo(db.fn.now())
-      table.foreign('user_id').references('id').inTable('users')
-      table.foreign('message_id').references('id').inTable('messages')
-      table.foreign('chat_id').references('id').inTable('chats')
-      table.index('user_id')
-      table.index('message_id')
-      table.index('chat_id')
-    })
-  }
+
   if (!(await db.schema.hasTable('tools'))) {
     await db.schema.createTable('tools', (table) => {
       table.string('id').primary().notNullable()
