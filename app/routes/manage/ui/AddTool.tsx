@@ -139,35 +139,36 @@ export const AddTool = observer(
         } as Record<string, any>
       },
       onSubmit: async ({ value }) => {
-        if (value.type === 'web_search') {
-          try {
+        try {
+          if (value.type === 'web_search') {
             await trpc.manage.connectSearch.mutate(value.params as any)
-          } catch (e: any) {
-            toast.error(e.message)
-            return
           }
-        }
-        if (props.id) {
-          await trpc.manage.updateTool.mutate({
-            id: props.id,
-            data: {
+          if (props.id) {
+            await trpc.manage.updateTool.mutate({
+              id: props.id,
+              data: {
+                description: value.description,
+                name: value.name,
+                params: value.params,
+                auto: value.auto,
+                type: value.type as 'web_search' | 'http'
+              }
+            })
+          } else {
+            await trpc.manage.createTool.mutate({
               description: value.description,
               name: value.name,
-              params: value.params,
+              id: value.id,
               auto: value.auto,
+              params: value.params,
               type: value.type as 'web_search' | 'http'
-            }
-          })
-        } else {
-          await trpc.manage.createTool.mutate({
-            description: value.description,
-            name: value.name,
-            id: value.id,
-            auto: value.auto,
-            params: value.params,
-            type: value.type as 'web_search' | 'http'
-          })
+            })
+          }
+        } catch (e: any) {
+          toast.error(e.message)
+          return
         }
+
         props.onUpdate()
         props.onClose()
       }

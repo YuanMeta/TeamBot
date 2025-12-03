@@ -9,6 +9,7 @@ import { adminProcedure } from './core'
 import { runWebSearch } from 'server/lib/search'
 import dayjs from 'dayjs'
 import { deleteUserCache } from 'server/session'
+import { systemTools } from 'server/lib/tools'
 export const manageRouter = {
   checkConnect: adminProcedure
     .input(
@@ -37,10 +38,10 @@ export const manageRouter = {
       const tools = await ctx
         .db('assistant_tools')
         .where({ assistant_id: input })
-        .select('tool_id')
+        .select('tool_id', 'system_tool_id')
       return {
         ...parseRecord(record),
-        tools: tools.map((t) => t.tool_id)
+        tools: tools.map((t) => t.tool_id || t.system_tool_id)
       }
     }),
   updateAssistant: adminProcedure
@@ -65,12 +66,23 @@ export const manageRouter = {
           .update(insertRecord(input.data as any))
         await trx('assistant_tools').where({ assistant_id: input.id }).delete()
         if (input.tools.length > 0) {
-          await trx('assistant_tools').insert(
-            input.tools.map((tool) => ({
-              assistant_id: input.id,
-              tool_id: tool
-            }))
-          )
+          if (input.tools.length) {
+            await trx('assistant_tools').insert(
+              input.tools.map((tool) => {
+                if (systemTools.includes(tool)) {
+                  return {
+                    assistant_id: input.id,
+                    system_tool_id: tool
+                  }
+                } else {
+                  return {
+                    assistant_id: input.id,
+                    tool_id: tool
+                  }
+                }
+              })
+            )
+          }
         }
       })
       return { success: true }
@@ -114,10 +126,19 @@ export const manageRouter = {
           .returning('id')
         if (input.tools.length) {
           await trx('assistant_tools').insert(
-            input.tools.map((tool) => ({
-              assistant_id: assistant.id,
-              tool_id: tool
-            }))
+            input.tools.map((tool) => {
+              if (systemTools.includes(tool)) {
+                return {
+                  assistant_id: assistant.id,
+                  system_tool_id: tool
+                }
+              } else {
+                return {
+                  assistant_id: assistant.id,
+                  tool_id: tool
+                }
+              }
+            })
           )
         }
       })
@@ -228,6 +249,15 @@ export const manageRouter = {
       })
     )
     .mutation(async ({ input, ctx }) => {
+      const exist =
+        systemTools.includes(input.id) ||
+        !!(await ctx.db('tools').where({ id: input.id }).first())
+      if (exist) {
+        throw new TRPCError({
+          code: 'BAD_REQUEST',
+          message: '工具ID已存在'
+        })
+      }
       return ctx.db('tools').insert(insertRecord(input))
     }),
   updateTool: adminProcedure
@@ -465,5 +495,8 @@ export const manageRouter = {
       result.sort((a, b) => b.totalTokens - a.totalTokens)
 
       return result
-    })
+    }),
+  getSystemTools: adminProcedure.query(() => {
+    return systemTools
+  })
 } satisfies TRPCRouterRecord

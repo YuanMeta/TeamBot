@@ -9,6 +9,9 @@ import { google } from '@ai-sdk/google'
 import type { TableAssistant } from 'types/table'
 import { openai } from '@ai-sdk/openai'
 import { anthropic } from '@ai-sdk/anthropic'
+
+export const systemTools = ['fetch_url_content']
+
 export const getUrlContent = tool({
   description:
     'Can retrieve the main text content of a given URL webpage and return it in Markdown format',
@@ -69,13 +72,10 @@ export const createHttpTool = (options: {
           // GET/DELETE: 将参数作为查询字符串
           if (Object.keys(allParams).length > 0) {
             const queryString = new URLSearchParams(
-              Object.entries(allParams).reduce(
-                (acc, [key, value]) => {
-                  acc[key] = String(value)
-                  return acc
-                },
-                {} as Record<string, string>
-              )
+              Object.entries(allParams).reduce((acc, [key, value]) => {
+                acc[key] = String(value)
+                return acc
+              }, {} as Record<string, string>)
             ).toString()
             url = `${url}${url.includes('?') ? '&' : '?'}${queryString}`
           }
@@ -123,53 +123,62 @@ export const composeTools = async (
 ) => {
   const toolsId = await db('assistant_tools')
     .where({ assistant_id: assistant.id })
-    .select('tool_id')
-  let toolsData = await db('tools')
-    .whereIn(
-      'id',
-      toolsId.map((t) => t.tool_id)
-    )
-    .select('*')
-  toolsData = toolsData.map((t) => parseRecord(t))
-  const tools: Record<string, Tool> = {
-    fetch_url_content: getUrlContent
-  }
-  const hasCustomeWebSearch = toolsData.some((t) => t.type === 'web_search')
-  if (!hasCustomeWebSearch) {
-    if (assistant.mode === 'gemini' && options.builtinSearch) {
-      tools.google_search = google.tools.googleSearch({})
-      tools.url_context = google.tools.urlContext({})
-    }
-    if (assistant.mode === 'openai' && options.builtinSearch) {
-      tools.web_search = openai.tools.webSearch({})
-    }
-    if (assistant.mode === 'anthropic' && options.builtinSearch) {
-      tools.web_search = anthropic.tools.webSearch_20250305({})
-    }
-    if (assistant.mode === 'z-ai' && options.builtinSearch) {
-      tools['web_search'] = createWebSearchTool({
-        mode: 'zhipu',
-        apiKey: assistant.api_key!
-      })
-    }
-  }
+    .select('tool_id', 'system_tool_id')
+  const tools: Record<string, Tool> = {}
 
-  for (let t of toolsData) {
-    if (t.type === 'web_search' && (t.auto || selectedTools.includes(t.id))) {
-      tools[t.id] = createWebSearchTool({
-        mode: t.params.mode as any,
-        apiKey: t.params.apiKey,
-        cseId: t.params.cseId
-      })
+  const sytemToolsRecord = toolsId
+    .filter((t) => t.system_tool_id)
+    .map((t) => t.system_tool_id)
+  const customTools = toolsId.filter((t) => t.tool_id).map((t) => t.tool_id)
+  if (sytemToolsRecord.length) {
+    for (let t of sytemToolsRecord) {
+      if (t === 'fetch_url_content') {
+        tools[t] = getUrlContent
+      }
     }
-    if (t.type === 'http' && (t.auto || selectedTools.includes(t.id))) {
-      try {
-        const http = JSON.parse(t.params.http)
-        tools[t.id] = createHttpTool({
-          description: t.description,
-          ...http
+  }
+  if (customTools.length) {
+    let toolsData = await db('tools').whereIn('id', customTools).select('*')
+    toolsData = toolsData.map((t) => parseRecord(t))
+    const hasCustomeWebSearch = toolsData.some((t) => t.type === 'web_search')
+    if (!hasCustomeWebSearch) {
+      if (assistant.mode === 'gemini' && options.builtinSearch) {
+        tools.google_search = google.tools.googleSearch({})
+        tools.url_context = google.tools.urlContext({})
+      }
+      if (assistant.mode === 'openai' && options.builtinSearch) {
+        tools.web_search = openai.tools.webSearch({})
+      }
+      if (assistant.mode === 'anthropic' && options.builtinSearch) {
+        tools.web_search = anthropic.tools.webSearch_20250305({})
+      }
+      if (assistant.mode === 'z-ai' && options.builtinSearch) {
+        tools['web_search'] = createWebSearchTool({
+          mode: 'zhipu',
+          apiKey: assistant.api_key!
         })
-      } catch (e) {}
+      }
+    }
+
+    for (let t of toolsData) {
+      if (t.type === 'web_search' && (t.auto || selectedTools.includes(t.id))) {
+        tools[t.id] = createWebSearchTool({
+          mode: t.params.mode as any,
+          apiKey: t.params.apiKey,
+          cseId: t.params.cseId
+        })
+      }
+      if (t.type === 'http' && (t.auto || selectedTools.includes(t.id))) {
+        try {
+          const http = JSON.parse(t.params.http)
+          tools[t.id] = createHttpTool({
+            description: t.description,
+            ...http
+          })
+        } catch (e) {
+          console.error(e)
+        }
+      }
     }
   }
   return tools

@@ -34,6 +34,13 @@ import { Slider } from '~/components/ui/slider'
 import { Checkbox } from '~/components/ui/checkbox'
 import { TextHelp } from '~/components/project/text-help'
 
+const systemToolsTexts: Record<string, { name: string; description: string }> =
+  {
+    fetch_url_content: {
+      name: '获取URL内容',
+      description: '可以检索给定URL网页的主要文本内容'
+    }
+  }
 export const AddAssistant = observer(
   (props: {
     open: boolean
@@ -45,6 +52,7 @@ export const AddAssistant = observer(
       submitting: false,
       tools: [] as TableTool[],
       update: false,
+      systemTools: [] as string[],
       options: {
         frequencyPenalty: {
           open: false,
@@ -65,6 +73,26 @@ export const AddAssistant = observer(
       },
       remoteModels: [] as { id: string; model: string; provider: string }[]
     })
+    const toolsOptions = useMemo(() => {
+      return [
+        ...state.systemTools.map((t) => {
+          return {
+            label: systemToolsTexts[t]?.name,
+            value: t,
+            type: 'system',
+            description: systemToolsTexts[t]?.description
+          }
+        }),
+        ...state.tools.map((t) => {
+          return {
+            label: t.name,
+            value: t.id,
+            type: t.type,
+            description: t.description
+          }
+        })
+      ]
+    }, [state.tools, state.systemTools])
     const form = useForm({
       defaultValues: {
         name: '',
@@ -142,6 +170,12 @@ export const AddAssistant = observer(
         })
     }, [])
     useEffect(() => {
+      trpc.manage.getSystemTools.query().then((res) => {
+        setState({ systemTools: res })
+        if (!props.id) {
+          form.setFieldValue('tools', ['fetch_url_content'])
+        }
+      })
       if (props.id) {
         trpc.manage.getAssistant.query(props.id as string).then((res) => {
           if (res) {
@@ -452,10 +486,10 @@ export const AddAssistant = observer(
                               调用工具
                             </FieldLabel>
                             <SelectFilter
-                              options={state.tools.map((t) => {
+                              options={toolsOptions.map((t) => {
                                 return {
-                                  label: t.name,
-                                  value: t.id,
+                                  label: t.label,
+                                  value: t.value,
                                   render: (
                                     <div className={'space-y-1'}>
                                       <div
@@ -464,9 +498,15 @@ export const AddAssistant = observer(
                                         }
                                       >
                                         <span className={'text-sm'}>
-                                          {t.name}
+                                          {t.label}
                                         </span>
                                         {t.type === 'http' && (
+                                          <Wrench
+                                            size={12}
+                                            className={'size-3'}
+                                          />
+                                        )}
+                                        {t.type === 'system' && (
                                           <Wrench
                                             size={12}
                                             className={'size-3'}

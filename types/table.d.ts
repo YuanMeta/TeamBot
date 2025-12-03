@@ -87,24 +87,12 @@ export interface TableMessage {
   updated_at: Date
 }
 
-// export interface TableMessageFile {
-//   id: string
-//   name: string
-//   user_id: string
-//   message_id?: string
-//   chat_id?: string
-//   path: string
-//   size: number
-//   origin: 'file'
-//   created_at: string
-// }
-
 export interface TableTool {
   id: string
   name: string
   icon?: string
   description: string
-  type: 'web_search' | 'http'
+  type: 'web_search' | 'http' | 'system'
   params: Record<string, any>
   url?: string
   auto: boolean
@@ -115,7 +103,8 @@ export interface TableTool {
 export interface TableAssistantTool {
   id: string
   assistant_id: string
-  tool_id: string
+  tool_id: string | null
+  system_tool_id: string | null
 }
 
 export interface TableModel {
