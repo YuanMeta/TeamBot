@@ -60,6 +60,7 @@ const state = {
     name: string | null
     email: string | null
     root: boolean
+    admin: boolean
   },
   loadingChats: false,
   loadingMessages: false,

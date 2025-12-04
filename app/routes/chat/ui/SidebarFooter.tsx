@@ -25,16 +25,7 @@ import {
 } from '~/components/ui/dropdown-menu'
 import { useStore } from '../store/store'
 
-export function NavUser({
-  collapsed,
-  user
-}: {
-  collapsed: boolean
-  user: {
-    name: string
-    email: string
-  }
-}) {
+export function NavUser({ collapsed }: { collapsed: boolean }) {
   const navigate = useNavigate()
   const [theme, setTheme, meta] = useTheme()
   const store = useStore()
@@ -62,10 +53,12 @@ export function NavUser({
                   collapsed ? 'hidden' : ''
                 }`}
               >
-                <span className='truncate font-medium'>{user.name}</span>
-                {!!user.email && (
+                <span className='truncate font-medium'>
+                  {store.state.userInfo?.name}
+                </span>
+                {!!store.state.userInfo?.email && (
                   <span className='text-muted-foreground truncate text-xs'>
-                    {user.email}
+                    {store.state.userInfo?.email}
                   </span>
                 )}
               </div>
@@ -122,7 +115,7 @@ export function NavUser({
             </DropdownMenuPortal>
           </DropdownMenuSub>
           <DropdownMenuItem
-            disabled={store.state.userInfo?.role !== 'admin'}
+            disabled={!store.state.userInfo?.admin}
             onClick={() => {
               window.open('/manage', '_blank')
             }}

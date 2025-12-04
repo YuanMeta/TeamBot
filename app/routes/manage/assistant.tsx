@@ -27,6 +27,7 @@ import type { TableAssistant } from 'types/table'
 import { ModelIcon } from '~/lib/ModelIcon'
 import { adminConfirmDialog$ } from '~/components/project/confirm-dialog'
 import { Usage } from './ui/Usage'
+import { useAccess } from '~/lib/access'
 
 export default observer(() => {
   const columns: ColumnDef<TableAssistant>[] = useMemo(() => {
@@ -112,6 +113,7 @@ export default observer(() => {
     data: [] as TableAssistant[],
     openUsage: false
   })
+  const { hasAccess } = useAccess()
   const getAssistantsList = useCallback(() => {
     trpc.manage.getAssistants.query().then((res) => {
       setState({ data: res as unknown as TableAssistant[] })
@@ -135,6 +137,7 @@ export default observer(() => {
           <div></div>
           <div className={'flex gap-3'}>
             <Button
+              disabled={!hasAccess('manageAssistant')}
               onClick={() => {
                 setState({
                   selectedProviderId: null,
@@ -147,6 +150,7 @@ export default observer(() => {
             </Button>
             <Button
               variant='outline'
+              disabled={!hasAccess('viewAssistantUsage')}
               onClick={() => {
                 setState({
                   openUsage: true

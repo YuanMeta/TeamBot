@@ -49,22 +49,26 @@ import { Github } from '@lobehub/icons'
 import { Theme, useTheme } from 'remix-themes'
 import { useLocalState } from '~/hooks/localState'
 import { trpc } from '~/.client/trpc'
+import { useAccess } from '~/lib/access'
 
 const items = [
   {
     title: 'AI助手',
     url: '/manage/assistant',
-    icon: BotMessageSquare
+    icon: BotMessageSquare,
+    access: 'viewAssistant'
   },
   {
     title: '成员',
     url: '/manage/member',
-    icon: Users
+    icon: Users,
+    access: 'viewMember'
   },
   {
     title: '模型工具',
     url: '/manage/tool',
-    icon: Wrench
+    icon: Wrench,
+    access: 'viewTools'
   }
 ]
 
@@ -94,6 +98,7 @@ function Header() {
 export const ManageSideBar = observer((props: { children: ReactNode }) => {
   let location = useLocation()
   let navigate = useNavigate()
+  const { access } = useAccess()
   const [theme, setTheme, meta] = useTheme()
   const [state, setState] = useLocalState({
     userInfo: null as null | {
@@ -114,20 +119,22 @@ export const ManageSideBar = observer((props: { children: ReactNode }) => {
         <SidebarContent>
           <SidebarGroup>
             <SidebarMenu>
-              {items.map((item) => (
-                <SidebarMenuItem key={item.title}>
-                  <SidebarMenuButton
-                    asChild
-                    tooltip={item.title}
-                    isActive={location.pathname === item.url}
-                  >
-                    <NavLink to={item.url} end>
-                      <item.icon />
-                      <span>{item.title}</span>
-                    </NavLink>
-                  </SidebarMenuButton>
-                </SidebarMenuItem>
-              ))}
+              {items
+                .filter((item) => access.includes(item.access))
+                .map((item) => (
+                  <SidebarMenuItem key={item.title}>
+                    <SidebarMenuButton
+                      asChild
+                      tooltip={item.title}
+                      isActive={location.pathname === item.url}
+                    >
+                      <NavLink to={item.url} end>
+                        <item.icon />
+                        <span>{item.title}</span>
+                      </NavLink>
+                    </SidebarMenuButton>
+                  </SidebarMenuItem>
+                ))}
             </SidebarMenu>
           </SidebarGroup>
         </SidebarContent>

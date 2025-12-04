@@ -225,12 +225,6 @@ export const ChatSidebar = observer(() => {
                 搜索聊天
               </span>
             </div>
-            {/* <div className={'sidebar-item'}>
-              <div className={'w-9 flex justify-center items-center'}>
-                <BookMarked className={'size-[17px]'} />
-              </div>
-              <span>文档库</span>
-            </div> */}
           </div>
         </div>
         <div
@@ -271,13 +265,7 @@ export const ChatSidebar = observer(() => {
             )}
           </div>
         </div>
-        <NavUser
-          collapsed={state.collapsed}
-          user={{
-            name: store.state.userInfo?.name || '',
-            email: store.state.userInfo?.email || ''
-          }}
-        />
+        <NavUser collapsed={state.collapsed} />
       </div>
       <AlertDialog
         open={state.showDeleteDialog}

@@ -20,6 +20,7 @@ import {
 } from '~/components/ui/table'
 import { useLocalState } from '~/hooks/localState'
 import { AddSsoProvider } from './AddSsoProvider'
+import { useAccess } from '~/lib/access'
 
 export interface SSOInstance {
   add: () => void
@@ -30,6 +31,7 @@ interface SSOProps {
 }
 
 export const SSO = observer(({ instance }: SSOProps) => {
+  const { hasAccess } = useAccess()
   const columns: ColumnDef<TableAuthProvider>[] = useMemo(() => {
     return [
       {
@@ -55,6 +57,7 @@ export const SSO = observer(({ instance }: SSOProps) => {
               <Button
                 variant='outline'
                 size='icon-sm'
+                disabled={!hasAccess('manageSso')}
                 onClick={() => {
                   setState({
                     selectedSsoProviderId: data.id,
@@ -64,7 +67,11 @@ export const SSO = observer(({ instance }: SSOProps) => {
               >
                 <PencilLine className={'size-3'} />
               </Button>
-              <Button variant='outline' size='icon-sm'>
+              <Button
+                variant='outline'
+                size='icon-sm'
+                disabled={!hasAccess('manageSso')}
+              >
                 <Trash className={'size-3'} />
               </Button>
             </div>

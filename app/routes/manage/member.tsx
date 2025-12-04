@@ -4,7 +4,14 @@ import {
   getCoreRowModel,
   useReactTable
 } from '@tanstack/react-table'
-import { PencilLine, Plus, Trash, Users, Waypoints } from 'lucide-react'
+import {
+  KeyRound,
+  PencilLine,
+  Plus,
+  Trash,
+  Users,
+  Waypoints
+} from 'lucide-react'
 
 import {
   Table,
@@ -24,30 +31,41 @@ import { AddMember } from './ui/AddMemeber'
 import type { TableUser } from 'types/table'
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '~/components/ui/tabs'
 import { SSO, type SSOInstance } from './ui/SSO'
+import { useAccess } from '~/lib/access'
+import { Badge } from '~/components/ui/badge'
 
+type MemberData = TableUser & { roles: string[] }
 export default observer(() => {
-  const columns: ColumnDef<TableUser>[] = useMemo(() => {
+  const { hasAccess } = useAccess()
+  const columns: ColumnDef<MemberData>[] = useMemo(() => {
     return [
       {
         accessorKey: 'name',
         header: '成员名',
         cell: ({ row }) => (
-          <div className='capitalize'>{row.getValue('name')}</div>
+          <div className='capitalize flex items-center gap-1.5'>
+            {row.getValue('name')}
+            {row.original.root && (
+              <KeyRound className='size-3.5 text-blue-500' />
+            )}
+          </div>
         )
       },
       {
         accessorKey: 'email',
         header: '邮箱',
-        cell: ({ row }) => (
-          <div className='capitalize'>{row.getValue('email')}</div>
-        )
+        cell: ({ row }) => <div>{row.getValue('email')}</div>
       },
       {
         header: '角色',
-        accessorKey: 'role',
+        accessorKey: 'roles',
         cell: ({ row }) => (
           <div className='lowercase'>
-            {row.getValue('role') === 'member' ? '成员' : '管理员'}
+            {(row.getValue('roles') as any)?.map((r: string) => (
+              <Badge key={r} variant={'secondary'}>
+                {r}
+              </Badge>
+            ))}
           </div>
         )
       },
@@ -60,6 +78,7 @@ export default observer(() => {
               <Button
                 variant='outline'
                 size='icon-sm'
+                disabled={!hasAccess('manageMember') || row.original.root}
                 onClick={() => {
                   setState({
                     selectedMemberId: data.id,
@@ -69,14 +88,18 @@ export default observer(() => {
               >
                 <PencilLine className={'size-3'} />
               </Button>
-              <Button variant='outline' size='icon-sm'>
+              <Button
+                variant='outline'
+                size='icon-sm'
+                disabled={!hasAccess('manageMember') || row.original.root}
+              >
                 <Trash className={'size-3'} />
               </Button>
             </div>
           )
         }
       }
-    ] as ColumnDef<TableUser>[]
+    ] as ColumnDef<MemberData>[]
   }, [])
   const ssoInstance = useRef<SSOInstance>({} as SSOInstance)
   const [state, setState] = useLocalState({
@@ -86,7 +109,7 @@ export default observer(() => {
     tab: 'member',
     openAddMember: false,
     selectedMemberId: null as null | number,
-    data: [] as TableUser[],
+    data: [] as MemberData[],
     total: 0
   })
   const getMembers = useCallback(() => {
@@ -131,6 +154,7 @@ export default observer(() => {
             <div>
               {state.tab === 'member' && (
                 <Button
+                  disabled={!hasAccess('manageMember')}
                   onClick={() => {
                     setState({ openAddMember: true, selectedMemberId: null })
                   }}
@@ -141,6 +165,7 @@ export default observer(() => {
               )}
               {state.tab === 'sso' && (
                 <Button
+                  disabled={!hasAccess('manageSso')}
                   onClick={() => {
                     ssoInstance.current.add?.()
                   }}

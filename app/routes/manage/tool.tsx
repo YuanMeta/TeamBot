@@ -26,8 +26,10 @@ import { Badge } from '~/components/ui/badge'
 import { TextHelp } from '~/components/project/text-help'
 import { adminConfirmDialog$ } from '~/components/project/confirm-dialog'
 import { toast } from 'sonner'
+import { useAccess } from '~/lib/access'
 
 export default observer(() => {
+  const { hasAccess } = useAccess()
   const columns: ColumnDef<TableTool>[] = useMemo(() => {
     return [
       {
@@ -67,6 +69,7 @@ export default observer(() => {
               <Button
                 variant='outline'
                 size='icon-sm'
+                disabled={!hasAccess('manageTools')}
                 onClick={() => {
                   setState({
                     selectedToolId: data.id,
@@ -79,6 +82,7 @@ export default observer(() => {
               <Button
                 variant='outline'
                 size='icon-sm'
+                disabled={!hasAccess('manageTools')}
                 onClick={() => {
                   adminConfirmDialog$.next({
                     title: '提示',

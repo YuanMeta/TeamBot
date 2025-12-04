@@ -145,16 +145,15 @@ export const manageRouter = {
       z.object({
         email: z.email().optional(),
         password: z.string().min(6).max(30),
-        name: z.string().min(1),
-        role: z.enum(['admin', 'member'])
+        name: z.string().min(1)
+        // role: z.enum(['admin', 'member'])
       })
     )
     .mutation(async ({ input, ctx }) => {
       return ctx.db('users').insert({
         email: input.email,
         password: await PasswordManager.hashPassword(input.password),
-        name: input.name,
-        role: input.role
+        name: input.name
       })
     }),
   updateMember: adminProcedure
@@ -163,8 +162,8 @@ export const manageRouter = {
         userId: z.number(),
         email: z.email().optional(),
         password: z.string().min(8).max(50).optional(),
-        name: z.string().min(1).optional(),
-        role: z.enum(['admin', 'member']).optional()
+        name: z.string().min(1).optional()
+        // role: z.enum(['admin', 'member']).optional()
       })
     )
     .mutation(async ({ input, ctx }) => {
@@ -176,8 +175,7 @@ export const manageRouter = {
           password: input.password
             ? await PasswordManager.hashPassword(input.password)
             : null,
-          name: input.name,
-          role: input.role
+          name: input.name
         })
     }),
   getMember: adminProcedure
@@ -191,7 +189,7 @@ export const manageRouter = {
           'email',
           'avatar',
           'name',
-          'role',
+          'root',
           'created_at',
           'deleted'
         )
@@ -216,12 +214,32 @@ export const manageRouter = {
       }
       const members = await baseQuery
         .clone()
-        .select('id', 'email', 'name', 'avatar', 'role')
+        .select('id', 'email', 'name', 'avatar', 'root')
         .orderBy('created_at', 'desc')
         .offset((input.page - 1) * input.pageSize)
         .limit(input.pageSize)
       const total = await baseQuery.clone().count('id', { as: 'total' })
-      return { members, total: total[0].total as number }
+
+      const memberIds = members.map((m) => m.id)
+      const userRoles = await db('user_roles')
+        .join('roles', 'user_roles.role_id', 'roles.id')
+        .whereIn('user_roles.user_id', memberIds)
+        .select('user_roles.user_id', 'roles.name as role_name')
+
+      const rolesByUser = userRoles.reduce((acc, { user_id, role_name }) => {
+        if (!acc[user_id]) {
+          acc[user_id] = []
+        }
+        acc[user_id].push(role_name)
+        return acc
+      }, {} as Record<number, string[]>)
+
+      const membersWithRoles = members.map((member) => ({
+        ...member,
+        roles: rolesByUser[member.id] || []
+      }))
+
+      return { members: membersWithRoles, total: total[0].total as number }
     }),
   deleteMember: adminProcedure
     .input(
