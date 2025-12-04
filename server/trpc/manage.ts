@@ -43,7 +43,7 @@ export const manageRouter = {
       const total = await ctx.db('assistants').count('id', { as: 'total' })
       return {
         list,
-        total: total[0].total as number
+        total: +total[0].total as number
       }
     }),
   getAssistant: adminProcedure
@@ -256,7 +256,7 @@ export const manageRouter = {
         roles: rolesByUser[member.id] || []
       }))
 
-      return { members: membersWithRoles, total: total[0].total as number }
+      return { members: membersWithRoles, total: +total[0].total as number }
     }),
   deleteMember: adminProcedure
     .input(
@@ -338,7 +338,7 @@ export const manageRouter = {
         return parseRecord(r, ['auto'])
       })
       const total = await ctx.db('tools').count('id', { as: 'total' })
-      return { tools, total: total[0].total as number }
+      return { tools, total: +total[0].total as number }
     }),
   getTool: adminProcedure.input(z.string()).query(async ({ input, ctx }) => {
     const record = await ctx
@@ -553,7 +553,7 @@ export const manageRouter = {
       const total = await ctx.db('roles').count('id', { as: 'total' })
       return {
         list,
-        total: total[0].total as number
+        total: +total[0].total as number
       }
     }),
   getRole: adminProcedure.input(z.number()).query(async ({ input, ctx }) => {

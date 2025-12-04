@@ -233,6 +233,7 @@ export default observer(() => {
             </div>
             <Pagination
               page={state.page}
+              showTotal={true}
               pageSize={state.pageSize}
               total={state.total}
               onPageChange={(page) => {

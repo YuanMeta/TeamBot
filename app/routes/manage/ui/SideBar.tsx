@@ -50,7 +50,6 @@ import { Github } from '@lobehub/icons'
 import { Theme, useTheme } from 'remix-themes'
 import { useLocalState } from '~/hooks/localState'
 import { trpc } from '~/.client/trpc'
-import { useAccess } from '~/lib/access'
 
 const items = [
   {

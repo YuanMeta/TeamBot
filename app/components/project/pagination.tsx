@@ -7,11 +7,13 @@ export function Pagination({
   total,
   page,
   pageSize,
-  onPageChange
+  onPageChange,
+  showTotal
 }: {
   total: number
   page: number
   pageSize: number
+  showTotal?: boolean
   onPageChange: (pageIndex: number) => void
 }) {
   const pages = useMemo(() => {
@@ -26,7 +28,13 @@ export function Pagination({
   return (
     <div className='flex items-center justify-between px-2 my-3'>
       <div className='text-muted-foreground flex-1 text-sm'></div>
-      <div className='flex items-center space-x-1'>
+      <div className='flex items-center gap-1'>
+        {!!showTotal && (
+          <div className={'text-sm text-secondary-foreground/60 px-2'}>
+            共 {total} 条记录
+          </div>
+        )}
+
         <Button
           variant='outline'
           size='icon-sm'
