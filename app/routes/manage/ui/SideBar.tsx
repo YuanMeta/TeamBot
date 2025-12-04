@@ -103,7 +103,7 @@ export const ManageSideBar = observer((props: { children: ReactNode }) => {
     }
   })
   useEffect(() => {
-    trpc.chat.getUserInfo.query().then((data) => {
+    trpc.common.getUserInfo.query().then((data) => {
       setState({ userInfo: (data as any) || null })
     })
   }, [])

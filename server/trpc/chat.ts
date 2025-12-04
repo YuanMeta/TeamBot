@@ -305,13 +305,6 @@ export const chatRouter = {
         .update(input.data)
         .returning('id')
     }),
-  getUserInfo: procedure.query(async ({ ctx }) => {
-    return ctx
-      .db('users')
-      .where({ id: ctx.userId })
-      .select('name', 'email')
-      .first()
-  }),
   regenerate: procedure
     .input(
       z.object({

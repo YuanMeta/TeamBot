@@ -12,7 +12,8 @@ export const createContext = async ({
   return {
     db,
     userId: null as null | number,
-    req
+    req,
+    root: false
   }
 }
 
@@ -42,7 +43,8 @@ export const procedure = t.procedure.use(async ({ ctx, next }) => {
   return next({
     ctx: {
       ...ctx,
-      userId: user.id
+      userId: user.id,
+      root: user.root
     }
   })
 })
@@ -102,7 +104,8 @@ export const adminProcedure = t.procedure.use(async ({ ctx, next }) => {
   return next({
     ctx: {
       ...ctx,
-      userId: user.id
+      userId: user.id,
+      root: user.root
     }
   })
 })

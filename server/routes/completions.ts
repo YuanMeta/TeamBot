@@ -9,7 +9,7 @@ import { TRPCError } from '@trpc/server'
 import type { MessagePart, Usage } from 'types'
 import { composeTools } from '../lib/tools'
 import { MessageManager } from '../lib/message'
-import { getUserId } from '../session'
+import { getUser } from '../session'
 import type { Request, Response } from 'express'
 import type { Knex } from 'knex'
 import { saveFileByBase64, tid } from '../lib/utils'
@@ -25,13 +25,12 @@ const InputSchema = z.object({
 
 export const completions = async (req: Request, res: Response, db: Knex) => {
   const json: z.infer<typeof InputSchema> = req.body
-
-  const uid = await getUserId(req)
-  if (!uid) {
+  const user = await getUser(req)
+  if (!user) {
     res.status(401).send('Unauthorized')
     return
   }
-
+  const uid = user.uid
   try {
     InputSchema.parse(json)
   } catch (e) {

@@ -59,7 +59,7 @@ const state = {
   userInfo: null as null | {
     name: string | null
     email: string | null
-    role: string | null
+    root: boolean
   },
   loadingChats: false,
   loadingMessages: false,
@@ -161,7 +161,7 @@ export class ChatStore extends StructStore<typeof state> {
       return this.setState((state) => (state.ready = true))
     }
     await this.loadAssistants()
-    await trpc.chat.getUserInfo.query().then((res) => {
+    await trpc.common.getUserInfo.query().then((res) => {
       this.setState((state) => (state.userInfo = res || null))
     })
     this.setState((state) => (state.ready = true))

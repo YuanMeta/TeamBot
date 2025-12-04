@@ -29,13 +29,12 @@ export const oauthStateCookie = createCookie('oauth_state', {
   secrets: [process.env.COOKIE_SECRET || 's3cr3t']
 })
 
-export const getUserId = async (request: Request) => {
+export const getUser = async (request: Request) => {
   const token = await userCookie.parse(request.headers.cookie || '')
   if (!token) {
     return null
   }
-  const data = verifyToken(token)
-  return data?.uid || null
+  return verifyToken(token)
 }
 
 export const verifyUser = async (cookie: string) => {
