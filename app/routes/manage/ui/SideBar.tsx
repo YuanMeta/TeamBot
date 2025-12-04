@@ -10,7 +10,8 @@ import {
   Moon,
   LogOut,
   UserRound,
-  MessageCircleMore
+  MessageCircleMore,
+  ShieldUser
 } from 'lucide-react'
 import { NavLink, useLocation, useNavigate } from 'react-router'
 import {
@@ -55,20 +56,22 @@ const items = [
   {
     title: 'AI助手',
     url: '/manage/assistant',
-    icon: BotMessageSquare,
-    access: 'viewAssistant'
-  },
-  {
-    title: '成员',
-    url: '/manage/member',
-    icon: Users,
-    access: 'viewMember'
+    icon: BotMessageSquare
   },
   {
     title: '模型工具',
     url: '/manage/tool',
-    icon: Wrench,
-    access: 'viewTools'
+    icon: Wrench
+  },
+  {
+    title: '成员',
+    url: '/manage/member',
+    icon: Users
+  },
+  {
+    title: '角色',
+    url: '/manage/role',
+    icon: ShieldUser
   }
 ]
 
@@ -119,22 +122,20 @@ export const ManageSideBar = observer((props: { children: ReactNode }) => {
         <SidebarContent>
           <SidebarGroup>
             <SidebarMenu>
-              {items
-                .filter((item) => access.includes(item.access))
-                .map((item) => (
-                  <SidebarMenuItem key={item.title}>
-                    <SidebarMenuButton
-                      asChild
-                      tooltip={item.title}
-                      isActive={location.pathname === item.url}
-                    >
-                      <NavLink to={item.url} end>
-                        <item.icon />
-                        <span>{item.title}</span>
-                      </NavLink>
-                    </SidebarMenuButton>
-                  </SidebarMenuItem>
-                ))}
+              {items.map((item) => (
+                <SidebarMenuItem key={item.title}>
+                  <SidebarMenuButton
+                    asChild
+                    tooltip={item.title}
+                    isActive={location.pathname === item.url}
+                  >
+                    <NavLink to={item.url} end>
+                      <item.icon />
+                      <span>{item.title}</span>
+                    </NavLink>
+                  </SidebarMenuButton>
+                </SidebarMenuItem>
+              ))}
             </SidebarMenu>
           </SidebarGroup>
         </SidebarContent>

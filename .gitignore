@@ -20,3 +20,4 @@ deploy.cjs
 production-build.tar.gz
 .temp-build
 files/
+.VSCodeCounter

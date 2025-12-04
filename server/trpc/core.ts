@@ -4,6 +4,7 @@ import superjson from 'superjson'
 import { verifyUser } from '../session'
 import { kdb } from '../lib/knex'
 import * as trpcExpress from '@trpc/server/adapters/express'
+import { publicAccess } from 'server/lib/db/access'
 
 export const createContext = async ({
   req
@@ -55,8 +56,11 @@ export const adminProcedure = t.procedure.use(async ({ ctx, next }) => {
   if (!user) {
     throw new TRPCError({ code: 'UNAUTHORIZED' })
   }
-
-  if (user.root) {
+  const paths = ctx.req.path
+    .slice(1)
+    .split(',')
+    .filter((p) => !p.startsWith('chat.'))
+  if (user.root || paths.every((p) => publicAccess.includes(p))) {
     return next({
       ctx: {
         ...ctx,
@@ -64,11 +68,6 @@ export const adminProcedure = t.procedure.use(async ({ ctx, next }) => {
       }
     })
   }
-
-  const paths = ctx.req.path
-    .slice(1)
-    .split(',')
-    .filter((p) => !p.startsWith('chat.'))
 
   if (paths.length) {
     const uniquePaths = Array.from(new Set(paths))

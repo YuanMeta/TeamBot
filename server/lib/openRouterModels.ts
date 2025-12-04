@@ -1,5 +1,4 @@
 import type { Knex } from 'knex'
-import { tid } from './utils'
 
 const providerMap = new Map([['google', 'gemini']])
 export const fetchOpenRouterModels = async (db: Knex) => {
@@ -9,7 +8,6 @@ export const fetchOpenRouterModels = async (db: Knex) => {
     )
     const data = res.data
 
-    // 批量准备要插入的数据
     const modelsToInsert = data
       .filter((model: any) => model.supported_parameters?.includes('tools'))
       .map((model: any) => {

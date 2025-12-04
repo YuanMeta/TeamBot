@@ -518,5 +518,106 @@ export const manageRouter = {
     }),
   getSystemTools: adminProcedure.query(() => {
     return systemTools
-  })
+  }),
+  getRoles: adminProcedure
+    .input(
+      z.object({
+        page: z.number(),
+        pageSize: z.number()
+      })
+    )
+    .query(async ({ ctx, input }) => {
+      return ctx
+        .db('roles')
+        .offset((input.page - 1) * input.pageSize)
+        .limit(input.pageSize)
+        .select('id', 'name', 'remark')
+    }),
+  getRole: adminProcedure.input(z.number()).query(async ({ input, ctx }) => {
+    const role = await ctx
+      .db('roles')
+      .where({ id: input })
+      .select('id', 'name', 'remark')
+      .first()
+    const access = await ctx
+      .db('access_roles')
+      .join('accesses', 'access_roles.access_id', 'accesses.id')
+      .where({ role_id: input })
+      .select('access_roles.access_id', 'accesses.name')
+    return {
+      ...role,
+      access
+    }
+  }),
+  deleteRole: adminProcedure
+    .input(z.number())
+    .mutation(async ({ input, ctx }) => {
+      const user = await ctx.db('user_roles').where({ role_id: input }).first()
+      if (user) {
+        throw new TRPCError({
+          code: 'BAD_REQUEST',
+          message: '角色已被用户使用，无法删除'
+        })
+      }
+      return ctx.db.transaction(async (trx) => {
+        await trx('access_roles').where({ role_id: input }).delete()
+        await trx('roles').where({ id: input }).delete()
+      })
+    }),
+  createRole: adminProcedure
+    .input(
+      z.object({
+        name: z.string().min(1),
+        remark: z.string().optional(),
+        access: z.array(z.number())
+      })
+    )
+    .mutation(async ({ input, ctx }) => {
+      return ctx.db.transaction(async (trx) => {
+        const [role] = await trx('roles')
+          .insert({
+            name: input.name,
+            remark: input.remark
+          })
+          .returning('id')
+        if (input.access.length) {
+          await trx('access_roles').insert(
+            input.access.map((access) => ({
+              role_id: role.id,
+              access_id: access
+            }))
+          )
+        }
+        return role
+      })
+    }),
+  updateRole: adminProcedure
+    .input(
+      z.object({
+        id: z.number(),
+        data: z.object({
+          name: z.string().min(1).optional(),
+          remark: z.string().optional(),
+          access: z.array(z.number())
+        })
+      })
+    )
+    .mutation(async ({ input, ctx }) => {
+      return ctx.db.transaction(async (trx) => {
+        await trx('roles').where({ id: input.id }).update({
+          name: input.data.name,
+          remark: input.data.remark
+        })
+        await trx('access_roles').where({ role_id: input.id }).delete()
+        if (input.data.access.length) {
+          await trx('access_roles').insert(
+            input.data.access.map((access) => ({
+              role_id: input.id,
+              access_id: access
+            }))
+          )
+        }
+        return input.id
+      })
+    })
 } satisfies TRPCRouterRecord

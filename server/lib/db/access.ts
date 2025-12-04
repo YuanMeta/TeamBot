@@ -1,36 +1,33 @@
 import type { Knex } from 'knex'
 
+export const publicAccess = [
+  'manage.getAssistant',
+  'manage.getAssistants',
+  'manage.getMembers',
+  'manage.getMember',
+  'manage.getTools',
+  'manage.getTool',
+  'manage.getRoles',
+  'manage.getRole'
+]
 export const insertAccesses = async (db: Knex) => {
   await db('accesses').insert([
     {
       name: 'admin'
     },
     {
-      name: 'viewAssistant',
-      trpc_access: JSON.stringify([
-        'manage.getAssistant',
-        'manage.getAssistants'
-      ]) as unknown as string[]
-    },
-    {
       name: 'manageAssistant',
       trpc_access: JSON.stringify([
         'manage.createAssistant',
         'manage.updateAssistant',
-        'manage.deleteAssistant'
+        'manage.deleteAssistant',
+        'manage.getSystemTools'
       ]) as unknown as string[]
     },
     {
       name: 'viewAssistantUsage',
       trpc_access: JSON.stringify([
         'manage.getUsageInfo'
-      ]) as unknown as string[]
-    },
-    {
-      name: 'viewMember',
-      trpc_access: JSON.stringify([
-        'manage.getMembers',
-        'manage.getMember'
       ]) as unknown as string[]
     },
     {
@@ -42,19 +39,20 @@ export const insertAccesses = async (db: Knex) => {
       ]) as unknown as string[]
     },
     {
+      name: 'manageRole',
+      trpc_access: JSON.stringify([
+        'manage.createRole',
+        'manage.updateRole',
+        'manage.deleteRole'
+      ]) as unknown as string[]
+    },
+    {
       name: 'manageSso',
       trpc_access: JSON.stringify([
         'manage.getAuthProviders',
         'manage.createAuthProvider',
         'manage.updateAuthProvider',
         'manage.deleteAuthProvider'
-      ]) as unknown as string[]
-    },
-    {
-      name: 'viewTools',
-      trpc_access: JSON.stringify([
-        'manage.getTools',
-        'manage.getTool'
       ]) as unknown as string[]
     },
     {
