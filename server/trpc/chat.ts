@@ -3,7 +3,7 @@ import { procedure } from './core'
 import z from 'zod'
 import dayjs from 'dayjs'
 import { tid } from 'server/lib/utils'
-import { insertRecord, parseRecord } from 'server/lib/table'
+import { insertRecord, parseRecord } from 'server/lib/db/table'
 import { unlink } from 'fs/promises'
 import { join } from 'path'
 export const chatRouter = {

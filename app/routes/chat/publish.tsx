@@ -1,6 +1,6 @@
 import { redirect, useLoaderData, useNavigate } from 'react-router'
 import type { Route } from './+types/publish'
-import { parseRecord } from 'server/lib/table'
+import { parseRecord } from 'server/lib/db/table'
 import {
   Empty,
   EmptyContent,

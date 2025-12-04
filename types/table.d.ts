@@ -11,6 +11,10 @@ declare module 'knex/types/tables' {
     models: TableModel
     auth_providers: TableAuthProvider
     oauth_accounts: TableOauthAccount
+    access_roles: TableAccessRole
+    accesses: TableAccess
+    roles: TableRole
+    user_roles: TableUserRole
   }
 }
 
@@ -147,9 +151,15 @@ export interface TableAssistantUsage {
   created_at: string
 }
 
+export interface TableUserRole {
+  user_id: number
+  role_id: number
+}
+
 export interface TableRole {
   id: number
   name: string
+  assistants: number[]
   remark: string | null
 }
 
@@ -161,7 +171,6 @@ export interface TableAccessRole {
 export interface TableAccess {
   id: number
   name: string
-  trpcAccess: string[] | null
-  routeAccess: string[] | null
-  created_at: string
+  remark: string | null
+  trpc_access: string[] | null
 }

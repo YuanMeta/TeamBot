@@ -1,5 +1,5 @@
 import Knex from 'knex'
-import { tableSchema } from './table'
+import { tableSchema } from './db/table'
 
 const globalForKnex = globalThis as unknown as {
   knex: Knex.Knex | undefined

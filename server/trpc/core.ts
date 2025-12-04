@@ -8,6 +8,15 @@ import * as trpcExpress from '@trpc/server/adapters/express'
 export const createContext = async ({
   req
 }: trpcExpress.CreateExpressContextOptions) => {
+  // try {
+  // const paths = req.path.slice(1).split(',')
+  // console.log('paths', paths)
+  // throw new TRPCError({
+  //   code: 'BAD_GATEWAY',
+  //   message: 'Invalid request path'
+  // })
+  // } catch (e) {}
+
   const db = await kdb()
   return {
     db,

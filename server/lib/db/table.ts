@@ -1,8 +1,12 @@
 import type { Knex } from 'knex'
-import { isJsonObject, tid } from './utils'
-import { PasswordManager } from './password'
+import { isJsonObject } from '../utils'
+import { PasswordManager } from '../password'
+import { insertAccesses, insertRoles } from './access'
 export const tableSchema = async (db: Knex) => {
-  // 删除表的顺序很重要：先删除有外键的表（子表），再删除被引用的表（父表）
+  // await db.schema.dropTableIfExists('user_roles')
+  // await db.schema.dropTableIfExists('access_roles')
+  // await db.schema.dropTableIfExists('accesses')
+  // await db.schema.dropTableIfExists('roles')
   // await db.schema.dropTableIfExists('messages')
   // await db.schema.dropTableIfExists('chats')
   // await db.schema.dropTableIfExists('assistant_tools')
@@ -25,7 +29,6 @@ export const tableSchema = async (db: Knex) => {
       table.string('avatar').nullable()
       table.string('name').nullable()
       table.string('password').nullable()
-      table.string('role').notNullable()
       table.boolean('deleted').defaultTo(false)
       table.boolean('root').defaultTo(false)
       table.timestamp('created_at').defaultTo(db.fn.now())
@@ -62,7 +65,11 @@ export const tableSchema = async (db: Knex) => {
       table.timestamp('updated_at').defaultTo(db.fn.now())
       table.timestamp('last_chat_time').defaultTo(db.fn.now())
       table.foreign('user_id').references('id').inTable('users')
-      table.foreign('assistant_id').references('id').inTable('assistants')
+      table
+        .foreign('assistant_id')
+        .references('id')
+        .inTable('assistants')
+        .onDelete('SET NULL')
       table.index('user_id')
     })
   }
@@ -157,7 +164,7 @@ export const tableSchema = async (db: Knex) => {
       table.text('profile_json').nullable()
       table.foreign('provider_id').references('id').inTable('auth_providers')
       table.foreign('user_id').references('id').inTable('users')
-      table.unique(['provider_id', 'provider_user_id'])
+      table.primary(['provider_id', 'provider_user_id'])
     })
   }
   if (!(await db.schema.hasTable('assistant_usages'))) {
@@ -184,6 +191,7 @@ export const tableSchema = async (db: Knex) => {
     await db.schema.createTable('roles', (table) => {
       table.increments('id').primary().notNullable()
       table.string('name').notNullable()
+      table.jsonb('assistants').nullable()
       table.text('remark').nullable()
     })
   }
@@ -192,29 +200,42 @@ export const tableSchema = async (db: Knex) => {
     await db.schema.createTable('accesses', (table) => {
       table.increments('id').primary().notNullable()
       table.string('name').notNullable()
-      table.text('trpc_access').nullable()
-      table.text('route_access').nullable()
+      table.text('remark').nullable()
+      table.jsonb('trpc_access').nullable()
     })
+    await insertAccesses(db)
   }
   if (!(await db.schema.hasTable('access_roles'))) {
     await db.schema.createTable('access_roles', (table) => {
       table.integer('role_id').notNullable()
-      table.integer('access_id').nullable()
+      table.integer('access_id').notNullable()
       table.foreign('role_id').references('id').inTable('roles')
       table.foreign('access_id').references('id').inTable('accesses')
-      table.unique(['role_id', 'access_id'])
+      table.primary(['role_id', 'access_id'])
       table.index('role_id')
+    })
+    await insertRoles(db)
+  }
+  if (!(await db.schema.hasTable('user_roles'))) {
+    await db.schema.createTable('user_roles', (table) => {
+      table.integer('user_id').notNullable()
+      table.integer('role_id').notNullable()
+      table.foreign('user_id').references('id').inTable('users')
+      table.foreign('role_id').references('id').inTable('roles')
+      table.primary(['user_id', 'role_id'])
+      table.index('user_id')
     })
   }
   const user = await db('users').first()
   if (!user) {
-    await db('users').insert({
-      email: 'teambot@teambot.com',
-      password: await PasswordManager.hashPassword('123456'),
-      name: 'TeamBot',
-      role: 'admin',
-      root: true
-    })
+    await db('users')
+      .insert({
+        email: 'teambot@teambot.com',
+        password: await PasswordManager.hashPassword('123456'),
+        name: 'TeamBot',
+        root: true
+      })
+      .returning('id')
   }
 }
 

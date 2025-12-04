@@ -4,7 +4,7 @@ import type { MessagePart } from 'types'
 import { createClient } from './checkConnect'
 import { findLast } from '~/lib/utils'
 import type { Knex } from 'knex'
-import { parseRecord } from './table'
+import { parseRecord } from './db/table'
 import type { TableMessage } from 'types/table'
 
 function addDocsContext(
