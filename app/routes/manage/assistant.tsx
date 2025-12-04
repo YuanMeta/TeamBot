@@ -28,6 +28,7 @@ import { ModelIcon } from '~/lib/ModelIcon'
 import { adminConfirmDialog$ } from '~/components/project/confirm-dialog'
 import { Usage } from './ui/Usage'
 import { useAccess } from '~/lib/access'
+import { Pagination } from '~/components/project/pagination'
 
 export default observer(() => {
   const columns: ColumnDef<TableAssistant>[] = useMemo(() => {
@@ -111,13 +112,24 @@ export default observer(() => {
     openProviderForm: false,
     selectedProviderId: null as null | number,
     data: [] as TableAssistant[],
-    openUsage: false
+    openUsage: false,
+    page: 1,
+    pageSize: 10,
+    total: 0
   })
   const { hasAccess } = useAccess()
   const getAssistantsList = useCallback(() => {
-    trpc.manage.getAssistants.query().then((res) => {
-      setState({ data: res as unknown as TableAssistant[] })
-    })
+    trpc.manage.getAssistants
+      .query({
+        page: state.page,
+        pageSize: state.pageSize
+      })
+      .then((res) => {
+        setState({
+          data: res.list as unknown as TableAssistant[],
+          total: res.total
+        })
+      })
   }, [])
   useEffect(() => {
     getAssistantsList()
@@ -213,6 +225,15 @@ export default observer(() => {
           </Table>
         </div>
       </div>
+      <Pagination
+        page={state.page}
+        pageSize={state.pageSize}
+        total={state.total}
+        onPageChange={(page) => {
+          setState({ page })
+          getAssistantsList()
+        }}
+      />
       {state.openProviderForm && (
         <AddAssistant
           open={state.openProviderForm}

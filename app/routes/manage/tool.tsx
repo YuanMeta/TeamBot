@@ -209,7 +209,10 @@ export default observer(() => {
           page={state.page}
           pageSize={state.pageSize}
           total={state.total}
-          onPageChange={() => {}}
+          onPageChange={(page) => {
+            setState({ page })
+            getTools()
+          }}
         />
         <AddTool
           open={state.openAddTool}

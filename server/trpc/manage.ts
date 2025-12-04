@@ -22,13 +22,30 @@ export const manageRouter = {
     .mutation(async ({ input }) => {
       return checkLLmConnect(input)
     }),
-  getAssistants: adminProcedure.query(async ({ ctx }) => {
-    return (
-      await ctx.db('assistants').select('*').orderBy('created_at', 'desc')
-    ).map((r) => {
-      return parseRecord(r)
-    })
-  }),
+  getAssistants: adminProcedure
+    .input(
+      z.object({
+        page: z.number(),
+        pageSize: z.number()
+      })
+    )
+    .query(async ({ ctx, input }) => {
+      const list = (
+        await ctx
+          .db('assistants')
+          .offset((input.page - 1) * input.pageSize)
+          .limit(input.pageSize)
+          .select('*')
+          .orderBy('id', 'desc')
+      ).map((r) => {
+        return parseRecord(r)
+      })
+      const total = await ctx.db('assistants').count('id', { as: 'total' })
+      return {
+        list,
+        total: total[0].total as number
+      }
+    }),
   getAssistant: adminProcedure
     .input(z.number())
     .query(async ({ input, ctx }) => {
