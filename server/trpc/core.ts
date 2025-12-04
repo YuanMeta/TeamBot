@@ -8,15 +8,6 @@ import * as trpcExpress from '@trpc/server/adapters/express'
 export const createContext = async ({
   req
 }: trpcExpress.CreateExpressContextOptions) => {
-  // try {
-  // const paths = req.path.slice(1).split(',')
-  // console.log('paths', paths)
-  // throw new TRPCError({
-  //   code: 'BAD_GATEWAY',
-  //   message: 'Invalid request path'
-  // })
-  // } catch (e) {}
-
   const db = await kdb()
   return {
     db,
@@ -50,18 +41,67 @@ export const procedure = t.procedure.use(async ({ ctx, next }) => {
   }
   return next({
     ctx: {
+      ...ctx,
       userId: user.id
     }
   })
 })
 
 export const adminProcedure = t.procedure.use(async ({ ctx, next }) => {
-  const user = await verifyUser(ctx.req.headers.cookie || '', true)
+  const user = await verifyUser(ctx.req.headers.cookie || '')
+
   if (!user) {
     throw new TRPCError({ code: 'UNAUTHORIZED' })
   }
+
+  if (user.root) {
+    return next({
+      ctx: {
+        ...ctx,
+        userId: user.id
+      }
+    })
+  }
+
+  const paths = ctx.req.path
+    .slice(1)
+    .split(',')
+    .filter((p) => !p.startsWith('chat.'))
+
+  if (paths.length) {
+    const uniquePaths = Array.from(new Set(paths))
+
+    const result = await ctx.db.raw(
+      `
+        SELECT COUNT(DISTINCT path) AS count
+        FROM user_roles ur
+        JOIN access_roles ar ON ur.role_id = ar.role_id
+        JOIN accesses a ON ar.access_id = a.id
+        CROSS JOIN LATERAL jsonb_array_elements_text(
+          COALESCE(a.trpc_access, '[]'::jsonb)
+        ) AS path
+        WHERE ur.user_id = ?
+          AND path = ANY(?)
+      `,
+      [user.id, uniquePaths]
+    )
+
+    const rows =
+      (result as unknown as { rows?: Array<{ count: string | number }> })
+        .rows || []
+    const matchedCount = rows.length ? Number(rows[0].count) : 0
+
+    if (matchedCount < uniquePaths.length) {
+      throw new TRPCError({
+        code: 'FORBIDDEN',
+        message: '无权限访问'
+      })
+    }
+  }
+
   return next({
     ctx: {
+      ...ctx,
       userId: user.id
     }
   })

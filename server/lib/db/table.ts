@@ -236,6 +236,10 @@ export const tableSchema = async (db: Knex) => {
         root: true
       })
       .returning('id')
+    // await db('user_roles').insert({
+    //   user_id: res[0].id,
+    //   role_id: 1
+    // })
   }
 }
 

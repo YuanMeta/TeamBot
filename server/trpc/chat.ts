@@ -309,7 +309,7 @@ export const chatRouter = {
     return ctx
       .db('users')
       .where({ id: ctx.userId })
-      .select('name', 'email', 'role')
+      .select('name', 'email')
       .first()
   }),
   regenerate: procedure

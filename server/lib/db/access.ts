@@ -8,7 +8,8 @@ export const insertAccesses = async (db: Knex) => {
     {
       name: 'viewAssistant',
       trpc_access: JSON.stringify([
-        'manage.getAssistant'
+        'manage.getAssistant',
+        'manage.getAssistants'
       ]) as unknown as string[]
     },
     {

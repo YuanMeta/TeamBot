@@ -96,7 +96,7 @@ export const registerRoutes = (app: Express, db: Knex) => {
 
     // 登录成功，清除失败记录
     loginAttempts.delete(attemptKey)
-    const token = generateToken({ uid: user.id })
+    const token = generateToken({ uid: user.id, root: user.root })
     res.setHeader('Set-Cookie', await userCookie.serialize(token))
     res.json({
       success: true
@@ -348,7 +348,7 @@ The historical dialogue is as follows: \n${messages
           })
           .first()
         if (user) {
-          const token = generateToken({ uid: user.user_id })
+          const token = generateToken({ uid: user.user_id, root: false })
           res.setHeader('Set-Cookie', await userCookie.serialize(token))
         } else {
           if (userResp.email || userResp.phone) {
@@ -386,7 +386,7 @@ The historical dialogue is as follows: \n${messages
                 })
                 return user
               })
-              const token = generateToken({ uid: user[0].id! })
+              const token = generateToken({ uid: user[0].id!, root: false })
               res.setHeader('Set-Cookie', await userCookie.serialize(token))
             }
           } else {

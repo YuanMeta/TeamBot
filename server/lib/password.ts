@@ -56,13 +56,13 @@ export class PasswordManager {
   }
 }
 
-export const generateToken = (data: { uid: number }) => {
+export const generateToken = (data: { uid: number; root: boolean }) => {
   return jwt.sign(data, secret, { expiresIn: '7d' })
 }
 
 export const verifyToken = (token: string) => {
   try {
-    return jwt.verify(token, secret) as { uid: number }
+    return jwt.verify(token, secret) as { uid: number; root: boolean }
   } catch {
     return null
   }

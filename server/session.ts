@@ -38,7 +38,7 @@ export const getUserId = async (request: Request) => {
   return data?.uid || null
 }
 
-export const verifyUser = async (cookie: string, admin = false) => {
+export const verifyUser = async (cookie: string) => {
   const token = await userCookie.parse(cookie)
   if (!token) {
     return false
@@ -50,19 +50,18 @@ export const verifyUser = async (cookie: string, admin = false) => {
   const db = await kdb()
   let user = await cacheable.get<{
     id: number
-    role: 'admin' | 'member'
-    deleted: boolean
+    root: boolean
   }>(`user:${data.uid}`)
   if (!user) {
     user = await db('users')
-      .where({ id: data.uid })
-      .select('id', 'role', 'deleted')
+      .where({ id: data.uid, deleted: false })
+      .select('id', 'root')
       .first()
     if (user) {
       cacheable.set(`user:${user.id}`, user, 60 * 60 * 12 * 1000)
     }
   }
-  if (!user || (admin && user.role !== 'admin') || user.deleted) {
+  if (!user) {
     return false
   }
   return user
