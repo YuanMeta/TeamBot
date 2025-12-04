@@ -60,12 +60,16 @@ export default observer(() => {
         header: '角色',
         accessorKey: 'roles',
         cell: ({ row }) => (
-          <div className='lowercase'>
-            {(row.getValue('roles') as any)?.map((r: string) => (
-              <Badge key={r} variant={'secondary'}>
-                {r}
-              </Badge>
-            ))}
+          <div className='lowercase flex flex-wrap gap-1'>
+            {row.original.root ? (
+              <Badge variant={'secondary'}>超级管理员</Badge>
+            ) : (
+              (row.getValue('roles') as any)?.map((r: string) => (
+                <Badge key={r} variant={'secondary'}>
+                  {r}
+                </Badge>
+              ))
+            )}
           </div>
         )
       },

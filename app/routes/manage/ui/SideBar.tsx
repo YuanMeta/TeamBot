@@ -101,7 +101,6 @@ function Header() {
 export const ManageSideBar = observer((props: { children: ReactNode }) => {
   let location = useLocation()
   let navigate = useNavigate()
-  const { access } = useAccess()
   const [theme, setTheme, meta] = useTheme()
   const [state, setState] = useLocalState({
     userInfo: null as null | {

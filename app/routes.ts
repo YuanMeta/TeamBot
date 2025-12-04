@@ -17,6 +17,10 @@ export default [
       file: 'routes/manage/member.tsx'
     },
     {
+      path: 'role',
+      file: 'routes/manage/role.tsx'
+    },
+    {
       path: 'tool',
       file: 'routes/manage/tool.tsx'
     }

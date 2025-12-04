@@ -527,11 +527,17 @@ export const manageRouter = {
       })
     )
     .query(async ({ ctx, input }) => {
-      return ctx
+      const list = await ctx
         .db('roles')
         .offset((input.page - 1) * input.pageSize)
         .limit(input.pageSize)
+        .orderBy('id', 'desc')
         .select('id', 'name', 'remark')
+      const total = await ctx.db('roles').count('id', { as: 'total' })
+      return {
+        list,
+        total: total[0].total as number
+      }
     }),
   getRole: adminProcedure.input(z.number()).query(async ({ input, ctx }) => {
     const role = await ctx
