@@ -44,13 +44,13 @@ export const commonRouter = {
   }),
   getUserAccess: procedure.query(async ({ ctx }) => {
     if (ctx.root) {
-      const accesses = await ctx.db('accesses').select('name')
-      return accesses.map((access) => access.name)
+      const accesses = await ctx.db('accesses').select('id')
+      return accesses.map((access) => access.id)
     }
 
     const result = await ctx.db.raw(
       `
-        SELECT DISTINCT a.name
+        SELECT DISTINCT a.id
         FROM user_roles ur
         JOIN access_roles ar ON ur.role_id = ar.role_id
         JOIN accesses a ON ar.access_id = a.id
@@ -60,7 +60,7 @@ export const commonRouter = {
     )
 
     const rows =
-      (result as unknown as { rows?: Array<{ name: string }> }).rows || []
-    return rows.map((row) => row.name)
+      (result as unknown as { rows?: Array<{ id: string }> }).rows || []
+    return rows.map((row) => row.id)
   })
 }

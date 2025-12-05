@@ -24,6 +24,7 @@ import type { TableRole } from 'types/table'
 import { adminConfirmDialog$ } from '~/components/project/confirm-dialog'
 import { toast } from 'sonner'
 import { useAccess } from '~/lib/access'
+import { AddRole } from './ui/AddRole'
 
 export default observer(() => {
   const { hasAccess } = useAccess()
@@ -199,6 +200,16 @@ export default observer(() => {
           total={state.total}
           onPageChange={(page) => {
             setState({ page })
+            getRoles()
+          }}
+        />
+        <AddRole
+          open={state.openAddRole}
+          id={state.selectedRoleId}
+          onClose={() => {
+            setState({ openAddRole: false, selectedRoleId: null })
+          }}
+          onUpdate={() => {
             getRoles()
           }}
         />

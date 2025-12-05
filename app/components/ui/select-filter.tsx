@@ -18,7 +18,7 @@ import {
 } from '~/components/ui/command'
 
 export interface SelectFilterOption {
-  value: string
+  value: string | number
   label: string
   render?: React.ReactNode
   disabled?: boolean
@@ -26,9 +26,9 @@ export interface SelectFilterOption {
 
 export interface SelectFilterProps {
   options: SelectFilterOption[]
-  value?: string | string[]
+  value?: string | string[] | number | number[]
   defaultValue?: string | string[]
-  onValueChange?: (value: string | string[]) => void
+  onValueChange?: (value: string | string[] | number | number[]) => void
   placeholder?: string
   searchPlaceholder?: string
   emptyText?: string
@@ -59,9 +59,9 @@ function SelectFilter({
   allowCreateOnEnter = false
 }: SelectFilterProps) {
   const [open, setOpen] = React.useState(false)
-  const [internalValue, setInternalValue] = React.useState<string | string[]>(
-    defaultValue || (multiple ? [] : '')
-  )
+  const [internalValue, setInternalValue] = React.useState<
+    string | number | string[] | number[]
+  >(defaultValue || (multiple ? [] : ''))
   const [search, setSearch] = React.useState('')
   const [extraOptions, setExtraOptions] = React.useState<SelectFilterOption[]>(
     []
@@ -78,8 +78,8 @@ function SelectFilter({
       return Array.isArray(currentValue)
         ? currentValue
         : currentValue
-          ? [currentValue]
-          : []
+        ? [currentValue]
+        : []
     }
     return currentValue ? [currentValue as string] : []
   }, [currentValue, multiple])
@@ -92,7 +92,9 @@ function SelectFilter({
     })
   }, [allOptions, currentValueArray])
 
-  const handleValueChange = (newValue: string | string[]) => {
+  const handleValueChange = (
+    newValue: string | number | string[] | number[]
+  ) => {
     if (value === undefined) {
       setInternalValue(newValue)
     }
@@ -102,12 +104,12 @@ function SelectFilter({
     }
   }
 
-  const handleSelectOption = (optionValue: string) => {
+  const handleSelectOption = (optionValue: string | number) => {
     if (multiple) {
       const newValue = currentValueArray.includes(optionValue)
         ? currentValueArray.filter((v) => v !== optionValue)
         : [...currentValueArray, optionValue]
-      handleValueChange(newValue)
+      handleValueChange(newValue as any)
     } else {
       const newValue = currentValueArray.includes(optionValue)
         ? ''
@@ -121,11 +123,14 @@ function SelectFilter({
     handleValueChange(multiple ? [] : '')
   }
 
-  const handleRemoveOption = (e: React.MouseEvent, optionValue: string) => {
+  const handleRemoveOption = (
+    e: React.MouseEvent,
+    optionValue: string | number
+  ) => {
     e.stopPropagation()
     if (multiple) {
       const newValue = currentValueArray.filter((v) => v !== optionValue)
-      handleValueChange(newValue)
+      handleValueChange(newValue as any)
     }
   }
 
@@ -134,7 +139,7 @@ function SelectFilter({
     if (!allowCreateOnEnter || !trimmed) return
     const exists = allOptions.some(
       (o) =>
-        o.value.toLowerCase() === trimmed.toLowerCase() ||
+        String(o.value).toLowerCase() === trimmed.toLowerCase() ||
         o.label.toLowerCase() === trimmed.toLowerCase()
     )
     if (exists) return
@@ -142,7 +147,7 @@ function SelectFilter({
     setExtraOptions((prev) => [...prev, newOption])
     if (multiple) {
       const newValue = [...currentValueArray, newOption.value]
-      handleValueChange(newValue)
+      handleValueChange(newValue as any)
     } else {
       handleValueChange(newOption.value)
       setOpen(false)
@@ -226,7 +231,7 @@ function SelectFilter({
                 {allOptions.map((option) => (
                   <CommandItem
                     key={option.value}
-                    value={option.value}
+                    value={String(option.value)}
                     className='gap-2'
                     disabled={option.disabled}
                     onSelect={() => handleSelectOption(option.value)}

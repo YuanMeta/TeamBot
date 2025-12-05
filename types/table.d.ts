@@ -164,12 +164,11 @@ export interface TableRole {
 
 export interface TableAccessRole {
   role_id: number
-  access_id: number
+  access_id: string
 }
 
 export interface TableAccess {
-  id: number
-  name: string
+  id: string
   remark: string | null
   trpc_access: string[] | null
 }

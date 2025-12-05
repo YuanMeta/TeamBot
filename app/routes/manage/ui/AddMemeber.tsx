@@ -20,8 +20,7 @@ import {
   FieldError
 } from '~/components/ui/field'
 import { Input } from '~/components/ui/input'
-import { Label } from '~/components/ui/label'
-import { RadioGroup, RadioGroupItem } from '~/components/ui/radio-group'
+import { SelectFilter } from '~/components/ui/select-filter'
 import { Spinner } from '~/components/ui/spinner'
 import { useLocalState } from '~/hooks/localState'
 
@@ -32,13 +31,16 @@ export const AddMember = observer(
     onClose: () => void
     onUpdate: () => void
   }) => {
+    const [state, setState] = useLocalState({
+      roles: [] as { value: number; label: string }[]
+    })
     const form = useForm({
       defaultValues: {
         name: '',
         email: '',
         passowrd: '',
         rePassword: '',
-        role: 'member'
+        roles: [] as number[]
       },
       onSubmit: async ({ value }) => {
         if (props.id) {
@@ -47,14 +49,14 @@ export const AddMember = observer(
             email: value.email || undefined,
             password: value.passowrd,
             name: value.name,
-            role: value.role as 'admin' | 'member'
+            roles: value.roles
           })
         } else {
           await trpc.manage.createMember.mutate({
             email: value.email || undefined,
             password: value.passowrd,
             name: value.name,
-            role: value.role as 'admin' | 'member'
+            roles: value.roles
           })
         }
         props.onUpdate()
@@ -70,13 +72,18 @@ export const AddMember = observer(
               form.reset({
                 email: res.email || '',
                 name: res.name || '',
-                role: res.role as 'admin' | 'member',
                 passowrd: '',
-                rePassword: ''
+                rePassword: '',
+                roles: res.roles
               })
             }
           })
         }
+        trpc.manage.getRoles.query({ page: 1, pageSize: 1000 }).then((res) => {
+          setState({
+            roles: res.list.map((r) => ({ value: r.id, label: r.name }))
+          })
+        })
       }
     }, [props.open, props.id])
     return (
@@ -91,9 +98,7 @@ export const AddMember = observer(
         <DialogContent>
           <DialogHeader>
             <DialogTitle>添加成员</DialogTitle>
-            <DialogDescription>
-              添加成员共享对话和知识库，建议使用SSO接入已有成员。
-            </DialogDescription>
+            <DialogDescription>添加成员共享对话和知识库。</DialogDescription>
           </DialogHeader>
           <div className={'modal-content'}>
             <form>
@@ -175,26 +180,31 @@ export const AddMember = observer(
                   }}
                 />
                 <form.Field
-                  name={'role'}
+                  name={'roles'}
+                  key={JSON.stringify(state.roles)}
+                  validators={{
+                    onSubmit: ({ value, fieldApi }) => {
+                      if (!value.length) {
+                        return { message: '请至少选择一个角色' }
+                      }
+                      return undefined
+                    }
+                  }}
                   children={(field) => {
                     return (
                       <Field>
                         <FieldLabel htmlFor={field.name} required>
                           角色
                         </FieldLabel>
-                        <RadioGroup
+                        <SelectFilter
+                          options={state.roles}
                           value={field.state.value}
-                          onValueChange={(value) => field.setValue(value)}
-                        >
-                          <div className='flex items-center gap-3'>
-                            <RadioGroupItem value='member' id='r1' />
-                            <Label htmlFor='r1'>成员</Label>
-                          </div>
-                          <div className='flex items-center gap-3'>
-                            <RadioGroupItem value='admin' id='r2' />
-                            <Label htmlFor='r2'>管理员</Label>
-                          </div>
-                        </RadioGroup>
+                          placeholder={'选择角色'}
+                          onValueChange={(value) => {
+                            field.setValue(value as number[])
+                          }}
+                          multiple={true}
+                        />
                       </Field>
                     )
                   }}

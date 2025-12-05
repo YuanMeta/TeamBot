@@ -137,7 +137,7 @@ export const ManageSideBar = observer((props: { children: ReactNode }) => {
             </SidebarMenu>
           </SidebarGroup>
         </SidebarContent>
-        <SidebarFooter className={'pb-3'}>
+        <SidebarFooter className={'pb-2'}>
           <SidebarMenu>
             <SidebarMenuItem>
               <DropdownMenu>

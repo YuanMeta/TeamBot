@@ -162,15 +162,28 @@ export const manageRouter = {
       z.object({
         email: z.email().optional(),
         password: z.string().min(6).max(30),
-        name: z.string().min(1)
-        // role: z.enum(['admin', 'member'])
+        name: z.string().min(1),
+        roles: z.number().array()
       })
     )
     .mutation(async ({ input, ctx }) => {
-      return ctx.db('users').insert({
-        email: input.email,
-        password: await PasswordManager.hashPassword(input.password),
-        name: input.name
+      return ctx.db.transaction(async (trx) => {
+        const [user] = await trx('users')
+          .insert({
+            email: input.email,
+            password: await PasswordManager.hashPassword(input.password),
+            name: input.name
+          })
+          .returning('id')
+        if (input.roles.length) {
+          await trx('user_roles').insert(
+            input.roles.map((role) => ({
+              user_id: user.id,
+              role_id: role
+            }))
+          )
+        }
+        return user.id
       })
     }),
   updateMember: adminProcedure
@@ -179,26 +192,37 @@ export const manageRouter = {
         userId: z.number(),
         email: z.email().optional(),
         password: z.string().min(8).max(50).optional(),
-        name: z.string().min(1).optional()
-        // role: z.enum(['admin', 'member']).optional()
+        name: z.string().min(1).optional(),
+        roles: z.number().array()
       })
     )
     .mutation(async ({ input, ctx }) => {
-      return ctx
-        .db('users')
-        .where({ id: input.userId })
-        .update({
-          email: input.email,
-          password: input.password
-            ? await PasswordManager.hashPassword(input.password)
-            : null,
-          name: input.name
-        })
+      return ctx.db.transaction(async (trx) => {
+        await trx('users')
+          .where({ id: input.userId })
+          .update({
+            email: input.email,
+            password: input.password
+              ? await PasswordManager.hashPassword(input.password)
+              : null,
+            name: input.name
+          })
+        await trx('user_roles').where({ user_id: input.userId }).delete()
+        if (input.roles.length) {
+          await trx('user_roles').insert(
+            input.roles.map((role) => ({
+              user_id: input.userId,
+              role_id: role
+            }))
+          )
+        }
+        return input.userId
+      })
     }),
   getMember: adminProcedure
     .input(z.object({ id: z.number() }))
     .query(async ({ input, ctx }) => {
-      return ctx
+      const member = await ctx
         .db('users')
         .where({ id: input.id })
         .select(
@@ -211,6 +235,14 @@ export const manageRouter = {
           'deleted'
         )
         .first()
+      const roles = await ctx
+        .db('user_roles')
+        .where('user_id', input.id)
+        .select('role_id')
+      return {
+        ...member,
+        roles: roles.map((r) => r.role_id)
+      }
     }),
   getMembers: adminProcedure
     .input(
@@ -560,16 +592,16 @@ export const manageRouter = {
     const role = await ctx
       .db('roles')
       .where({ id: input })
-      .select('id', 'name', 'remark')
+      .select('id', 'name', 'remark', 'assistants')
       .first()
     const access = await ctx
       .db('access_roles')
       .join('accesses', 'access_roles.access_id', 'accesses.id')
       .where({ role_id: input })
-      .select('access_roles.access_id', 'accesses.name')
+      .select('access_roles.access_id')
     return {
       ...role,
-      access
+      access: access.map((a) => a.access_id)
     }
   }),
   deleteRole: adminProcedure
@@ -592,16 +624,20 @@ export const manageRouter = {
       z.object({
         name: z.string().min(1),
         remark: z.string().optional(),
-        access: z.array(z.number())
+        access: z.array(z.string()),
+        assistants: z.array(z.number())
       })
     )
     .mutation(async ({ input, ctx }) => {
       return ctx.db.transaction(async (trx) => {
         const [role] = await trx('roles')
-          .insert({
-            name: input.name,
-            remark: input.remark
-          })
+          .insert(
+            insertRecord({
+              name: input.name,
+              remark: input.remark,
+              assistants: input.assistants
+            })
+          )
           .returning('id')
         if (input.access.length) {
           await trx('access_roles').insert(
@@ -621,16 +657,22 @@ export const manageRouter = {
         data: z.object({
           name: z.string().min(1).optional(),
           remark: z.string().optional(),
-          access: z.array(z.number())
+          access: z.array(z.string()),
+          assistants: z.array(z.number())
         })
       })
     )
     .mutation(async ({ input, ctx }) => {
       return ctx.db.transaction(async (trx) => {
-        await trx('roles').where({ id: input.id }).update({
-          name: input.data.name,
-          remark: input.data.remark
-        })
+        await trx('roles')
+          .where({ id: input.id })
+          .update(
+            insertRecord({
+              name: input.data.name,
+              remark: input.data.remark,
+              assistants: input.data.assistants
+            })
+          )
         await trx('access_roles').where({ role_id: input.id }).delete()
         if (input.data.access.length) {
           await trx('access_roles').insert(
@@ -642,5 +684,11 @@ export const manageRouter = {
         }
         return input.id
       })
-    })
+    }),
+  getAccesses: adminProcedure.query(async ({ ctx }) => {
+    return ctx.db('accesses').select('id')
+  }),
+  getAssistantOptions: adminProcedure.query(async ({ ctx }) => {
+    return ctx.db('assistants').select('id', 'name')
+  })
 } satisfies TRPCRouterRecord

@@ -3,23 +3,23 @@ import { isJsonObject } from '../utils'
 import { PasswordManager } from '../password'
 import { insertAccesses, insertRoles } from './access'
 export const tableSchema = async (db: Knex) => {
-  // await db.schema.dropTableIfExists('user_roles')
-  // await db.schema.dropTableIfExists('access_roles')
-  // await db.schema.dropTableIfExists('accesses')
-  // await db.schema.dropTableIfExists('roles')
-  // await db.schema.dropTableIfExists('messages')
-  // await db.schema.dropTableIfExists('chats')
-  // await db.schema.dropTableIfExists('assistant_tools')
-  // await db.schema.dropTableIfExists('assistant_usages')
-  // await db.schema.dropTableIfExists('oauth_accounts')
-  // await db.schema.dropTableIfExists('access_roles')
-  // await db.schema.dropTableIfExists('assistants')
-  // await db.schema.dropTableIfExists('tools')
-  // await db.schema.dropTableIfExists('auth_providers')
-  // await db.schema.dropTableIfExists('users')
-  // await db.schema.dropTableIfExists('roles')
-  // await db.schema.dropTableIfExists('accesses')
-  // await db.schema.dropTableIfExists('models')
+  await db.schema.dropTableIfExists('user_roles')
+  await db.schema.dropTableIfExists('access_roles')
+  await db.schema.dropTableIfExists('accesses')
+  await db.schema.dropTableIfExists('roles')
+  await db.schema.dropTableIfExists('messages')
+  await db.schema.dropTableIfExists('chats')
+  await db.schema.dropTableIfExists('assistant_tools')
+  await db.schema.dropTableIfExists('assistant_usages')
+  await db.schema.dropTableIfExists('oauth_accounts')
+  await db.schema.dropTableIfExists('access_roles')
+  await db.schema.dropTableIfExists('assistants')
+  await db.schema.dropTableIfExists('tools')
+  await db.schema.dropTableIfExists('auth_providers')
+  await db.schema.dropTableIfExists('users')
+  await db.schema.dropTableIfExists('roles')
+  await db.schema.dropTableIfExists('accesses')
+  await db.schema.dropTableIfExists('models')
 
   if (!(await db.schema.hasTable('users'))) {
     await db.schema.createTable('users', (table) => {
@@ -198,8 +198,7 @@ export const tableSchema = async (db: Knex) => {
 
   if (!(await db.schema.hasTable('accesses'))) {
     await db.schema.createTable('accesses', (table) => {
-      table.increments('id').primary().notNullable()
-      table.string('name').notNullable()
+      table.string('id').primary().notNullable()
       table.text('remark').nullable()
       table.jsonb('trpc_access').nullable()
     })
@@ -208,7 +207,7 @@ export const tableSchema = async (db: Knex) => {
   if (!(await db.schema.hasTable('access_roles'))) {
     await db.schema.createTable('access_roles', (table) => {
       table.integer('role_id').notNullable()
-      table.integer('access_id').notNullable()
+      table.string('access_id').notNullable()
       table.foreign('role_id').references('id').inTable('roles')
       table.foreign('access_id').references('id').inTable('accesses')
       table.primary(['role_id', 'access_id'])
@@ -228,7 +227,7 @@ export const tableSchema = async (db: Knex) => {
   }
   const user = await db('users').first()
   if (!user) {
-    await db('users')
+    const res = await db('users')
       .insert({
         email: 'teambot@teambot.com',
         password: await PasswordManager.hashPassword('123456'),
@@ -236,10 +235,10 @@ export const tableSchema = async (db: Knex) => {
         root: true
       })
       .returning('id')
-    // await db('user_roles').insert({
-    //   user_id: res[0].id,
-    //   role_id: 1
-    // })
+    await db('user_roles').insert({
+      user_id: res[0].id,
+      role_id: 1
+    })
   }
 }
 
