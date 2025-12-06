@@ -1,5 +1,6 @@
 import {
   EllipsisVertical,
+  KeyRound,
   LogOut,
   MonitorCog,
   Moon,
@@ -24,123 +25,145 @@ import {
   DropdownMenuTrigger
 } from '~/components/ui/dropdown-menu'
 import { useStore } from '../store/store'
+import { useLocalState } from '~/hooks/localState'
+import { ChangePassword } from '~/components/project/ChangePassword'
+import { observer } from 'mobx-react-lite'
 
-export function NavUser({ collapsed }: { collapsed: boolean }) {
+export const NavUser = observer(({ collapsed }: { collapsed: boolean }) => {
   const navigate = useNavigate()
   const [theme, setTheme, meta] = useTheme()
   const store = useStore()
+  const [state, setState] = useLocalState({
+    showChangePasswordDialog: false
+  })
   return (
-    <DropdownMenu>
-      <DropdownMenuTrigger asChild>
-        <div
-          className={`px-2 justify-center flex py-2 border-t ${
-            collapsed ? 'w-13' : 'w-full'
-          }`}
-        >
+    <>
+      <DropdownMenu>
+        <DropdownMenuTrigger asChild>
           <div
-            className={`flex-1 ${
-              collapsed ? 'justify-center' : 'px-2'
-            } flex items-center justify-between py-1 rounded-md dark:hover:bg-accent/40 hover:bg-accent-foreground/5 cursor-pointer`}
+            className={`px-2 justify-center flex py-2 border-t ${
+              collapsed ? 'w-13' : 'w-full'
+            }`}
           >
-            <div className={'flex items-center gap-2'}>
-              <Avatar className='h-7 w-7 rounded-lg grayscale'>
-                <AvatarFallback className='rounded-lg'>
-                  <UserRound className={'size-4'} />
-                </AvatarFallback>
-              </Avatar>
-              <div
-                className={`grid flex-1 text-left text-sm leading-tight ${
-                  collapsed ? 'hidden' : ''
-                }`}
-              >
-                <span className='truncate font-medium'>
-                  {store.state.userInfo?.name}
-                </span>
-                {!!store.state.userInfo?.email && (
-                  <span className='text-muted-foreground truncate text-xs'>
-                    {store.state.userInfo?.email}
+            <div
+              className={`flex-1 ${
+                collapsed ? 'justify-center' : 'px-2'
+              } flex items-center justify-between py-1 rounded-md dark:hover:bg-accent/40 hover:bg-accent-foreground/5 cursor-pointer`}
+            >
+              <div className={'flex items-center gap-2'}>
+                <Avatar className='h-7 w-7 rounded-lg grayscale'>
+                  <AvatarFallback className='rounded-lg'>
+                    <UserRound className={'size-4'} />
+                  </AvatarFallback>
+                </Avatar>
+                <div
+                  className={`grid flex-1 text-left text-sm leading-tight ${
+                    collapsed ? 'hidden' : ''
+                  }`}
+                >
+                  <span className='truncate font-medium'>
+                    {store.state.userInfo?.name}
                   </span>
-                )}
+                  {!!store.state.userInfo?.email && (
+                    <span className='text-muted-foreground truncate text-xs'>
+                      {store.state.userInfo?.email}
+                    </span>
+                  )}
+                </div>
               </div>
-            </div>
 
-            <EllipsisVertical
-              className={`size-4  ${collapsed ? 'hidden' : ''}`}
-            />
+              <EllipsisVertical
+                className={`size-4  ${collapsed ? 'hidden' : ''}`}
+              />
+            </div>
           </div>
-        </div>
-      </DropdownMenuTrigger>
-      <DropdownMenuContent
-        className='w-48 rounded-lg'
-        side={'right'}
-        align='end'
-        sideOffset={4}
-      >
-        <DropdownMenuGroup>
-          <DropdownMenuSub>
-            <DropdownMenuSubTrigger>
-              <MonitorCog />
-              主题
-            </DropdownMenuSubTrigger>
-            <DropdownMenuPortal>
-              <DropdownMenuSubContent>
-                <DropdownMenuCheckboxItem
-                  checked={theme === 'light' && meta.definedBy === 'USER'}
-                  onClick={() => {
-                    setTheme(Theme.LIGHT)
-                  }}
-                >
-                  <Sun />
-                  明亮
-                </DropdownMenuCheckboxItem>
-                <DropdownMenuCheckboxItem
-                  checked={theme === 'dark' && meta.definedBy === 'USER'}
-                  onClick={() => {
-                    setTheme(Theme.DARK)
-                  }}
-                >
-                  <Moon />
-                  暗黑
-                </DropdownMenuCheckboxItem>
-                <DropdownMenuCheckboxItem
-                  checked={!theme || meta.definedBy === 'SYSTEM'}
-                  onClick={() => {
-                    setTheme(null)
-                  }}
-                >
-                  <MonitorCog />
-                  系统
-                </DropdownMenuCheckboxItem>
-              </DropdownMenuSubContent>
-            </DropdownMenuPortal>
-          </DropdownMenuSub>
+        </DropdownMenuTrigger>
+        <DropdownMenuContent
+          className='w-48 rounded-lg'
+          side={'right'}
+          align='end'
+          sideOffset={4}
+        >
+          <DropdownMenuGroup>
+            <DropdownMenuSub>
+              <DropdownMenuSubTrigger>
+                <MonitorCog />
+                主题
+              </DropdownMenuSubTrigger>
+              <DropdownMenuPortal>
+                <DropdownMenuSubContent>
+                  <DropdownMenuCheckboxItem
+                    checked={theme === 'light' && meta.definedBy === 'USER'}
+                    onClick={() => {
+                      setTheme(Theme.LIGHT)
+                    }}
+                  >
+                    <Sun />
+                    明亮
+                  </DropdownMenuCheckboxItem>
+                  <DropdownMenuCheckboxItem
+                    checked={theme === 'dark' && meta.definedBy === 'USER'}
+                    onClick={() => {
+                      setTheme(Theme.DARK)
+                    }}
+                  >
+                    <Moon />
+                    暗黑
+                  </DropdownMenuCheckboxItem>
+                  <DropdownMenuCheckboxItem
+                    checked={!theme || meta.definedBy === 'SYSTEM'}
+                    onClick={() => {
+                      setTheme(null)
+                    }}
+                  >
+                    <MonitorCog />
+                    系统
+                  </DropdownMenuCheckboxItem>
+                </DropdownMenuSubContent>
+              </DropdownMenuPortal>
+            </DropdownMenuSub>
+            <DropdownMenuItem
+              onClick={() => {
+                setState({ showChangePasswordDialog: true })
+              }}
+            >
+              <KeyRound />
+              修改密码
+            </DropdownMenuItem>
+            <DropdownMenuItem
+              disabled={!store.state.userInfo?.admin}
+              onClick={() => {
+                window.open('/manage', '_blank')
+              }}
+            >
+              <UserStar />
+              管理中心
+            </DropdownMenuItem>
+          </DropdownMenuGroup>
+          <DropdownMenuSeparator />
           <DropdownMenuItem
-            disabled={!store.state.userInfo?.admin}
             onClick={() => {
-              window.open('/manage', '_blank')
+              fetch('/api/logout', {
+                method: 'POST',
+                credentials: 'include'
+              }).then((res) => {
+                if (res.ok) {
+                  navigate('/login')
+                }
+              })
             }}
           >
-            <UserStar />
-            管理中心
+            <LogOut />
+            退出登录
           </DropdownMenuItem>
-        </DropdownMenuGroup>
-        <DropdownMenuSeparator />
-        <DropdownMenuItem
-          onClick={() => {
-            fetch('/api/logout', {
-              method: 'POST',
-              credentials: 'include'
-            }).then((res) => {
-              if (res.ok) {
-                navigate('/login')
-              }
-            })
-          }}
-        >
-          <LogOut />
-          退出登录
-        </DropdownMenuItem>
-      </DropdownMenuContent>
-    </DropdownMenu>
+        </DropdownMenuContent>
+      </DropdownMenu>
+      <ChangePassword
+        open={state.showChangePasswordDialog}
+        onClose={() => {
+          setState({ showChangePasswordDialog: false })
+        }}
+      />
+    </>
   )
-}
+})

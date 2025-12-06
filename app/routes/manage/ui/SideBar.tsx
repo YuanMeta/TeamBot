@@ -11,7 +11,8 @@ import {
   LogOut,
   UserRound,
   MessageCircleMore,
-  ShieldUser
+  ShieldUser,
+  KeyRound
 } from 'lucide-react'
 import { NavLink, useLocation, useNavigate } from 'react-router'
 import {
@@ -50,6 +51,7 @@ import { Github } from '@lobehub/icons'
 import { Theme, useTheme } from 'remix-themes'
 import { useLocalState } from '~/hooks/localState'
 import { trpc } from '~/.client/trpc'
+import { ChangePassword } from '~/components/project/ChangePassword'
 
 const items = [
   {
@@ -106,7 +108,8 @@ export const ManageSideBar = observer((props: { children: ReactNode }) => {
       name: string
       email: string
       role: string
-    }
+    },
+    showChangePasswordDialog: false
   })
   useEffect(() => {
     trpc.common.getUserInfo.query().then((data) => {
@@ -166,47 +169,6 @@ export const ManageSideBar = observer((props: { children: ReactNode }) => {
                   sideOffset={4}
                 >
                   <DropdownMenuGroup>
-                    <DropdownMenuSub>
-                      <DropdownMenuSubTrigger>
-                        <MonitorCog />
-                        主题
-                      </DropdownMenuSubTrigger>
-                      <DropdownMenuPortal>
-                        <DropdownMenuSubContent>
-                          <DropdownMenuCheckboxItem
-                            checked={
-                              theme === 'light' && meta.definedBy === 'USER'
-                            }
-                            onClick={() => {
-                              setTheme(Theme.LIGHT)
-                            }}
-                          >
-                            <Sun />
-                            明亮
-                          </DropdownMenuCheckboxItem>
-                          <DropdownMenuCheckboxItem
-                            checked={
-                              theme === 'dark' && meta.definedBy === 'USER'
-                            }
-                            onClick={() => {
-                              setTheme(Theme.DARK)
-                            }}
-                          >
-                            <Moon />
-                            暗黑
-                          </DropdownMenuCheckboxItem>
-                          <DropdownMenuCheckboxItem
-                            checked={!theme || meta.definedBy === 'SYSTEM'}
-                            onClick={() => {
-                              setTheme(null)
-                            }}
-                          >
-                            <MonitorCog />
-                            系统
-                          </DropdownMenuCheckboxItem>
-                        </DropdownMenuSubContent>
-                      </DropdownMenuPortal>
-                    </DropdownMenuSub>
                     <DropdownMenuItem
                       onClick={() => {
                         navigate('/chat')
@@ -224,6 +186,56 @@ export const ManageSideBar = observer((props: { children: ReactNode }) => {
                       Git Hub
                     </DropdownMenuItem>
                   </DropdownMenuGroup>
+                  <DropdownMenuSeparator />
+                  <DropdownMenuSub>
+                    <DropdownMenuSubTrigger>
+                      <MonitorCog />
+                      主题
+                    </DropdownMenuSubTrigger>
+                    <DropdownMenuPortal>
+                      <DropdownMenuSubContent>
+                        <DropdownMenuCheckboxItem
+                          checked={
+                            theme === 'light' && meta.definedBy === 'USER'
+                          }
+                          onClick={() => {
+                            setTheme(Theme.LIGHT)
+                          }}
+                        >
+                          <Sun />
+                          明亮
+                        </DropdownMenuCheckboxItem>
+                        <DropdownMenuCheckboxItem
+                          checked={
+                            theme === 'dark' && meta.definedBy === 'USER'
+                          }
+                          onClick={() => {
+                            setTheme(Theme.DARK)
+                          }}
+                        >
+                          <Moon />
+                          暗黑
+                        </DropdownMenuCheckboxItem>
+                        <DropdownMenuCheckboxItem
+                          checked={!theme || meta.definedBy === 'SYSTEM'}
+                          onClick={() => {
+                            setTheme(null)
+                          }}
+                        >
+                          <MonitorCog />
+                          系统
+                        </DropdownMenuCheckboxItem>
+                      </DropdownMenuSubContent>
+                    </DropdownMenuPortal>
+                  </DropdownMenuSub>
+                  <DropdownMenuItem
+                    onClick={() => {
+                      setState({ showChangePasswordDialog: true })
+                    }}
+                  >
+                    <KeyRound />
+                    修改密码
+                  </DropdownMenuItem>
                   <DropdownMenuSeparator />
                   <DropdownMenuItem
                     onClick={() => {
@@ -257,6 +269,12 @@ export const ManageSideBar = observer((props: { children: ReactNode }) => {
         </main>
       </SidebarInset>
       <AdminConfirmDialog />
+      <ChangePassword
+        open={state.showChangePasswordDialog}
+        onClose={() => {
+          setState({ showChangePasswordDialog: false })
+        }}
+      />
     </SidebarProvider>
   )
 })
