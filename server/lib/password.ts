@@ -1,8 +1,7 @@
 import crypto from 'crypto'
 import jwt from 'jsonwebtoken'
 
-// 使用环境变量，提供默认值（仅开发环境）
-const secret = process.env.JWT_SECRET || 'teambot-0508'
+const secret = process.env.JWT_SECRET!
 
 // 生产环境必须设置JWT_SECRET
 if (process.env.NODE_ENV === 'production' && !process.env.JWT_SECRET) {

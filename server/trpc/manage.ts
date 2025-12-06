@@ -9,6 +9,7 @@ import { runWebSearch } from 'server/lib/search'
 import dayjs from 'dayjs'
 import { deleteUserCache } from 'server/session'
 import { systemTools } from 'server/lib/tools'
+import { aesDecrypt, aesEncrypt } from 'server/lib/utils'
 export const manageRouter = {
   checkConnect: adminProcedure
     .input(
@@ -35,7 +36,17 @@ export const manageRouter = {
           .db('assistants')
           .offset((input.page - 1) * input.pageSize)
           .limit(input.pageSize)
-          .select('*')
+          .select(
+            'id',
+            'name',
+            'mode',
+            'models',
+            'api_key',
+            'base_url',
+            'options',
+            'created_at',
+            'prompt'
+          )
           .orderBy('id', 'desc')
       ).map((r) => {
         return parseRecord(r)
@@ -57,6 +68,7 @@ export const manageRouter = {
         .select('tool_id', 'system_tool_id')
       return {
         ...parseRecord(record),
+        api_key: record.api_key ? await aesDecrypt(record.api_key) : null,
         tools: tools.map((t) => t.tool_id || t.system_tool_id)
       }
     }),
@@ -79,7 +91,14 @@ export const manageRouter = {
       await ctx.db.transaction(async (trx) => {
         await trx('assistants')
           .where({ id: input.id })
-          .update(insertRecord(input.data as any))
+          .update(
+            insertRecord({
+              ...(input.data as any),
+              api_key: input.data.api_key
+                ? await aesEncrypt(input.data.api_key)
+                : null
+            })
+          )
         await trx('assistant_tools').where({ assistant_id: input.id }).delete()
         if (input.tools.length > 0) {
           if (input.tools.length) {
@@ -135,7 +154,14 @@ export const manageRouter = {
     .mutation(async ({ input, ctx }) => {
       await ctx.db.transaction(async (trx) => {
         const [assistant] = await trx('assistants')
-          .insert(insertRecord(input.data as any))
+          .insert(
+            insertRecord({
+              ...(input.data as any),
+              api_key: input.data.api_key
+                ? await aesEncrypt(input.data.api_key)
+                : null
+            })
+          )
           .returning('id')
         if (input.tools.length) {
           await trx('assistant_tools').insert(
