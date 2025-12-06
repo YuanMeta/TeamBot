@@ -172,9 +172,27 @@ export const chatRouter = {
       })
     }),
   getAssistants: procedure.query(async ({ ctx }) => {
-    const assistants = await ctx
-      .db('assistants')
-      .select('id', 'name', 'mode', 'models', 'options')
+    const assistantsIds = await ctx
+      .db('user_roles')
+      .join('roles', 'user_roles.role_id', '=', 'roles.id')
+      .where('user_roles.user_id', ctx.userId)
+      .select('roles.assistants')
+    let ids: number[] = assistantsIds.flatMap((r) => r.assistants)
+    if (!ids.length) {
+      return []
+    }
+
+    const handle = ctx.db('assistants')
+    if (!ids.includes(0)) {
+      handle.whereIn('id', ids)
+    }
+    const assistants = await handle.select(
+      'id',
+      'name',
+      'mode',
+      'models',
+      'options'
+    )
     let data: any[] = []
     for (let a of assistants) {
       const as = parseRecord(a as any)

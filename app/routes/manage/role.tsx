@@ -79,7 +79,7 @@ export default observer(() => {
               <Button
                 variant='outline'
                 size='icon-sm'
-                disabled={!hasAccess('manageTools')}
+                disabled={!hasAccess('manageRole')}
                 onClick={() => {
                   adminConfirmDialog$.next({
                     title: '提示',
