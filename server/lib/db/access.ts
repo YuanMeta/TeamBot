@@ -10,7 +10,9 @@ export const publicAccess = [
   'manage.getRoles',
   'manage.getRole',
   'manage.getAccesses',
-  'manage.getAssistantOptions'
+  'manage.getAssistantOptions',
+  'manage.getRoleMembers',
+  'manage.searchMembers'
 ]
 export const insertAccesses = async (db: Knex) => {
   await db('accesses').insert([
@@ -45,7 +47,9 @@ export const insertAccesses = async (db: Knex) => {
       trpc_access: JSON.stringify([
         'manage.createRole',
         'manage.updateRole',
-        'manage.deleteRole'
+        'manage.deleteRole',
+        'manage.remoteRoleFromUser',
+        'manage.addRoleToUser'
       ]) as unknown as string[]
     },
     {

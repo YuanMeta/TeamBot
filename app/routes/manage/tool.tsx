@@ -209,6 +209,7 @@ export default observer(() => {
           page={state.page}
           pageSize={state.pageSize}
           total={state.total}
+          className={'mt-3s'}
           onPageChange={(page) => {
             setState({ page })
             getTools()

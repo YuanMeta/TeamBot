@@ -8,12 +8,14 @@ export function Pagination({
   page,
   pageSize,
   onPageChange,
-  showTotal
+  showTotal,
+  className
 }: {
   total: number
   page: number
   pageSize: number
   showTotal?: boolean
+  className?: string
   onPageChange: (pageIndex: number) => void
 }) {
   const pages = useMemo(() => {
@@ -25,8 +27,9 @@ export function Pagination({
     }
     return Array.from({ length: end - start + 1 }, (_, i) => start + i)
   }, [total, pageSize, page])
+  if (!total) return null
   return (
-    <div className='flex items-center justify-between px-2 my-3'>
+    <div className={`flex items-center justify-between px-2 ${className}`}>
       <div className='text-muted-foreground flex-1 text-sm'></div>
       <div className='flex items-center gap-1'>
         {!!showTotal && (

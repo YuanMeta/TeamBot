@@ -25,6 +25,7 @@ import { adminConfirmDialog$ } from '~/components/project/confirm-dialog'
 import { toast } from 'sonner'
 import { useAccess } from '~/lib/access'
 import { AddRole } from './ui/AddRole'
+import { RoleMember } from './ui/RoleMember'
 
 export default observer(() => {
   const { hasAccess } = useAccess()
@@ -50,7 +51,16 @@ export default observer(() => {
           const data = row.original
           return (
             <div className={'flex gap-2'}>
-              <Button variant={'outline'} size={'icon-sm'}>
+              <Button
+                variant={'outline'}
+                size={'icon-sm'}
+                onClick={() => {
+                  setState({
+                    selectedRoleId: data.id,
+                    openRoleMember: true
+                  })
+                }}
+              >
                 <Users />
               </Button>
               <Button
@@ -106,7 +116,8 @@ export default observer(() => {
     openAddRole: false,
     selectedRoleId: null as null | number,
     data: [] as TableRole[],
-    total: 0
+    total: 0,
+    openRoleMember: false
   })
   const getRoles = useCallback(() => {
     trpc.manage.getRoles
@@ -115,8 +126,6 @@ export default observer(() => {
         pageSize: state.pageSize
       })
       .then((res) => {
-        console.log('roles', res)
-
         setState({ data: res.list as any, total: res.total })
       })
   }, [])
@@ -198,6 +207,7 @@ export default observer(() => {
           page={state.page}
           pageSize={state.pageSize}
           total={state.total}
+          className={'mt-3'}
           onPageChange={(page) => {
             setState({ page })
             getRoles()
@@ -212,6 +222,13 @@ export default observer(() => {
           onUpdate={() => {
             getRoles()
           }}
+        />
+        <RoleMember
+          open={state.openRoleMember}
+          onClose={() => {
+            setState({ openRoleMember: false })
+          }}
+          roleId={state.selectedRoleId!}
         />
       </div>
     </div>

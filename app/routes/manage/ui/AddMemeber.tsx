@@ -20,7 +20,7 @@ import {
   FieldError
 } from '~/components/ui/field'
 import { Input } from '~/components/ui/input'
-import { SelectFilter } from '~/components/ui/select-filter'
+import { SelectFilter } from '~/components/project/select-filter'
 import { Spinner } from '~/components/ui/spinner'
 import { useLocalState } from '~/hooks/localState'
 

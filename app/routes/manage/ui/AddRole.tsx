@@ -20,7 +20,7 @@ import {
 } from '~/components/ui/field'
 import { Input } from '~/components/ui/input'
 import { Label } from '~/components/ui/label'
-import { SelectFilter } from '~/components/ui/select-filter'
+import { SelectFilter } from '~/components/project/select-filter'
 import { Spinner } from '~/components/ui/spinner'
 import { Textarea } from '~/components/ui/textarea'
 import { useLocalState } from '~/hooks/localState'

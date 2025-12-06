@@ -690,5 +690,80 @@ export const manageRouter = {
   }),
   getAssistantOptions: adminProcedure.query(async ({ ctx }) => {
     return ctx.db('assistants').select('id', 'name')
-  })
+  }),
+  getRoleMembers: adminProcedure
+    .input(
+      z.object({
+        roleId: z.number(),
+        page: z.number(),
+        pageSize: z.number()
+      })
+    )
+    .query(async ({ input, ctx }) => {
+      const list = await ctx
+        .db('user_roles')
+        .join('users', 'user_roles.user_id', 'users.id')
+        .where('user_roles.role_id', input.roleId)
+        .select('users.id', 'users.email', 'users.name')
+        .offset((input.page - 1) * input.pageSize)
+        .limit(input.pageSize)
+      const [total] = await ctx
+        .db('user_roles')
+        .where('role_id', input.roleId)
+        .count('user_id', { as: 'total' })
+      return {
+        list,
+        total: +total.total as number
+      }
+    }),
+  remoteRoleFromUser: adminProcedure
+    .input(
+      z.object({
+        roleId: z.number(),
+        userId: z.number()
+      })
+    )
+    .mutation(async ({ input, ctx }) => {
+      return ctx
+        .db('user_roles')
+        .where({ user_id: input.userId, role_id: input.roleId })
+        .delete()
+    }),
+  searchMembers: adminProcedure
+    .input(
+      z.object({
+        keyword: z.string().optional()
+      })
+    )
+    .query(async ({ input, ctx }) => {
+      return ctx
+        .db('users')
+        .where('name', 'like', `%${input.keyword}%`)
+        .orWhere(`email`, 'like', `%${input.keyword}%`)
+        .orWhere('phone', `like`, `%${input.keyword}%`)
+        .orderBy('id', 'desc')
+        .select('id', 'name', 'email')
+    }),
+  addRoleToUser: adminProcedure
+    .input(
+      z.object({
+        roleId: z.number(),
+        userId: z.number()
+      })
+    )
+    .mutation(async ({ input, ctx }) => {
+      const record = await ctx
+        .db('user_roles')
+        .where({ user_id: input.userId, role_id: input.roleId })
+        .first()
+      if (record) {
+        throw new TRPCError({
+          code: 'BAD_REQUEST',
+          message: '用户已拥有该角色'
+        })
+      }
+      return ctx
+        .db('user_roles')
+        .insert({ user_id: input.userId, role_id: input.roleId })
+    })
 } satisfies TRPCRouterRecord

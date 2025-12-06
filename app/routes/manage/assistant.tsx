@@ -229,6 +229,7 @@ export default observer(() => {
         page={state.page}
         pageSize={state.pageSize}
         total={state.total}
+        className={'mt-3'}
         onPageChange={(page) => {
           setState({ page })
           getAssistantsList()

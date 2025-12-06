@@ -233,6 +233,7 @@ export default observer(() => {
             </div>
             <Pagination
               page={state.page}
+              className={'mt-3'}
               showTotal={true}
               pageSize={state.pageSize}
               total={state.total}

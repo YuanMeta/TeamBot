@@ -17,7 +17,7 @@ import {
 } from '~/components/ui/select'
 import { ModelIcon } from '~/lib/ModelIcon'
 import { ChevronLeft, Earth, Wrench } from 'lucide-react'
-import { SelectFilter } from '~/components/ui/select-filter'
+import { SelectFilter } from '~/components/project/select-filter'
 import { isFormInValid } from '~/lib/utils'
 import { trpc } from '~/.client/trpc'
 import { useCallback, useEffect, useMemo } from 'react'
@@ -544,14 +544,6 @@ export const AddAssistant = observer(
                       }}
                     />
                   </FieldGroup>
-                  <Button
-                    type={'submit'}
-                    className={'w-full mt-10'}
-                    disabled={state.submitting}
-                  >
-                    {state.submitting && <Spinner />}
-                    {props.id ? '更新' : '创建'}
-                  </Button>
                 </div>
                 <div className={'flex-1'}>
                   <FieldGroup>
@@ -844,6 +836,16 @@ export const AddAssistant = observer(
                     </Field>
                   </FieldGroup>
                 </div>
+              </div>
+              <div className={'flex mt-10 justify-center'}>
+                <Button
+                  type={'submit'}
+                  className={'w-96'}
+                  disabled={state.submitting}
+                >
+                  {state.submitting && <Spinner />}
+                  {props.id ? '更新' : '创建'}
+                </Button>
               </div>
             </form>
           </CardContent>
