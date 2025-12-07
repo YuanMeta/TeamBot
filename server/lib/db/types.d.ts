@@ -120,7 +120,7 @@ export interface OauthAccounts {
 }
 
 export interface Roles {
-  assistants: Json | null
+  assistants: JSONColumnType<number[]>
   id: Generated<number>
   name: string
   remark: string | null

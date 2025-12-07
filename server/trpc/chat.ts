@@ -192,7 +192,7 @@ export const chatRouter = {
       .where('user_roles.user_id', '=', ctx.userId)
       .select(['roles.assistants'])
       .execute()
-    let ids: number[] = assistantsIds.flatMap((r) => r.assistants as any)
+    let ids: number[] = assistantsIds.flatMap((r) => r.assistants)
     if (!ids.length) {
       return []
     }

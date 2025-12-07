@@ -340,7 +340,7 @@ export const tableSchema = async (db: KDB) => {
       .ifNotExists()
       .addColumn('id', 'serial', (col) => col.primaryKey())
       .addColumn('name', 'varchar', (col) => col.notNull())
-      .addColumn('assistants', 'jsonb')
+      .addColumn('assistants', 'jsonb', (col) => col.notNull())
       .addColumn('remark', 'text')
       .execute()
   }

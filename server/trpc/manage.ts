@@ -821,7 +821,7 @@ export const manageRouter = {
           .values({
             name: input.name,
             remark: input.remark,
-            assistants: JSON.stringify(input.assistants) as any
+            assistants: JSON.stringify(input.assistants)
           })
           .returning(['id'])
           .executeTakeFirstOrThrow()

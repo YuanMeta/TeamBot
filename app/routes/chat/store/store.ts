@@ -157,14 +157,20 @@ export class ChatStore extends StructStore<typeof state> {
   }
   async init(preview: boolean) {
     this.state.cacheModel = localStorage.getItem('last_assistant_model')
-    await this.loadTools()
     if (preview) {
-      return this.setState((state) => (state.ready = true))
+      await this.loadTools()
+      if (preview) {
+        return this.setState((state) => (state.ready = true))
+      }
+    } else {
+      await Promise.all([
+        await this.loadTools(),
+        await this.loadAssistants(),
+        await trpc.common.getUserInfo.query().then((res) => {
+          this.setState((state) => (state.userInfo = res || null))
+        })
+      ])
     }
-    await this.loadAssistants()
-    await trpc.common.getUserInfo.query().then((res) => {
-      this.setState((state) => (state.userInfo = res || null))
-    })
     this.setState((state) => (state.ready = true))
     await this.loadChats()
   }
