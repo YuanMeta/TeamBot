@@ -12,7 +12,7 @@ import { composeTools } from '../lib/tools'
 import { MessageManager } from '../lib/message'
 import { getUser } from '../session'
 import type { Request, Response } from 'express'
-import { saveFileByBase64, tid } from '../lib/utils'
+import { saveFileByBase64 } from '../lib/utils'
 import dayjs from 'dayjs'
 import type { KDB } from 'server/lib/db/instance'
 const InputSchema = z.object({
@@ -93,16 +93,16 @@ export const completions = async (req: Request, res: Response, db: KDB) => {
     stopWhen: stepCountIs(20),
     tools,
     toolChoice: json.tools?.length ? 'required' : 'auto',
-    maxOutputTokens: Number(assistant.options?.maxOutputTokens) || undefined,
-    temperature: Number(assistant.options?.temperature) || undefined,
+    maxOutputTokens: Number(assistant.options.maxOutputTokens) || undefined,
+    temperature: Number(assistant.options.temperature) || undefined,
     topP: assistant.options.top_p.open
-      ? Number(assistant.options?.top_p)
+      ? Number(assistant.options.top_p.value)
       : undefined,
     frequencyPenalty: assistant.options.frequencyPenalty.open
-      ? Number(assistant.options?.frequencyPenalty)
+      ? Number(assistant.options.frequencyPenalty.value)
       : undefined,
     presencePenalty: assistant.options.presencePenalty.open
-      ? Number(assistant.options?.presencePenalty)
+      ? Number(assistant.options.presencePenalty.value)
       : undefined,
     abortSignal: controller.signal,
     system: MessageManager.getSystemPromp({

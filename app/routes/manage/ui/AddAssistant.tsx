@@ -571,7 +571,7 @@ export const AddAssistant = observer(
                                 是否开启内置搜索
                               </FieldLabel>
                               <RadioGroup
-                                value={field.state.value}
+                                value={field.state.value ? 'on' : 'off'}
                                 onValueChange={(value) =>
                                   field.setValue(value === 'on' ? true : false)
                                 }

@@ -172,7 +172,8 @@ export const composeTools = async (
         tools[t.id] = createWebSearchTool({
           mode: t.params.mode as any,
           apiKey: t.params.apiKey,
-          cseId: t.params.cseId
+          cseId: t.params.cseId,
+          description: t.description
         })
       }
       if (t.type === 'http' && (t.auto || selectedTools.includes(t.id))) {

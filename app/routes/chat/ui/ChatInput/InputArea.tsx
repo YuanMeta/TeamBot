@@ -155,7 +155,7 @@ export const InputArea = observer(
                 spellCheck={false}
                 onPaste={(e) => {
                   const files = e.clipboardData.files
-                  if (files) {
+                  if (files?.length) {
                     onAddFile(files[0])
                   }
                 }}

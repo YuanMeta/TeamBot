@@ -54,7 +54,9 @@ export const runWebSearch = async (
       snippet: item.snippet!,
       url: item.link!,
       favicon: item.link
-        ? `https://www.google.com/s2/favicons?domain=${new URL(item.link).host}&sz=64`
+        ? `https://www.google.com/s2/favicons?domain=${
+            new URL(item.link).host
+          }&sz=64`
         : undefined
     }))
   }
@@ -116,9 +118,12 @@ export const runWebSearch = async (
     }
   }
 }
-export const createWebSearchTool = (options: SearchOptions) => {
+export const createWebSearchTool = (
+  options: SearchOptions & { description?: string }
+) => {
   return tool({
-    description: 'Search the web for up-to-date information',
+    description:
+      options.description || 'Search the web for up-to-date information',
     inputSchema: z.object({
       query: z.string().min(1).max(100).describe('The search query')
     }),
