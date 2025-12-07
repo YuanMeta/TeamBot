@@ -761,7 +761,7 @@ export const manageRouter = {
     const role = await ctx.db
       .selectFrom('roles')
       .where('id', '=', input)
-      .select(['id', 'name', 'remark', 'assistants'])
+      .select(['id', 'name', 'remark', 'assistants', 'all_assistants'])
       .executeTakeFirst()
     const access = await ctx.db
       .selectFrom('access_roles')
@@ -770,7 +770,7 @@ export const manageRouter = {
       .select(['access_roles.access_id'])
       .execute()
     return {
-      ...role,
+      ...role!,
       access: access.map((a) => a.access_id)
     }
   }),
@@ -803,7 +803,8 @@ export const manageRouter = {
         name: z.string().min(1),
         remark: z.string().optional(),
         access: z.array(z.string()),
-        assistants: z.array(z.number())
+        assistants: z.array(z.number()),
+        allAssistants: z.boolean()
       })
     )
     .mutation(async ({ input, ctx }) => {
@@ -813,7 +814,8 @@ export const manageRouter = {
           .values({
             name: input.name,
             remark: input.remark,
-            assistants: JSON.stringify(input.assistants)
+            assistants: JSON.stringify(input.assistants),
+            all_assistants: input.allAssistants
           })
           .returning(['id'])
           .executeTakeFirstOrThrow()
@@ -839,7 +841,8 @@ export const manageRouter = {
           name: z.string().min(1).optional(),
           remark: z.string().optional(),
           access: z.array(z.string()),
-          assistants: z.array(z.number())
+          assistants: z.array(z.number()),
+          allAssistants: z.boolean()
         })
       })
     )
@@ -850,7 +853,8 @@ export const manageRouter = {
           .set({
             name: input.data.name,
             remark: input.data.remark,
-            assistants: JSON.stringify(input.data.assistants) as any
+            assistants: JSON.stringify(input.data.assistants),
+            all_assistants: input.data.allAssistants
           })
           .where('id', '=', input.id)
           .execute()

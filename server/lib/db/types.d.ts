@@ -121,6 +121,7 @@ export interface OauthAccounts {
 
 export interface Roles {
   assistants: JSONColumnType<number[]>
+  all_assistants: boolean
   id: Generated<number>
   name: string
   remark: string | null

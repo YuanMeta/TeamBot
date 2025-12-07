@@ -42,13 +42,14 @@ export const AddRole = observer(
   }) => {
     const [state, setState] = useLocalState({
       access: [] as string[],
+      allAssistant: true,
       assistants: [] as { id: number; name: string }[]
     })
     const form = useForm({
       defaultValues: {
         name: '',
         remark: '',
-        assistants: [0] as number[],
+        assistants: [] as number[],
         access: [] as string[]
       },
       onSubmit: async ({ value }) => {
@@ -59,7 +60,8 @@ export const AddRole = observer(
               name: value.name,
               remark: value.remark,
               access: value.access,
-              assistants: value.assistants
+              assistants: value.assistants,
+              allAssistants: state.allAssistant
             }
           })
         } else {
@@ -67,7 +69,8 @@ export const AddRole = observer(
             name: value.name,
             remark: value.remark,
             access: value.access,
-            assistants: value.assistants
+            assistants: value.assistants,
+            allAssistants: state.allAssistant
           })
         }
         props.onUpdate()
@@ -84,6 +87,7 @@ export const AddRole = observer(
               form.setFieldValue('assistants', res.assistants || [])
               form.setFieldValue('name', res.name || '')
               form.setFieldValue('remark', res.remark || '')
+              setState({ allAssistant: res.all_assistants })
             }
           })
         }
@@ -91,7 +95,7 @@ export const AddRole = observer(
           setState({ access: res.map((a) => a.id) })
         })
         trpc.manage.getAssistantOptions.query().then((res) => {
-          setState({ assistants: [{ id: 0, name: '所有助手' }, ...res] })
+          setState({ assistants: res })
         })
       }
     }, [props.open, props.id])
@@ -182,7 +186,11 @@ export const AddRole = observer(
                 />
                 <form.Field
                   name={'assistants'}
-                  key={JSON.stringify(state.assistants)}
+                  key={
+                    JSON.stringify(state.assistants) + state.allAssistant
+                      ? 'all'
+                      : 'selecte'
+                  }
                   children={(field) => {
                     const isInvalid =
                       field.state.meta.isTouched && !field.state.meta.isValid
@@ -191,21 +199,34 @@ export const AddRole = observer(
                         <FieldLabel htmlFor={field.name}>
                           添加授权助手
                         </FieldLabel>
-                        <SelectFilter
-                          options={state.assistants.map((a) => ({
-                            label: a.name,
-                            value: a.id
-                          }))}
-                          value={field.state.value}
-                          placeholder={'选择助手'}
-                          onValueChange={(value) => {
-                            const assistants = value as number[]
-                            field.setValue(
-                              assistants.includes(0) ? [0] : assistants
-                            )
-                          }}
-                          multiple={true}
-                        />
+                        <div className='flex items-center gap-2'>
+                          <Checkbox
+                            id='all-assistants'
+                            checked={state.allAssistant}
+                            onCheckedChange={(checked: boolean) =>
+                              setState({ allAssistant: checked })
+                            }
+                          />
+                          <Label htmlFor='all-assistants'>所有助手</Label>
+                        </div>
+                        {!state.allAssistant && (
+                          <SelectFilter
+                            options={state.assistants.map((a) => ({
+                              label: a.name,
+                              value: a.id
+                            }))}
+                            value={field.state.value}
+                            placeholder={'选择助手'}
+                            onValueChange={(value) => {
+                              const assistants = value as number[]
+                              field.setValue(
+                                assistants.includes(0) ? [0] : assistants
+                              )
+                            }}
+                            multiple={true}
+                          />
+                        )}
+
                         {isInvalid && (
                           <FieldError errors={field.state.meta.errors} />
                         )}

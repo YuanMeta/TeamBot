@@ -1,5 +1,5 @@
 import { procedure } from './core'
-import { isAdmin } from 'server/lib/db/query'
+import { checkAllowUseAssistant, isAdmin } from 'server/lib/db/query'
 import z from 'zod'
 import { PasswordManager } from 'server/lib/password'
 import { TRPCError } from '@trpc/server'

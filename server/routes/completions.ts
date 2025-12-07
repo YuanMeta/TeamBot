@@ -15,6 +15,7 @@ import type { Request, Response } from 'express'
 import { saveFileByBase64 } from '../lib/utils'
 import dayjs from 'dayjs'
 import type { KDB } from 'server/lib/db/instance'
+import { checkAllowUseAssistant } from 'server/lib/db/query'
 const InputSchema = z.object({
   chatId: z.string(),
   assistantId: z.number(),
@@ -55,6 +56,15 @@ export const completions = async (req: Request, res: Response, db: KDB) => {
     model: json.model,
     images: json.images
   })
+  if (!user.root) {
+    const allow = await checkAllowUseAssistant(db, uid, assistant.id)
+    if (!allow) {
+      throw new TRPCError({
+        code: 'FORBIDDEN',
+        message: 'permission denied'
+      })
+    }
+  }
   if (json.images?.length) {
     let paths: string[] = []
     for (let image of json.images) {

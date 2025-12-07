@@ -79,12 +79,14 @@ export const insertRoles = async (db: KDB) => {
     .values([
       {
         name: '管理员',
-        assistants: JSON.stringify([0]),
-        remark: '可进入后台系统，管理所有功能'
+        assistants: JSON.stringify([]),
+        remark: '可进入后台系统，管理所有功能',
+        all_assistants: true
       },
       {
         name: '成员',
-        assistants: JSON.stringify([0]),
+        assistants: JSON.stringify([]),
+        all_assistants: true,
         remark: '不可进入后台系统，仅使用助手对话功能'
       }
     ])

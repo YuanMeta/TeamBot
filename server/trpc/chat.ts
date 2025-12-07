@@ -186,36 +186,55 @@ export const chatRouter = {
       })
     }),
   getAssistants: procedure.query(async ({ ctx }) => {
-    const assistantsIds = await ctx.db
+    let query = ctx.db.selectFrom('assistants')
+    // 是否拥有所有助手
+    const allAssistant = await ctx.db
       .selectFrom('user_roles')
       .innerJoin('roles', 'user_roles.role_id', 'roles.id')
       .where('user_roles.user_id', '=', ctx.userId)
-      .select(['roles.assistants'])
-      .execute()
-    let ids: number[] = assistantsIds.flatMap((r) => r.assistants)
-    if (!ids.length) {
-      return []
-    }
+      .where('roles.all_assistants', '=', true)
+      .select('role_id')
+      .executeTakeFirst()
 
-    let query = ctx.db.selectFrom('assistants')
-    if (!ids.includes(0)) {
+    if (!allAssistant) {
+      const assistantsIds = await ctx.db
+        .selectFrom('user_roles')
+        .innerJoin('roles', 'user_roles.role_id', 'roles.id')
+        .where('user_roles.user_id', '=', ctx.userId)
+        .select(['roles.assistants'])
+        .execute()
+      let ids: number[] = assistantsIds.flatMap((r) => r.assistants)
+      if (!ids.length) {
+        return []
+      }
       query = query.where('id', 'in', ids)
     }
     const assistants = await query
       .select(['id', 'name', 'mode', 'models', 'options'])
       .execute()
-    let data: any[] = []
-    for (let a of assistants) {
-      const as = parseRecord(a as any)
+    let toolsMap = new Map<number, string[]>()
+    if (assistants.length) {
       const tools = await ctx.db
         .selectFrom('assistant_tools')
-        .where('assistant_id', '=', a.id)
-        .select(['tool_id'])
+        .where(
+          'assistant_id',
+          'in',
+          assistants.map((a) => a.id)
+        )
+        .select(['tool_id', 'assistant_id'])
         .execute()
-      as.tools = tools.map((t) => t.tool_id)
-      data.push(as)
+      for (let t of tools) {
+        if (!t.tool_id) continue
+        toolsMap.set(t.assistant_id, [
+          ...(toolsMap.get(t.assistant_id) || []),
+          t.tool_id
+        ])
+      }
     }
-    return data
+    return assistants.map((a) => ({
+      ...a,
+      tools: toolsMap.get(a.id) || []
+    }))
   }),
   getTools: procedure.query(async ({ ctx }) => {
     return ctx.db

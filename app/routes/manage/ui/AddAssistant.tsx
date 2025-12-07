@@ -133,7 +133,6 @@ export const AddAssistant = observer(
               top_p: state.options.top_p
             }
           }
-          console.log('data', data, value)
 
           if (props.id) {
             await trpc.manage.updateAssistant.mutate({
