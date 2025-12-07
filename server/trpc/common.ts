@@ -1,4 +1,3 @@
-import type { Knex } from 'knex'
 import { procedure } from './core'
 import { isAdmin } from 'server/lib/db/query'
 import z from 'zod'
@@ -7,11 +6,11 @@ import { TRPCError } from '@trpc/server'
 
 export const commonRouter = {
   getUserInfo: procedure.query(async ({ ctx }) => {
-    const user = await ctx
-      .db('users')
-      .where({ id: ctx.userId })
-      .select('name', 'email', 'root')
-      .first()
+    const user = await ctx.db
+      .selectFrom('users')
+      .where('id', '=', ctx.userId)
+      .select(['name', 'email', 'root'])
+      .executeTakeFirst()
     if (!user) return null
     if (user.root) {
       return {
@@ -31,24 +30,23 @@ export const commonRouter = {
   }),
   getUserAccess: procedure.query(async ({ ctx }) => {
     if (ctx.root) {
-      const accesses = await ctx.db('accesses').select('id')
+      const accesses = await ctx.db
+        .selectFrom('accesses')
+        .select(['id'])
+        .execute()
       return accesses.map((access) => access.id)
     }
 
-    const result = await ctx.db.raw(
-      `
-        SELECT DISTINCT a.id
-        FROM user_roles ur
-        JOIN access_roles ar ON ur.role_id = ar.role_id
-        JOIN accesses a ON ar.access_id = a.id
-        WHERE ur.user_id = ?
-      `,
-      [ctx.userId]
-    )
+    const result = await ctx.db
+      .selectFrom('user_roles as ur')
+      .innerJoin('access_roles as ar', 'ur.role_id', 'ar.role_id')
+      .innerJoin('accesses as a', 'ar.access_id', 'a.id')
+      .where('ur.user_id', '=', ctx.userId)
+      .select('a.id')
+      .distinct()
+      .execute()
 
-    const rows =
-      (result as unknown as { rows?: Array<{ id: string }> }).rows || []
-    return rows.map((row) => row.id)
+    return result.map((row) => row.id)
   }),
   changePassword: procedure
     .input(
@@ -59,7 +57,11 @@ export const commonRouter = {
       })
     )
     .mutation(async ({ ctx, input }) => {
-      const user = await ctx.db('users').where({ id: ctx.userId }).first()
+      const user = await ctx.db
+        .selectFrom('users')
+        .where('id', '=', ctx.userId)
+        .selectAll()
+        .executeTakeFirst()
       if (!user) return null
       if (
         user.password &&
@@ -70,12 +72,13 @@ export const commonRouter = {
       ) {
         throw new TRPCError({ code: 'BAD_REQUEST', message: '原密码不正确' })
       }
-      await ctx
-        .db('users')
-        .where({ id: ctx.userId })
-        .update({
+      await ctx.db
+        .updateTable('users')
+        .set({
           password: await PasswordManager.hashPassword(input.password)
         })
+        .where('id', '=', ctx.userId)
+        .execute()
       return { success: true }
     })
 }

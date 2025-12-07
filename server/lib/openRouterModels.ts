@@ -1,7 +1,7 @@
-import type { Knex } from 'knex'
+import type { KDB } from './db/instance'
 
 const providerMap = new Map([['google', 'gemini']])
-export const fetchOpenRouterModels = async (db: Knex) => {
+export const fetchOpenRouterModels = async (db: KDB) => {
   try {
     const res = await fetch('https://openrouter.ai/api/v1/models').then((res) =>
       res.json()
@@ -20,10 +20,11 @@ export const fetchOpenRouterModels = async (db: Knex) => {
       })
 
     if (modelsToInsert.length > 0) {
-      await db('models')
-        .insert(modelsToInsert)
-        .onConflict(['model', 'provider'])
-        .ignore()
+      await db
+        .insertInto('models')
+        .values(modelsToInsert)
+        .onConflict((oc) => oc.columns(['model', 'provider']).doNothing())
+        .execute()
     }
   } catch (e) {
     console.error('Failed to fetch OpenRouter models', e)

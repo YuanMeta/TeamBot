@@ -2,9 +2,10 @@ import { initTRPC, TRPCError } from '@trpc/server'
 import z, { ZodError } from 'zod'
 import superjson from 'superjson'
 import { verifyUser } from '../session'
-import { kdb } from '../lib/knex'
 import * as trpcExpress from '@trpc/server/adapters/express'
 import { publicAccess } from 'server/lib/db/access'
+import { kdb } from 'server/lib/db/instance'
+import { sql } from 'kysely'
 
 export const createContext = async ({
   req
@@ -72,25 +73,22 @@ export const adminProcedure = t.procedure.use(async ({ ctx, next }) => {
   if (paths.length) {
     const uniquePaths = Array.from(new Set(paths))
 
-    const result = await ctx.db.raw(
-      `
-        SELECT COUNT(DISTINCT path) AS count
-        FROM user_roles ur
-        JOIN access_roles ar ON ur.role_id = ar.role_id
-        JOIN accesses a ON ar.access_id = a.id
-        CROSS JOIN LATERAL jsonb_array_elements_text(
+    const result = await ctx.db
+      .selectFrom('user_roles as ur')
+      .innerJoin('access_roles as ar', 'ur.role_id', 'ar.role_id')
+      .innerJoin('accesses as a', 'ar.access_id', 'a.id')
+      .innerJoin(
+        sql`LATERAL jsonb_array_elements_text(
           COALESCE(a.trpc_access, '[]'::jsonb)
-        ) AS path
-        WHERE ur.user_id = ?
-          AND path = ANY(?)
-      `,
-      [user.id, uniquePaths]
-    )
+        )`.as('path'),
+        (join) => join.onTrue()
+      )
+      .select(sql<string>`COUNT(DISTINCT path)`.as('count'))
+      .where('ur.user_id', '=', user.id)
+      .where(sql`path`, 'in', uniquePaths)
+      .executeTakeFirst()
 
-    const rows =
-      (result as unknown as { rows?: Array<{ count: string | number }> })
-        .rows || []
-    const matchedCount = rows.length ? Number(rows[0].count) : 0
+    const matchedCount = result ? Number(result.count) : 0
 
     if (matchedCount < uniquePaths.length) {
       throw new TRPCError({

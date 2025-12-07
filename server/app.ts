@@ -4,23 +4,20 @@ import express from 'express'
 import * as trpcExpress from '@trpc/server/adapters/express'
 import { appRouter } from './trpc/router'
 import { createContext } from './trpc/core'
-import { kdb } from './lib/knex'
 import { registerRoutes } from './routes/api'
-import type { Knex } from 'knex'
 import { TRPCError } from '@trpc/server'
 import { getHTTPStatusCodeFromError } from '@trpc/server/http'
 import { fetchOpenRouterModels } from './lib/openRouterModels'
 import { getUser } from './session'
+import { kdb, type KDB } from './lib/db/instance'
 declare module 'react-router' {
   interface AppLoadContext {
-    db: Knex
+    db: KDB
     userId: number | null
     root: boolean
   }
 }
-
 const db = await kdb()
-
 fetchOpenRouterModels(db)
 
 export const app = express()

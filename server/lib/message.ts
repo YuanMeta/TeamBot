@@ -3,9 +3,11 @@ import { TRPCError } from '@trpc/server'
 import type { MessagePart } from 'types'
 import { createClient } from './checkConnect'
 import { findLast } from '~/lib/utils'
-import type { Knex } from 'knex'
 import { parseRecord } from './db/table'
+import { sql, type Selectable } from 'kysely'
 import type { TableMessage } from 'types/table'
+import type { KDB } from './db/instance'
+import type { Messages } from './db/types'
 
 function addDocsContext(
   text: string,
@@ -21,7 +23,7 @@ function addDocsContext(
 export class MessageManager {
   static async compreTokena(data: {
     model: LanguageModel
-    messages: TableMessage[]
+    messages: Selectable<Messages>[]
     previousSummary?: string | null
   }) {
     const conversation = data.messages.map((m) => {
@@ -56,7 +58,7 @@ Output only the summarized version of the conversation.`,
   }
 
   static async getStreamMessage(
-    db: Knex,
+    db: KDB,
     data: {
       chatId: string
       userId: number
@@ -66,26 +68,31 @@ Output only the summarized version of the conversation.`,
     }
   ) {
     const { chatId, userId } = data
-    const chat = await db('chats')
-      .where({
-        id: chatId,
-        user_id: userId
-      })
-      .first()
+    const chat = await db
+      .selectFrom('chats')
+      .selectAll()
+      .where('id', '=', chatId)
+      .where('user_id', '=', userId)
+      .executeTakeFirst()
     if (!chat) {
       throw new TRPCError({
         code: 'NOT_FOUND',
         message: 'Chat not found'
       })
     }
-    let assistant = await db('assistants')
-      .where({ id: data.assistantId })
-      .first()
-    let messages = await db('messages')
-      .where({ chat_id: chatId, user_id: userId })
+    let assistant = await db
+      .selectFrom('assistants')
+      .selectAll()
+      .where('id', '=', data.assistantId)
+      .executeTakeFirst()
+    let messages = await db
+      .selectFrom('messages')
+      .selectAll()
+      .where('chat_id', '=', chatId)
+      .where('user_id', '=', userId)
       .orderBy('created_at', 'asc')
       .offset(chat.message_offset)
-      .select('*')
+      .execute()
     messages = messages.map((m) => parseRecord(m))
     if (!messages.length) {
       throw new TRPCError({
@@ -127,10 +134,14 @@ Output only the summarized version of the conversation.`,
             previousSummary: summary
           })
           chat.summary = summary
-          await db('chats')
-            .where({ id: chat.id })
-            .update({ summary })
-            .increment('message_offset', compreMessages.length)
+          await db
+            .updateTable('chats')
+            .set({
+              summary,
+              message_offset: sql`message_offset + ${compreMessages.length}`
+            })
+            .where('id', '=', chat.id)
+            .execute()
         }
       }
       history.map((m) => {
@@ -141,7 +152,7 @@ Output only the summarized version of the conversation.`,
         }
         if (m.role === 'user') {
           let text = m.text
-          text = addDocsContext(text!, m.docs)
+          text = addDocsContext(text!, m.docs as any)
           msg.parts.push({
             type: 'text',
             text: text
@@ -189,7 +200,7 @@ Output only the summarized version of the conversation.`,
       parts: [
         {
           type: 'text',
-          text: addDocsContext(userMessage.text!, userMessage.docs)
+          text: addDocsContext(userMessage.text!, userMessage.docs as any)
         }
       ]
     }

@@ -2,13 +2,14 @@ import { tool, type Tool } from 'ai'
 import z from 'zod'
 import { htmlToMarkdown } from '~/lib/utils'
 import { getReadability } from './utils'
-import type { Knex } from 'knex'
 import { parseRecord } from './db/table'
 import { createWebSearchTool } from './search'
 import { google } from '@ai-sdk/google'
-import type { TableAssistant } from 'types/table'
 import { openai } from '@ai-sdk/openai'
 import { anthropic } from '@ai-sdk/anthropic'
+import type { KDB } from './db/instance'
+import type { Selectable } from 'kysely'
+import type { Assistants } from './db/types'
 
 export const systemTools = ['fetch_url_content']
 
@@ -114,16 +115,18 @@ export const createHttpTool = (options: {
 }
 
 export const composeTools = async (
-  db: Knex,
-  assistant: TableAssistant,
+  db: KDB,
+  assistant: Selectable<Assistants>,
   selectedTools: string[],
   options: {
     builtinSearch: boolean
   }
 ) => {
-  const toolsId = await db('assistant_tools')
-    .where({ assistant_id: assistant.id })
-    .select('tool_id', 'system_tool_id')
+  const toolsId = await db
+    .selectFrom('assistant_tools')
+    .where('assistant_id', '=', assistant.id)
+    .select(['tool_id', 'system_tool_id'])
+    .execute()
   const tools: Record<string, Tool> = {}
 
   const sytemToolsRecord = toolsId
@@ -138,7 +141,11 @@ export const composeTools = async (
     }
   }
   if (customTools.length) {
-    let toolsData = await db('tools').whereIn('id', customTools).select('*')
+    let toolsData = await db
+      .selectFrom('tools')
+      .where('id', 'in', customTools)
+      .selectAll()
+      .execute()
     toolsData = toolsData.map((t) => parseRecord(t))
     const hasCustomeWebSearch = toolsData.some((t) => t.type === 'web_search')
     if (!hasCustomeWebSearch) {

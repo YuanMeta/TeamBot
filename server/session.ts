@@ -1,7 +1,7 @@
 import { createCookie } from 'react-router'
 import { verifyToken } from './lib/password'
 import type { Request } from 'express'
-import { kdb } from './lib/knex'
+import { kdb } from './lib/db/instance'
 import { cacheable } from './lib/cache'
 
 const isProduction = process.env.NODE_ENV === 'production'
@@ -49,13 +49,15 @@ export const verifyUser = async (cookie: string) => {
   const db = await kdb()
   let user = await cacheable.get<{
     id: number
-    root: boolean
+    root: boolean | null
   }>(`user:${data.uid}`)
   if (!user) {
-    user = await db('users')
-      .where({ id: data.uid, deleted: false })
-      .select('id', 'root')
-      .first()
+    user = await db
+      .selectFrom('users')
+      .where('id', '=', data.uid)
+      .where('deleted', '=', false)
+      .select(['id', 'root'])
+      .executeTakeFirst()
     if (user) {
       cacheable.set(`user:${user.id}`, user, 60 * 60 * 12 * 1000)
     }

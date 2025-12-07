@@ -1,5 +1,4 @@
 import type { Express } from 'express'
-import type { Knex } from 'knex'
 import z from 'zod'
 import { generateToken, PasswordManager } from '../lib/password'
 import { userCookie, oauthStateCookie } from '../session'
@@ -15,6 +14,7 @@ import { join, resolve } from 'path'
 import { existsSync, createReadStream, statSync } from 'fs'
 import { lookup } from 'mime-types'
 import { routeInterceptor } from './interceptor'
+import type { KDB } from 'server/lib/db/instance'
 // 防暴力破解：登录尝试记录
 const loginAttempts = new Map<string, { count: number; lockedUntil: number }>()
 const MAX_ATTEMPTS = 5
@@ -40,7 +40,7 @@ const LoginInputSchema = z.object({
   password: z.string().min(6)
 })
 
-export const registerRoutes = (app: Express, db: Knex) => {
+export const registerRoutes = (app: Express, db: KDB) => {
   app.post('/api/login', async (req, res) => {
     const input: { nameOrEmail: string; password: string } = req.body
     try {
@@ -67,10 +67,16 @@ export const registerRoutes = (app: Express, db: Knex) => {
     if (attempts.lockedUntil > 0 && attempts.lockedUntil <= Date.now()) {
       loginAttempts.delete(attemptKey)
     }
-    const user = await db('users')
-      .where({ name: input.nameOrEmail })
-      .orWhere({ email: input.nameOrEmail })
-      .first()
+    const user = await db
+      .selectFrom('users')
+      .selectAll()
+      .where((eb) =>
+        eb.or([
+          eb('name', '=', input.nameOrEmail),
+          eb('email', '=', input.nameOrEmail)
+        ])
+      )
+      .executeTakeFirst()
     if (!user) {
       recordFailedAttempt(attemptKey)
       return res.status(429).send('用户名或密码错误').end()
@@ -96,7 +102,7 @@ export const registerRoutes = (app: Express, db: Knex) => {
 
     // 登录成功，清除失败记录
     loginAttempts.delete(attemptKey)
-    const token = generateToken({ uid: user.id, root: user.root })
+    const token = generateToken({ uid: user.id, root: user.root! })
     res.setHeader('Set-Cookie', await userCookie.serialize(token))
     res.json({
       success: true
@@ -200,16 +206,22 @@ export const registerRoutes = (app: Express, db: Knex) => {
           message: (e as Error).message
         })
       }
-      const chat = await db('chats').where('id', json.chatId).first()
+      const chat = await db
+        .selectFrom('chats')
+        .selectAll()
+        .where('id', '=', json.chatId)
+        .executeTakeFirst()
       if (!chat) {
         throw new TRPCError({
           code: 'NOT_FOUND',
           message: 'Chat not found'
         })
       }
-      const assistant = await db('assistants')
-        .where('id', json.assistantId)
-        .first()
+      const assistant = await db
+        .selectFrom('assistants')
+        .selectAll()
+        .where('id', '=', json.assistantId)
+        .executeTakeFirst()
       const client = createClient({
         mode: assistant!.mode,
         api_key: assistant!.api_key,
@@ -235,9 +247,11 @@ The historical dialogue is as follows: \n${messages
           if (data.finishReason === 'stop') {
             let text = data.content.find((c) => c.type === 'text')?.text
             if (text) {
-              await db('chats')
-                .where({ id: json.chatId })
-                .update({ title: text })
+              await db
+                .updateTable('chats')
+                .set({ title: text })
+                .where('id', '=', json.chatId)
+                .execute()
             }
           }
         },
@@ -252,9 +266,11 @@ The historical dialogue is as follows: \n${messages
 
   app.get('/oauth/login/:provider', async (req, res) => {
     const state = randomString(24)
-    const provider = await db('auth_providers')
-      .where('id', req.params.provider)
-      .first()
+    const provider = await db
+      .selectFrom('auth_providers')
+      .selectAll()
+      .where('id', '=', Number(req.params.provider))
+      .executeTakeFirst()
     if (!provider) {
       res.status(404).json({ error: 'Provider not found' })
       return
@@ -291,9 +307,11 @@ The historical dialogue is as follows: \n${messages
   app.get('/oauth/callback/:provider', async (req, res) => {
     try {
       const { code, state } = req.query
-      const provider = await db('auth_providers')
-        .where('id', req.params.provider)
-        .first()
+      const provider = await db
+        .selectFrom('auth_providers')
+        .selectAll()
+        .where('id', '=', Number(req.params.provider))
+        .executeTakeFirst()
       if (!provider) {
         res.status(404).json({ error: 'Provider not found' })
         return
@@ -334,59 +352,73 @@ The historical dialogue is as follows: \n${messages
         .json<{ access_token: string }>()
       const access_token = tokenResp.access_token
       const userResp = await ky
-        .get(provider.userinfo_url, {
+        .get(provider.userinfo_url!, {
           headers: {
             Authorization: `Bearer ${access_token}`
           }
         })
         .json<{ id: string; email?: string; phone?: string; name?: string }>()
       if (userResp?.id) {
-        const user = await db('oauth_accounts')
-          .where({
-            provider_id: provider.id,
-            provider_user_id: userResp.id
-          })
-          .first()
+        const user = await db
+          .selectFrom('oauth_accounts')
+          .select('user_id')
+          .where('provider_id', '=', provider.id)
+          .where('provider_user_id', '=', userResp.id)
+          .executeTakeFirst()
         if (user) {
           const token = generateToken({ uid: user.user_id, root: false })
           res.setHeader('Set-Cookie', await userCookie.serialize(token))
         } else {
           if (userResp.email || userResp.phone) {
-            const handle = db('users')
-            let user: TableUser | undefined
+            let user: { id: number } | undefined
             if (userResp.email) {
-              user = await handle.where({ email: userResp.email }).first()
+              user = await db
+                .selectFrom('users')
+                .select('id')
+                .where('email', '=', userResp.email)
+                .executeTakeFirst()
             }
-            if (userResp.phone) {
-              user = await handle.where({ phone: userResp.phone }).first()
+            if (!user && userResp.phone) {
+              user = await db
+                .selectFrom('users')
+                .select('id')
+                .where('phone', '=', userResp.phone)
+                .executeTakeFirst()
             }
             if (user) {
-              await db('oauth_accounts').insert({
-                provider_id: provider.id,
-                provider_user_id: userResp.id,
-                user_id: user.id,
-                profile_json: JSON.stringify(userResp) as any
-              })
-            } else {
-              const user = await db.transaction(async (trx) => {
-                const user = await trx('users')
-                  .insert({
-                    email: userResp.email,
-                    phone: userResp.phone,
-                    name: userResp.name,
-                    password: null,
-                    role: 'member'
-                  })
-                  .returning('*')
-                await trx('oauth_accounts').insert({
+              await db
+                .insertInto('oauth_accounts')
+                .values({
                   provider_id: provider.id,
                   provider_user_id: userResp.id,
-                  user_id: user[0].id!,
+                  user_id: user.id,
                   profile_json: JSON.stringify(userResp) as any
                 })
-                return user
+                .execute()
+            } else {
+              const user = await db.transaction().execute(async (trx) => {
+                const newUser = await trx
+                  .insertInto('users')
+                  .values({
+                    email: userResp.email ?? null,
+                    phone: userResp.phone ?? null,
+                    name: userResp.name ?? null,
+                    password: null
+                  })
+                  .returningAll()
+                  .executeTakeFirstOrThrow()
+                await trx
+                  .insertInto('oauth_accounts')
+                  .values({
+                    provider_id: provider.id,
+                    provider_user_id: userResp.id,
+                    user_id: newUser.id!,
+                    profile_json: JSON.stringify(userResp) as any
+                  })
+                  .execute()
+                return newUser
               })
-              const token = generateToken({ uid: user[0].id!, root: false })
+              const token = generateToken({ uid: user.id!, root: false })
               res.setHeader('Set-Cookie', await userCookie.serialize(token))
             }
           } else {

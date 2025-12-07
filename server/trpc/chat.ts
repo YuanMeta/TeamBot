@@ -3,7 +3,7 @@ import { procedure } from './core'
 import z from 'zod'
 import dayjs from 'dayjs'
 import { tid } from 'server/lib/utils'
-import { insertRecord, parseRecord } from 'server/lib/db/table'
+import { parseRecord } from 'server/lib/db/table'
 import { unlink } from 'fs/promises'
 import { join } from 'path'
 export const chatRouter = {
@@ -27,9 +27,10 @@ export const chatRouter = {
     )
     .mutation(async ({ input, ctx }) => {
       const date = new Date()
-      return await ctx.db.transaction(async (trx) => {
-        const chat = await trx('chats')
-          .insert({
+      return await ctx.db.transaction().execute(async (trx) => {
+        const chat = await trx
+          .insertInto('chats')
+          .values({
             id: tid(),
             assistant_id: input.assistantId,
             user_id: ctx.userId,
@@ -45,19 +46,21 @@ export const chatRouter = {
             'updated_at',
             'last_chat_time'
           ])
-        const userMessage = await trx('messages')
-          .insert(
-            insertRecord({
-              id: input.userMessageId,
-              chat_id: chat[0].id,
-              role: 'user',
-              text: input.userPrompt,
-              docs: input.docs,
-              user_id: ctx.userId,
-              created_at: date
-            })
-          )
-          .returning('*')
+          .execute()
+
+        const userMessage = await trx
+          .insertInto('messages')
+          .values({
+            id: input.userMessageId,
+            chat_id: chat[0].id,
+            role: 'user',
+            text: input.userPrompt,
+            docs: input.docs ? JSON.stringify(input.docs) : null,
+            user_id: ctx.userId,
+            created_at: date
+          })
+          .returningAll()
+          .execute()
 
         let userFiles: Array<{
           id: string
@@ -66,15 +69,17 @@ export const chatRouter = {
           size: number
         }> = []
 
-        const assistantMessage = await trx('messages')
-          .insert({
+        const assistantMessage = await trx
+          .insertInto('messages')
+          .values({
             id: input.assistantMessageId,
             chat_id: chat[0].id,
             role: 'assistant',
             user_id: ctx.userId,
             created_at: dayjs(date).add(1, 'second').toDate()
           })
-          .returning('*')
+          .returningAll()
+          .execute()
 
         const messages = [
           { ...userMessage[0], files: userFiles },
@@ -91,16 +96,15 @@ export const chatRouter = {
       })
     )
     .query(async ({ ctx, input }) => {
-      return ctx
-        .db('chats')
-        .where({
-          user_id: ctx.userId,
-          deleted: false
-        })
+      return ctx.db
+        .selectFrom('chats')
+        .where('user_id', '=', ctx.userId)
+        .where('deleted', '=', false)
         .offset(input.offset || 0)
         .limit(50)
         .orderBy('last_chat_time', 'desc')
-        .select('id', 'title', 'model', 'assistant_id', 'last_chat_time')
+        .select(['id', 'title', 'model', 'assistant_id', 'last_chat_time'])
+        .execute()
     }),
   getChat: procedure
     .input(
@@ -109,14 +113,12 @@ export const chatRouter = {
       })
     )
     .query(async ({ ctx, input }) => {
-      const chat = await ctx
-        .db('chats')
-        .where({
-          id: input.id,
-          user_id: ctx.userId
-        })
-        .select('id', 'title', 'model', 'assistant_id', 'last_chat_time')
-        .first()
+      const chat = await ctx.db
+        .selectFrom('chats')
+        .where('id', '=', input.id)
+        .where('user_id', '=', ctx.userId)
+        .select(['id', 'title', 'model', 'assistant_id', 'last_chat_time'])
+        .executeTakeFirst()
       if (!chat) {
         return null
       }
@@ -130,13 +132,15 @@ export const chatRouter = {
       })
     )
     .query(async ({ ctx, input }) => {
-      const messages = await ctx
-        .db('messages')
-        .where({ chat_id: input.chatId, user_id: ctx.userId })
+      const messages = await ctx.db
+        .selectFrom('messages')
+        .where('chat_id', '=', input.chatId)
+        .where('user_id', '=', ctx.userId)
         .offset(input.offset)
         .limit(10)
         .orderBy('created_at', 'desc')
-        .select('*')
+        .selectAll()
+        .execute()
       return {
         messages: messages.map((m) => parseRecord(m)),
         loadMore: messages.length === 10
@@ -149,10 +153,13 @@ export const chatRouter = {
       })
     )
     .mutation(async ({ input, ctx }) => {
-      return ctx.db.transaction(async (trx) => {
-        const messages = await trx('messages')
-          .where({ chat_id: input.id, user_id: ctx.userId })
-          .select('files')
+      return ctx.db.transaction().execute(async (trx) => {
+        const messages = await trx
+          .selectFrom('messages')
+          .where('chat_id', '=', input.id)
+          .where('user_id', '=', ctx.userId)
+          .select(['files'])
+          .execute()
         for (let m of messages) {
           if (m.files) {
             try {
@@ -165,52 +172,59 @@ export const chatRouter = {
             }
           }
         }
-        await trx('messages')
-          .where({ chat_id: input.id, user_id: ctx.userId })
-          .delete()
-        await trx('chats').where({ id: input.id, user_id: ctx.userId }).delete()
+        await trx
+          .deleteFrom('messages')
+          .where('chat_id', '=', input.id)
+          .where('user_id', '=', ctx.userId)
+          .execute()
+        await trx
+          .deleteFrom('chats')
+          .where('id', '=', input.id)
+          .where('user_id', '=', ctx.userId)
+          .execute()
+        return { success: true }
       })
     }),
   getAssistants: procedure.query(async ({ ctx }) => {
-    const assistantsIds = await ctx
-      .db('user_roles')
-      .join('roles', 'user_roles.role_id', '=', 'roles.id')
-      .where('user_roles.user_id', ctx.userId)
-      .select('roles.assistants')
-    let ids: number[] = assistantsIds.flatMap((r) => r.assistants)
+    const assistantsIds = await ctx.db
+      .selectFrom('user_roles')
+      .innerJoin('roles', 'user_roles.role_id', 'roles.id')
+      .where('user_roles.user_id', '=', ctx.userId)
+      .select(['roles.assistants'])
+      .execute()
+    let ids: number[] = assistantsIds.flatMap((r) => r.assistants as any)
     if (!ids.length) {
       return []
     }
 
-    const handle = ctx.db('assistants')
+    let query = ctx.db.selectFrom('assistants')
     if (!ids.includes(0)) {
-      handle.whereIn('id', ids)
+      query = query.where('id', 'in', ids)
     }
-    const assistants = await handle.select(
-      'id',
-      'name',
-      'mode',
-      'models',
-      'options'
-    )
+    const assistants = await query
+      .select(['id', 'name', 'mode', 'models', 'options'])
+      .execute()
     let data: any[] = []
     for (let a of assistants) {
       const as = parseRecord(a as any)
-      const tools = await ctx
-        .db('assistant_tools')
-        .where({ assistant_id: a.id })
-        .select('tool_id')
+      const tools = await ctx.db
+        .selectFrom('assistant_tools')
+        .where('assistant_id', '=', a.id)
+        .select(['tool_id'])
+        .execute()
       as.tools = tools.map((t) => t.tool_id)
       data.push(as)
     }
     return data
   }),
   getTools: procedure.query(async ({ ctx }) => {
-    return ctx
-      .db('tools')
-      .where({ auto: false })
-      .orWhere('type', 'web_search')
-      .select('id', 'name', 'description', 'type')
+    return ctx.db
+      .selectFrom('tools')
+      .where((eb) =>
+        eb.or([eb('auto', '=', false), eb('type', '=', 'web_search')])
+      )
+      .select(['id', 'name', 'description', 'type'])
+      .execute()
   }),
   createMessages: procedure
     .input(
@@ -231,11 +245,12 @@ export const chatRouter = {
     )
     .mutation(async ({ input, ctx }) => {
       let date = new Date()
-      const chat = await ctx
-        .db('chats')
-        .where({ id: input.chatId, user_id: ctx.userId })
-        .select('id')
-        .first()
+      const chat = await ctx.db
+        .selectFrom('chats')
+        .where('id', '=', input.chatId)
+        .where('user_id', '=', ctx.userId)
+        .select(['id'])
+        .executeTakeFirst()
 
       if (!chat) {
         throw new TRPCError({
@@ -244,18 +259,20 @@ export const chatRouter = {
         })
       }
 
-      return ctx.db.transaction(async (trx) => {
-        const userMessage = await trx('messages')
-          .insert({
+      return ctx.db.transaction().execute(async (trx) => {
+        const userMessage = await trx
+          .insertInto('messages')
+          .values({
             id: input.userMessageId,
             chat_id: input.chatId,
             role: 'user',
             user_id: ctx.userId,
             created_at: date,
             text: input.userPrompt,
-            docs: input.docs
-          })
-          .returning('*')
+            docs: input.docs ? JSON.stringify(input.docs) : null
+          } as any)
+          .returningAll()
+          .execute()
 
         let userFiles: Array<{
           id: string
@@ -263,15 +280,17 @@ export const chatRouter = {
           path: string
           size: number
         }> = []
-        const aiMessage = await trx('messages')
-          .insert({
+        const aiMessage = await trx
+          .insertInto('messages')
+          .values({
             id: input.assistantMessageId,
             chat_id: input.chatId,
             role: 'assistant',
             user_id: ctx.userId,
             created_at: dayjs(date).add(1, 'second').toDate()
           })
-          .returning('*')
+          .returningAll()
+          .execute()
 
         const messages = [
           { ...userMessage[0], files: userFiles },
@@ -295,12 +314,18 @@ export const chatRouter = {
         })
       })
     )
-    .mutation(({ ctx, input }) => {
-      return ctx
-        .db('messages')
-        .where({ id: input.id, user_id: ctx.userId })
-        .update(insertRecord(input.data))
-        .returning('id')
+    .mutation(async ({ ctx, input }) => {
+      await ctx.db
+        .updateTable('messages')
+        .set({
+          ...input.data,
+          parts: input.data.parts ? JSON.stringify(input.data.parts) : null
+        })
+        .where('id', '=', input.id)
+        .where('user_id', '=', ctx.userId)
+        .returning(['id'])
+        .execute()
+      return { success: true }
     }),
   updateChat: procedure
     .input(
@@ -316,12 +341,15 @@ export const chatRouter = {
         })
       })
     )
-    .mutation(({ input, ctx }) => {
-      return ctx
-        .db('chats')
-        .where({ id: input.id, user_id: ctx.userId })
-        .update(input.data)
-        .returning('id')
+    .mutation(async ({ input, ctx }) => {
+      await ctx.db
+        .updateTable('chats')
+        .set(input.data)
+        .where('id', '=', input.id)
+        .where('user_id', '=', ctx.userId)
+        .returning(['id'])
+        .execute()
+      return { success: true }
     }),
   regenerate: procedure
     .input(
@@ -339,13 +367,13 @@ export const chatRouter = {
       })
     )
     .mutation(async ({ input, ctx }) => {
-      return ctx.db.transaction(async (trx) => {
-        const chat = await trx('chats')
-          .where({
-            user_id: ctx.userId,
-            id: input.chatId
-          })
-          .first()
+      return ctx.db.transaction().execute(async (trx) => {
+        const chat = await trx
+          .selectFrom('chats')
+          .where('user_id', '=', ctx.userId)
+          .where('id', '=', input.chatId)
+          .selectAll()
+          .executeTakeFirst()
         if (!chat) {
           throw new TRPCError({
             code: 'NOT_FOUND',
@@ -354,49 +382,52 @@ export const chatRouter = {
         }
         if (chat.message_offset >= input.offset) {
           const offset = input.offset > 2 ? input.offset - 2 : 0
-          await trx('chats')
-            .where({ id: input.chatId })
-            .update({ message_offset: offset })
+          await trx
+            .updateTable('chats')
+            .set({ message_offset: offset })
+            .where('id', '=', input.chatId)
+            .execute()
         }
         if (input.removeMessages.length) {
-          await trx('messages')
-            .where({ chat_id: input.chatId, user_id: ctx.userId })
-            .whereIn('id', input.removeMessages)
-            .delete()
+          await trx
+            .deleteFrom('messages')
+            .where('chat_id', '=', input.chatId)
+            .where('user_id', '=', ctx.userId)
+            .where('id', 'in', input.removeMessages)
+            .execute()
         }
         if (input.userMessage) {
-          await trx('messages')
-            .where({
-              id: input.userMessage.msgId,
-              user_id: ctx.userId,
-              chat_id: input.chatId,
-              role: 'user'
-            })
-            .update({
+          await trx
+            .updateTable('messages')
+            .set({
               text: input.userMessage.prompt
             })
+            .where('id', '=', input.userMessage.msgId)
+            .where('user_id', '=', ctx.userId)
+            .where('chat_id', '=', input.chatId)
+            .where('role', '=', 'user')
+            .execute()
         }
-        await trx('messages')
-          .where({
-            id: input.aiMessageId,
-            user_id: ctx.userId,
-            role: 'assistant',
-            chat_id: input.chatId
+        await trx
+          .updateTable('messages')
+          .set({
+            terminated: false,
+            error: null,
+            parts: null,
+            steps: null,
+            text: null,
+            input_tokens: 0,
+            output_tokens: 0,
+            total_tokens: 0,
+            reasoning_tokens: 0,
+            cached_input_tokens: 0
           })
-          .update(
-            insertRecord({
-              terminated: false,
-              error: null,
-              parts: null,
-              steps: {},
-              text: null,
-              input_tokens: 0,
-              output_tokens: 0,
-              total_tokens: 0,
-              reasoning_tokens: 0,
-              cached_input_tokens: 0
-            })
-          )
+          .where('id', '=', input.aiMessageId)
+          .where('user_id', '=', ctx.userId)
+          .where('role', '=', 'assistant')
+          .where('chat_id', '=', input.chatId)
+          .execute()
+        return { success: true }
       })
     }),
   searchChat: procedure
@@ -407,27 +438,29 @@ export const chatRouter = {
       })
     )
     .mutation(async ({ input, ctx }) => {
-      const record = await ctx
-        .db('chats')
-        .join('messages', 'chats.id', '=', 'messages.chat_id')
-        .where('chats.user_id', ctx.userId)
-        .andWhere((builder) => {
-          builder
-            .where('messages.text', 'like', `%${input.query}%`)
-            .orWhere('chats.title', 'like', `%${input.query}%`)
-        })
+      const record = await ctx.db
+        .selectFrom('chats')
+        .innerJoin('messages', 'chats.id', 'messages.chat_id')
+        .where('chats.user_id', '=', ctx.userId)
+        .where((eb) =>
+          eb.or([
+            eb('messages.text', 'like', `%${input.query}%`),
+            eb('chats.title', 'like', `%${input.query}%`)
+          ])
+        )
         .orderBy('chats.last_chat_time', 'desc')
         .offset((input.page - 1) * 10)
         .limit(10)
-        .select({
-          chat_id: 'chats.id',
-          message_id: 'messages.id',
-          title: 'chats.title',
-          text: 'messages.text',
-          last_chat_time: 'chats.last_chat_time',
-          updated_at: 'messages.updated_at',
-          role: 'messages.role'
-        })
+        .select([
+          'chats.id as chat_id',
+          'messages.id as message_id',
+          'chats.title as title',
+          'messages.text as text',
+          'chats.last_chat_time as last_chat_time',
+          'messages.updated_at as updated_at',
+          'messages.role as role'
+        ])
+        .execute()
       const chats: {
         id: string
         title: string
@@ -445,14 +478,14 @@ export const chatRouter = {
           chatMap.set(r.chat_id, {
             id: r.chat_id,
             title: r.title,
-            last_chat_time: r.last_chat_time,
+            last_chat_time: r.last_chat_time!,
             messages: r.text?.toLowerCase().includes(input.query.toLowerCase())
               ? [
                   {
                     id: r.message_id,
-                    text: r.text,
-                    updated_at: r.updated_at,
-                    role: r.role
+                    text: r.text!,
+                    updated_at: r.updated_at!,
+                    role: r.role as 'user' | 'assistant'
                   }
                 ]
               : []
@@ -461,9 +494,9 @@ export const chatRouter = {
           if (r.text?.toLowerCase().includes(input.query.toLowerCase())) {
             chatMap.get(r.chat_id)!.messages.push({
               id: r.message_id,
-              text: r.text,
-              updated_at: r.updated_at,
-              role: r.role
+              text: r.text!,
+              updated_at: r.updated_at!,
+              role: r.role as 'user' | 'assistant'
             })
           }
         }
