@@ -8,6 +8,7 @@ import { sql, type Selectable } from 'kysely'
 import type { TableMessage } from 'types/table'
 import type { KDB } from './db/instance'
 import type { Messages } from './db/types'
+import { aesDecrypt } from './utils'
 
 function addDocsContext(
   text: string,
@@ -101,6 +102,9 @@ Output only the summarized version of the conversation.`,
       })
     }
     assistant = parseRecord(assistant!)
+    assistant.api_key = assistant.api_key
+      ? await aesDecrypt(assistant.api_key)
+      : null
     const client = createClient({
       mode: assistant.mode,
       api_key: assistant.api_key,

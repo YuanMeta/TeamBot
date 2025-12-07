@@ -23,19 +23,19 @@ export const loader = async (args: Route.LoaderArgs) => {
   }
   const { params } = args
   const { id } = params
-  const chat = await args.context
-    .db('chats')
-    .where({ id })
-    .select('id', 'title', 'last_chat_time', 'user_id')
-    .first()
+  const chat = await args.context.db
+    .selectFrom('chats')
+    .where('id', '=', id as string)
+    .select(['id', 'title', 'last_chat_time', 'user_id'])
+    .executeTakeFirst()
 
   if (!chat) {
     return { chat: null, messages: [] }
   }
-  const messages = await args.context
-    .db('messages')
-    .where({ chat_id: id })
-    .select(
+  const messages = await args.context.db
+    .selectFrom('messages')
+    .where('chat_id', '=', id as string)
+    .select([
       'id',
       'role',
       'text',
@@ -44,8 +44,9 @@ export const loader = async (args: Route.LoaderArgs) => {
       'updated_at',
       'model',
       'user_id'
-    )
+    ])
     .orderBy('created_at', 'asc')
+    .execute()
   return { chat, messages: messages.map((m) => parseRecord(m)) }
 }
 
@@ -90,8 +91,8 @@ export default function () {
           </header>
           <div className={'flex-1 overflow-y-auto  px-3 pt-5 pb-20 w-full'}>
             <div className={`chat-list animate-show !max-w-[720px] mx-auto`}>
-              {data.messages.map((m) => (
-                <ChatItem key={m.id} msg={m as any} preview={true} />
+              {data.messages.map((m, i) => (
+                <ChatItem key={m.id} msg={m as any} preview={true} index={i} />
               ))}
             </div>
           </div>

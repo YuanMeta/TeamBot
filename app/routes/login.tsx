@@ -22,8 +22,11 @@ import { useLoaderData, useNavigate } from 'react-router'
 import type { Route } from './+types/login'
 import { useEffect } from 'react'
 
-export const loader = (args: Route.LoaderArgs) => {
-  const providers = args.context.db('auth_providers').select('id', 'name')
+export const loader = async (args: Route.LoaderArgs) => {
+  const providers = await args.context.db
+    .selectFrom('auth_providers')
+    .select(['id', 'name'])
+    .execute()
   return providers
 }
 export default observer(() => {
