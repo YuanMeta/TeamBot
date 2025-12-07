@@ -6,11 +6,12 @@ import { Subject } from 'rxjs'
 import { ChatClient } from './client'
 import type { MessagePart, SearchResult } from 'types'
 import { observable, runInAction } from 'mobx'
-import type { TableAssistant, TableTool } from 'types/table'
 import { builtInSearchMode } from '~/routes/manage/ui/data'
 import 'dayjs/locale/zh-cn'
 import dayjs from 'dayjs'
 import relativeTime from 'dayjs/plugin/relativeTime'
+import type { Selectable } from 'kysely'
+import type { Assistants, Tools } from 'server/lib/db/types'
 dayjs.extend(relativeTime)
 dayjs.locale('zh-cn')
 export interface MessageData {
@@ -29,9 +30,10 @@ export interface MessageData {
   updatedAt: Date
 }
 
-export interface AssistantData extends TableAssistant {
+export interface AssistantData extends Selectable<Assistants> {
   tools: string[]
 }
+type ToolData = Selectable<Tools>
 
 export interface ChatData {
   id: string
@@ -55,7 +57,7 @@ const state = {
   openWebSearchData: {} as Record<string, boolean>,
   openSearchModal: false,
   ready: false,
-  tools: [] as TableTool[],
+  tools: [] as ToolData[],
   userInfo: null as null | {
     name: string | null
     email: string | null
@@ -118,11 +120,11 @@ const state = {
     let id = `${assistantId}:${chatId}`
     return tools[id] || []
   },
-  toolsMap: new Map<string, TableTool>(),
+  toolsMap: new Map<string, ToolData>(),
   get enableWebSearch() {
     return (
       (builtInSearchMode.has(this.assistant?.mode!) &&
-        this.assistant?.options.builtin_search === 'on') ||
+        this.assistant?.options.builtin_search) ||
       this.assistant?.tools.some(
         (t) => this.toolsMap.get(t)?.type === 'web_search'
       ) ||
@@ -187,10 +189,10 @@ export class ChatStore extends StructStore<typeof state> {
   }
   private async loadTools() {
     await trpc.chat.getTools.query().then((res) => {
-      this.setState((state) => (state.tools = res as unknown as TableTool[]))
+      this.setState((state) => (state.tools = res as unknown as ToolData[]))
       res.forEach((t) => {
         runInAction(() => {
-          this.state.toolsMap.set(t.id, t as TableTool)
+          this.state.toolsMap.set(t.id, t as ToolData)
         })
       })
     })

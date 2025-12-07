@@ -20,16 +20,18 @@ import { useLocalState } from '~/hooks/localState'
 import { useCallback, useEffect, useMemo } from 'react'
 import { trpc } from '~/.client/trpc'
 import { Pagination } from '~/components/project/pagination'
-import type { TableRole } from 'types/table'
 import { adminConfirmDialog$ } from '~/components/project/confirm-dialog'
 import { toast } from 'sonner'
 import { useAccess } from '~/lib/access'
 import { AddRole } from './ui/AddRole'
 import { RoleMember } from './ui/RoleMember'
+import type { Selectable } from 'kysely'
+import type { Roles } from 'server/lib/db/types'
 
+type RoleData = Selectable<Roles>
 export default observer(() => {
   const { hasAccess } = useAccess()
-  const columns: ColumnDef<TableRole>[] = useMemo(() => {
+  const columns: ColumnDef<RoleData>[] = useMemo(() => {
     return [
       {
         accessorKey: 'name',
@@ -107,7 +109,7 @@ export default observer(() => {
           )
         }
       }
-    ] as ColumnDef<TableRole>[]
+    ] as ColumnDef<RoleData>[]
   }, [])
   const [state, setState] = useLocalState({
     page: 1,
@@ -115,7 +117,7 @@ export default observer(() => {
     keyword: '',
     openAddRole: false,
     selectedRoleId: null as null | number,
-    data: [] as TableRole[],
+    data: [] as RoleData[],
     total: 0,
     openRoleMember: false
   })

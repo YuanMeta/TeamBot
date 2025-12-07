@@ -6,10 +6,9 @@ import { completions } from './completions'
 import { TRPCError } from '@trpc/server'
 import { createClient } from 'server/lib/checkConnect'
 import { APICallError, streamText } from 'ai'
-import { randomString } from 'server/lib/utils'
+import { aesDecrypt, randomString } from 'server/lib/utils'
 import ky from 'ky'
 import { createHash } from 'crypto'
-import type { TableUser } from 'types/table'
 import { join, resolve } from 'path'
 import { existsSync, createReadStream, statSync } from 'fs'
 import { lookup } from 'mime-types'
@@ -222,9 +221,17 @@ export const registerRoutes = (app: Express, db: KDB) => {
         .selectAll()
         .where('id', '=', json.assistantId)
         .executeTakeFirst()
+      if (!assistant) {
+        throw new TRPCError({
+          code: 'NOT_FOUND',
+          message: 'Assistant not found'
+        })
+      }
       const client = createClient({
         mode: assistant!.mode,
-        api_key: assistant!.api_key,
+        api_key: assistant?.api_key
+          ? await aesDecrypt(assistant.api_key)
+          : null,
         base_url: assistant!.base_url
       })!
       const messages = [

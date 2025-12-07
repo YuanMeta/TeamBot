@@ -1,11 +1,10 @@
-import { generateText, type LanguageModel, type Tool, type UIMessage } from 'ai'
+import { generateText, type LanguageModel, type UIMessage } from 'ai'
 import { TRPCError } from '@trpc/server'
 import type { MessagePart } from 'types'
 import { createClient } from './checkConnect'
 import { findLast } from '~/lib/utils'
 import { parseRecord } from './db/table'
 import { sql, type Selectable } from 'kysely'
-import type { TableMessage } from 'types/table'
 import type { KDB } from './db/instance'
 import type { Messages } from './db/types'
 import { aesDecrypt } from './utils'
@@ -86,6 +85,12 @@ Output only the summarized version of the conversation.`,
       .selectAll()
       .where('id', '=', data.assistantId)
       .executeTakeFirst()
+    if (!assistant) {
+      throw new TRPCError({
+        code: 'NOT_FOUND',
+        message: 'Assistant not found'
+      })
+    }
     let messages = await db
       .selectFrom('messages')
       .selectAll()
@@ -101,7 +106,6 @@ Output only the summarized version of the conversation.`,
         message: 'No messages found'
       })
     }
-    assistant = parseRecord(assistant!)
     assistant.api_key = assistant.api_key
       ? await aesDecrypt(assistant.api_key)
       : null

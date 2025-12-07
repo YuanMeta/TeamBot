@@ -10,7 +10,6 @@ import {
 import { Delete, Plus } from 'lucide-react'
 import { observer } from 'mobx-react-lite'
 import { useCallback, useEffect, useMemo } from 'react'
-import type { TableUser } from 'types/table'
 import { trpc } from '~/.client/trpc'
 import { Pagination } from '~/components/project/pagination'
 import { PopConfirm } from '~/components/project/popconfirm'
@@ -32,17 +31,20 @@ import {
 } from '~/components/ui/table'
 import { useLocalState } from '~/hooks/localState'
 import { toast } from 'sonner'
+import type { Selectable } from 'kysely'
+import type { Users } from 'server/lib/db/types'
 
+type UserData = Selectable<Users>
 export const RoleMember = observer(
   (props: { roleId: number; open: boolean; onClose: () => void }) => {
     const [state, setState] = useLocalState({
-      data: [] as TableUser[],
+      data: [] as UserData[],
       page: 1,
       pageSize: 10,
       total: 0,
       selectedMemberId: null as null | number
     })
-    const columns: ColumnDef<TableUser>[] = useMemo(() => {
+    const columns: ColumnDef<UserData>[] = useMemo(() => {
       return [
         {
           accessorKey: 'name',
@@ -86,7 +88,7 @@ export const RoleMember = observer(
             </div>
           )
         }
-      ] as ColumnDef<TableUser>[]
+      ] as ColumnDef<UserData>[]
     }, [props.roleId])
     const table = useReactTable({
       data: state.data,
@@ -105,7 +107,7 @@ export const RoleMember = observer(
         })
         .then((res) => {
           setState({
-            data: res.list as unknown as TableUser[],
+            data: res.list as unknown as UserData[],
             total: res.total
           })
         })

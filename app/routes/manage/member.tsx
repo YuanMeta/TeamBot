@@ -28,13 +28,14 @@ import { useCallback, useEffect, useMemo, useRef } from 'react'
 import { trpc } from '~/.client/trpc'
 import { Pagination } from '~/components/project/pagination'
 import { AddMember } from './ui/AddMemeber'
-import type { TableUser } from 'types/table'
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '~/components/ui/tabs'
 import { SSO, type SSOInstance } from './ui/SSO'
 import { useAccess } from '~/lib/access'
 import { Badge } from '~/components/ui/badge'
+import type { Selectable } from 'kysely'
+import type { Users as UserType } from 'server/lib/db/types'
 
-type MemberData = TableUser & { roles: string[] }
+type MemberData = Selectable<UserType> & { roles: string[] }
 export default observer(() => {
   const { hasAccess } = useAccess()
   const columns: ColumnDef<MemberData>[] = useMemo(() => {
@@ -82,7 +83,7 @@ export default observer(() => {
               <Button
                 variant='outline'
                 size='icon-sm'
-                disabled={!hasAccess('manageMember') || row.original.root}
+                disabled={!hasAccess('manageMember') || row.original.root!}
                 onClick={() => {
                   setState({
                     selectedMemberId: data.id,
@@ -95,7 +96,7 @@ export default observer(() => {
               <Button
                 variant='outline'
                 size='icon-sm'
-                disabled={!hasAccess('manageMember') || row.original.root}
+                disabled={!hasAccess('manageMember') || row.original.root!}
               >
                 <Trash className={'size-3'} />
               </Button>

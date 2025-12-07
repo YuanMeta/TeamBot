@@ -20,17 +20,19 @@ import { useLocalState } from '~/hooks/localState'
 import { useCallback, useEffect, useMemo } from 'react'
 import { trpc } from '~/.client/trpc'
 import { Pagination } from '~/components/project/pagination'
-import type { TableTool } from 'types/table'
 import { AddTool } from './ui/AddTool'
 import { Badge } from '~/components/ui/badge'
 import { TextHelp } from '~/components/project/text-help'
 import { adminConfirmDialog$ } from '~/components/project/confirm-dialog'
 import { toast } from 'sonner'
 import { useAccess } from '~/lib/access'
+import type { Selectable } from 'kysely'
+import type { Tools } from 'server/lib/db/types'
 
+type ToolData = Selectable<Tools>
 export default observer(() => {
   const { hasAccess } = useAccess()
-  const columns: ColumnDef<TableTool>[] = useMemo(() => {
+  const columns: ColumnDef<ToolData>[] = useMemo(() => {
     return [
       {
         accessorKey: 'id',
@@ -110,7 +112,7 @@ export default observer(() => {
           )
         }
       }
-    ] as ColumnDef<TableTool>[]
+    ] as ColumnDef<ToolData>[]
   }, [])
   const [state, setState] = useLocalState({
     page: 1,
@@ -118,7 +120,7 @@ export default observer(() => {
     keyword: '',
     openAddTool: false,
     selectedToolId: null as null | string,
-    data: [] as TableTool[],
+    data: [] as ToolData[],
     total: 0
   })
   const getTools = useCallback(() => {
@@ -128,7 +130,7 @@ export default observer(() => {
         pageSize: state.pageSize
       })
       .then((res) => {
-        setState({ data: res.tools as any, total: res.total })
+        setState({ data: res.tools, total: res.total })
       })
   }, [])
   useEffect(() => {

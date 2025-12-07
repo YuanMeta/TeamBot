@@ -26,7 +26,7 @@ export interface Assistants {
   created_at: Generated<Date | null>
   id: Generated<number>
   mode: string
-  models: string
+  models: JSONColumnType<string[]>
   name: string
   options: JSONColumnType<AssistantOptions>
   prompt: string | null
@@ -155,6 +155,7 @@ export interface Users {
   updated_at: Generated<Date | null>
 }
 
+// 使用 declare 和 interface 使得 DB 可以在其他文件中扩展
 export interface DB {
   access_roles: AccessRoles
   accesses: Accesses

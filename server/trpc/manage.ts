@@ -30,27 +30,23 @@ export const manageRouter = {
       })
     )
     .query(async ({ ctx, input }) => {
-      const list = (
-        await ctx.db
-          .selectFrom('assistants')
-          .offset((input.page - 1) * input.pageSize)
-          .limit(input.pageSize)
-          .select([
-            'id',
-            'name',
-            'mode',
-            'models',
-            'api_key',
-            'base_url',
-            'options',
-            'created_at',
-            'prompt'
-          ])
-          .orderBy('id', 'desc')
-          .execute()
-      ).map((r) => {
-        return parseRecord(r)
-      })
+      const list = await ctx.db
+        .selectFrom('assistants')
+        .offset((input.page - 1) * input.pageSize)
+        .limit(input.pageSize)
+        .select([
+          'id',
+          'name',
+          'mode',
+          'models',
+          'api_key',
+          'base_url',
+          'options',
+          'created_at',
+          'prompt'
+        ])
+        .orderBy('id', 'desc')
+        .execute()
       const total = await ctx.db
         .selectFrom('assistants')
         .select((eb) => eb.fn.count<string>('id').as('total'))
@@ -75,7 +71,7 @@ export const manageRouter = {
         .select(['tool_id', 'system_tool_id'])
         .execute()
       return {
-        ...parseRecord(record),
+        ...record,
         api_key: record.api_key ? await aesDecrypt(record.api_key) : null,
         tools: tools.map((t) => t.tool_id || t.system_tool_id)
       }
@@ -475,17 +471,13 @@ export const manageRouter = {
       })
     )
     .query(async ({ input, ctx }) => {
-      const tools = (
-        await ctx.db
-          .selectFrom('tools')
-          .offset((input.page - 1) * input.pageSize)
-          .limit(input.pageSize)
-          .selectAll()
-          .orderBy('created_at', 'desc')
-          .execute()
-      ).map((r) => {
-        return parseRecord(r, ['auto'])
-      })
+      const tools = await ctx.db
+        .selectFrom('tools')
+        .offset((input.page - 1) * input.pageSize)
+        .limit(input.pageSize)
+        .selectAll()
+        .orderBy('created_at', 'desc')
+        .execute()
       const total = await ctx.db
         .selectFrom('tools')
         .select((eb) => eb.fn.count<string>('id').as('total'))

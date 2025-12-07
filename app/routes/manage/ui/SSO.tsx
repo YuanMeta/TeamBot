@@ -7,7 +7,6 @@ import {
 import { PencilLine, Trash } from 'lucide-react'
 import { observer } from 'mobx-react-lite'
 import { useCallback, useEffect, useMemo } from 'react'
-import type { TableAuthProvider } from 'types/table'
 import { trpc } from '~/.client/trpc'
 import { Button } from '~/components/ui/button'
 import {
@@ -21,6 +20,8 @@ import {
 import { useLocalState } from '~/hooks/localState'
 import { AddSsoProvider } from './AddSsoProvider'
 import { useAccess } from '~/lib/access'
+import type { Selectable } from 'kysely'
+import type { AuthProviders } from 'server/lib/db/types'
 
 export interface SSOInstance {
   add: () => void
@@ -30,9 +31,10 @@ interface SSOProps {
   instance?: SSOInstance
 }
 
+type AuthProviderData = Selectable<AuthProviders>
 export const SSO = observer(({ instance }: SSOProps) => {
   const { hasAccess } = useAccess()
-  const columns: ColumnDef<TableAuthProvider>[] = useMemo(() => {
+  const columns: ColumnDef<AuthProviderData>[] = useMemo(() => {
     return [
       {
         accessorKey: 'name',
@@ -78,16 +80,16 @@ export const SSO = observer(({ instance }: SSOProps) => {
           )
         }
       }
-    ] as ColumnDef<TableAuthProvider>[]
+    ] as ColumnDef<AuthProviderData>[]
   }, [])
   const [state, setState] = useLocalState({
-    data: [] as TableAuthProvider[],
+    data: [] as AuthProviderData[],
     openAddSsoProvider: false,
     selectedSsoProviderId: null as null | number
   })
   const getProviders = useCallback(() => {
     trpc.manage.getAuthProviders.query().then((res) => {
-      setState({ data: res as TableAuthProvider[] })
+      setState({ data: res as AuthProviderData[] })
     })
   }, [])
 

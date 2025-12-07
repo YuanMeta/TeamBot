@@ -23,15 +23,17 @@ import { useLocalState } from '~/hooks/localState'
 import { AddAssistant } from './ui/AddAssistant'
 import { useCallback, useEffect, useMemo } from 'react'
 import { trpc } from '~/.client/trpc'
-import type { TableAssistant } from 'types/table'
 import { ModelIcon } from '~/lib/ModelIcon'
 import { adminConfirmDialog$ } from '~/components/project/confirm-dialog'
 import { Usage } from './ui/Usage'
 import { useAccess } from '~/lib/access'
 import { Pagination } from '~/components/project/pagination'
+import type { Selectable } from 'kysely'
+import type { Assistants } from 'server/lib/db/types'
 
+type AssistantData = Selectable<Assistants>
 export default observer(() => {
-  const columns: ColumnDef<TableAssistant>[] = useMemo(() => {
+  const columns: ColumnDef<AssistantData>[] = useMemo(() => {
     return [
       {
         accessorKey: 'name',
@@ -106,12 +108,12 @@ export default observer(() => {
           )
         }
       }
-    ] as ColumnDef<TableAssistant>[]
+    ] as ColumnDef<AssistantData>[]
   }, [])
   const [state, setState] = useLocalState({
     openProviderForm: false,
     selectedProviderId: null as null | number,
-    data: [] as TableAssistant[],
+    data: [] as AssistantData[],
     openUsage: false,
     page: 1,
     pageSize: 10,
@@ -126,7 +128,7 @@ export default observer(() => {
       })
       .then((res) => {
         setState({
-          data: res.list as unknown as TableAssistant[],
+          data: res.list as unknown as AssistantData[],
           total: res.total
         })
       })

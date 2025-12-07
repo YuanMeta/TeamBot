@@ -25,7 +25,6 @@ import type { TrpcRequestError } from 'types'
 import { toast } from 'sonner'
 import { useLocalState } from '~/hooks/localState'
 import { Spinner } from '~/components/ui/spinner'
-import type { TableTool } from 'types/table'
 import { Card, CardContent, CardHeader, CardTitle } from '~/components/ui/card'
 import { builtInSearchMode } from './data'
 import { RadioGroup, RadioGroupItem } from '~/components/ui/radio-group'
@@ -33,6 +32,8 @@ import { Label } from '~/components/ui/label'
 import { Slider } from '~/components/ui/slider'
 import { Checkbox } from '~/components/ui/checkbox'
 import { TextHelp } from '~/components/project/text-help'
+import type { Selectable } from 'kysely'
+import type { Tools } from 'server/lib/db/types'
 
 const systemToolsTexts: Record<string, { name: string; description: string }> =
   {
@@ -41,6 +42,8 @@ const systemToolsTexts: Record<string, { name: string; description: string }> =
       description: '可以检索给定URL网页的主要文本内容'
     }
   }
+
+type ToolData = Selectable<Tools>
 export const AddAssistant = observer(
   (props: {
     open: boolean
@@ -50,7 +53,7 @@ export const AddAssistant = observer(
   }) => {
     const [state, setState] = useLocalState({
       submitting: false,
-      tools: [] as TableTool[],
+      tools: [] as ToolData[],
       update: false,
       systemTools: [] as string[],
       options: {
@@ -101,7 +104,7 @@ export const AddAssistant = observer(
         api_key: null as string | null,
         base_url: null as string | null,
         options: {
-          builtin_search: 'off',
+          builtin_search: false,
           maxContextTokens: 30000,
           maxOutputTokens: 0
         } as Record<string, any>,
@@ -569,7 +572,9 @@ export const AddAssistant = observer(
                               </FieldLabel>
                               <RadioGroup
                                 value={field.state.value}
-                                onValueChange={(value) => field.setValue(value)}
+                                onValueChange={(value) =>
+                                  field.setValue(value === 'on' ? true : false)
+                                }
                               >
                                 <div className='flex items-center gap-3'>
                                   <RadioGroupItem value='off' id='r1' />
