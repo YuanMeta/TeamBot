@@ -14,8 +14,7 @@ import type { Assistants } from './db/types'
 export const systemTools = ['fetch_url_content']
 
 export const getUrlContent = tool({
-  description:
-    'Can retrieve the main text content of a given URL webpage and return it in Markdown format',
+  description: `Fetch and return the main human-readable text content of the provided URL in Markdown. Only call this tool when you need to verify or retrieve webpage content that the model's internal knowledge may not cover—do NOT call for basic known facts.`,
   inputSchema: z.object({
     url: z.string().describe('The url to fetch the content from')
   }),
