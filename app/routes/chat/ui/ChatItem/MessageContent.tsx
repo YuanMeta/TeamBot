@@ -21,10 +21,7 @@ const MessageContent = observer<{ msg: MessageData }>(({ msg }) => {
     <div className={'relative max-w-full'}>
       <div className={'flex flex-col gap-2.5'}>
         {msg.parts?.map((p, index) => (
-          <div
-            key={index}
-            className={`${(p as ToolPart).state === 'completed' && store.state.toolsMap.get((p as ToolPart).toolName)?.type === 'http' ? 'hidden' : ''}`}
-          >
+          <div key={index}>
             {p.type === 'text' && (
               <Markdown
                 fontSize={16}
@@ -34,8 +31,13 @@ const MessageContent = observer<{ msg: MessageData }>(({ msg }) => {
                 {formatStreamText(p.text)}
               </Markdown>
             )}
+            {/* {p.type === 'tool' && (
+              <span className={'text-red-500'}>
+                {store.state.toolsMap.get(p.toolName)?.type}
+              </span>
+            )} */}
             {p.type === 'tool' &&
-              (store.state.toolsMap.get(p.toolName) ||
+              (!!store.state.toolsMap.get(p.toolName) ||
                 p.toolName === 'fetch_url_content') && (
                 <div>
                   {p.toolName === 'fetch_url_content' && <UrlTool tool={p} />}

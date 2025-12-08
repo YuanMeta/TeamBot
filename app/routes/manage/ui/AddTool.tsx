@@ -1,6 +1,6 @@
 import { useForm } from '@tanstack/react-form'
 import { observer } from 'mobx-react-lite'
-import { useEffect, useMemo } from 'react'
+import { useCallback, useEffect, useMemo, useRef } from 'react'
 import z from 'zod'
 import { trpc } from '~/.client/trpc'
 import { Button } from '~/components/ui/button'
@@ -39,6 +39,7 @@ import CodeEditor from '~/components/project/Code'
 import bochaIcon from '~/assets/bocha.png'
 import zhipuIcon from '~/assets/zhipu.png'
 import { toast } from 'sonner'
+import { useLocalState } from '~/hooks/localState'
 
 const httpJsonSchema = z.object({
   url: z.url({ error: '请填写正确的请求URL' }),
@@ -96,7 +97,7 @@ const useTexts = () => {
       web_search_desc:
         '通过搜索引擎获取最新网页内容，用于补充或验证模型的知识。如果你认为需要最新的信息来回答用户的问题，请使用此工具。',
       http_json: `{
-  "url": "https://example.com",
+  "url": "https://example.tb",
   "method": "GET",
   "headers": {
     "Authorization": "Bearer <your_api_key>"
@@ -119,6 +120,111 @@ const useTexts = () => {
     []
   )
 }
+
+const InputParams = observer(
+  (props: {
+    open: boolean
+    onClose: () => void
+    onConfirm: (data: Record<string, any>) => Promise<boolean>
+    input: {
+      key: string
+      type: 'string' | 'number'
+      describe: string
+    }[]
+  }) => {
+    const [state, setState] = useLocalState({
+      data: {} as Record<string, any>,
+      submitting: false
+    })
+    const confirm = useCallback(() => {
+      const schemaFields: Record<string, any> = {}
+
+      props.input.forEach((field) => {
+        if (field.type === 'string') {
+          schemaFields[field.key] = z.string().describe(field.describe)
+        } else if (field.type === 'number') {
+          schemaFields[field.key] = z.coerce
+            .number()
+            .positive()
+            .describe(field.describe)
+        }
+      })
+      let params = state.data
+      const inputSchema =
+        Object.keys(schemaFields).length > 0
+          ? z.object(schemaFields)
+          : z.object({})
+      try {
+        params = inputSchema.parse(state.data)
+      } catch (e) {
+        if (e instanceof z.ZodError) {
+          toast.error(e.issues[0].message)
+          return
+        }
+      }
+      setState((state) => {
+        state.submitting = true
+      })
+      props
+        .onConfirm(params)
+        .then((res) => {
+          if (res) {
+            props.onClose()
+          }
+        })
+        .finally(() => {
+          setState((state) => {
+            state.submitting = false
+          })
+        })
+    }, [props.onConfirm, props.input])
+    return (
+      <Dialog
+        open={props.open}
+        onOpenChange={(open) => {
+          if (!open) {
+            props.onClose()
+          }
+        }}
+      >
+        <DialogContent className={'w-[420px] max-w-[calc(100vw-2rem)]'}>
+          <DialogHeader>
+            <DialogTitle>请求测试</DialogTitle>
+          </DialogHeader>
+          <div
+            className={'px-5 pt-2 pb-3 max-h-[400px] overflow-y-auto space-y-3'}
+          >
+            {props.input.map((input) => (
+              <div key={input.key}>
+                <Field>
+                  <FieldLabel>{input.key}</FieldLabel>
+                  <Input
+                    placeholder={input.describe}
+                    value={state.data[input.key]}
+                    onChange={(e) => {
+                      setState((state) => {
+                        state.data[input.key] = e.target.value
+                      })
+                    }}
+                  />
+                </Field>
+              </div>
+            ))}
+            <Button
+              className={'w-full mt-4'}
+              onClick={confirm}
+              disabled={state.submitting}
+            >
+              {state.submitting && <Spinner />}
+              确认
+            </Button>
+          </div>
+        </DialogContent>
+      </Dialog>
+    )
+  }
+)
+
 export const AddTool = observer(
   (props: {
     open: boolean
@@ -127,6 +233,47 @@ export const AddTool = observer(
     onUpdate: () => void
   }) => {
     const texts = useTexts()
+    const dataRef = useRef<Record<string, any>>({})
+    const [state, setState] = useLocalState({
+      openInputParams: false,
+      inputParams: [] as {
+        key: string
+        type: 'string' | 'number'
+        describe: string
+      }[]
+    })
+    const httpTest = useCallback(
+      async (params: z.infer<typeof httpJsonSchema>) => {
+        try {
+          await trpc.common.httpTest.mutate(params)
+          return true
+        } catch (e: any) {
+          toast.error(`http 请求失败: ${e.message}`)
+          return false
+        }
+      },
+      []
+    )
+    const save = useCallback(
+      async (data: Record<string, any>) => {
+        try {
+          if (props.id) {
+            await trpc.manage.updateTool.mutate({
+              id: props.id,
+              data: data as any
+            })
+          } else {
+            await trpc.manage.createTool.mutate(data as any)
+          }
+        } catch (e: any) {
+          toast.error(e.message)
+          return
+        }
+        props.onUpdate()
+        props.onClose()
+      },
+      [props.id]
+    )
     const form = useForm({
       defaultValues: {
         name: '',
@@ -139,38 +286,34 @@ export const AddTool = observer(
         } as Record<string, any>
       },
       onSubmit: async ({ value }) => {
-        try {
-          if (value.type === 'web_search') {
-            await trpc.manage.connectSearch.mutate(value.params as any)
-          }
-          if (props.id) {
-            await trpc.manage.updateTool.mutate({
-              id: props.id,
-              data: {
-                description: value.description,
-                name: value.name,
-                params: value.params,
-                auto: value.auto,
-                type: value.type as 'web_search' | 'http'
-              }
+        const saveData = async () => {
+          await save({
+            id: value.id,
+            description: value.description,
+            name: value.name,
+            params: value.params,
+            auto: value.auto,
+            type: value.type as 'web_search' | 'http'
+          })
+        }
+        if (value.type === 'web_search') {
+          await trpc.manage.connectSearch.mutate(value.params as any)
+          saveData()
+        } else if (value.type === 'http') {
+          const http = JSON.parse(value.params.http)
+          if (http.input?.length) {
+            dataRef.current = value
+            setState((state) => {
+              state.openInputParams = true
+              state.inputParams = http.input
             })
           } else {
-            await trpc.manage.createTool.mutate({
-              description: value.description,
-              name: value.name,
-              id: value.id,
-              auto: value.auto,
-              params: value.params,
-              type: value.type as 'web_search' | 'http'
-            })
+            const valid = await httpTest(http)
+            if (valid) {
+              saveData()
+            }
           }
-        } catch (e: any) {
-          toast.error(e.message)
-          return
         }
-
-        props.onUpdate()
-        props.onClose()
       }
     })
     useEffect(() => {
@@ -573,8 +716,6 @@ export const AddTool = observer(
                           validators={{
                             onSubmit: ({ value }) => {
                               let data: Record<string, any> = {}
-                              console.log('value', value)
-
                               try {
                                 data = JSON.parse(value)
                               } catch {
@@ -584,8 +725,6 @@ export const AddTool = observer(
                                 httpJsonSchema.parse(data)
                               } catch (e) {
                                 if (e instanceof z.ZodError) {
-                                  console.log('1')
-
                                   return { message: e.issues[0].message }
                                 }
                               }
@@ -650,6 +789,33 @@ export const AddTool = observer(
             )}
           />
         </DialogContent>
+        <InputParams
+          open={state.openInputParams}
+          input={state.inputParams}
+          onConfirm={async (params) => {
+            const http = JSON.parse(dataRef.current.params.http)
+            const res = await httpTest({
+              url: http.url,
+              method: http.method,
+              headers: http.headers,
+              params: {
+                ...params,
+                ...http.params
+              }
+            })
+            if (res) {
+              await save(dataRef.current as any)
+              return true
+            } else {
+              return false
+            }
+          }}
+          onClose={() => {
+            setState((state) => {
+              state.openInputParams = false
+            })
+          }}
+        />
       </Dialog>
     )
   }

@@ -3,6 +3,7 @@ import { checkAllowUseAssistant, isAdmin } from 'server/lib/db/query'
 import z from 'zod'
 import { PasswordManager } from 'server/lib/password'
 import { TRPCError } from '@trpc/server'
+import ky from 'ky'
 
 export const commonRouter = {
   getUserInfo: procedure.query(async ({ ctx }) => {
@@ -80,5 +81,42 @@ export const commonRouter = {
         .where('id', '=', ctx.userId)
         .execute()
       return { success: true }
+    }),
+  httpTest: procedure
+    .input(
+      z.object({
+        url: z.string().min(1),
+        method: z.enum(['GET', 'POST', 'PUT', 'DELETE', 'PATCH']),
+        headers: z.record(z.string(), z.string()).optional(),
+        params: z.record(z.string(), z.any()).optional(),
+        timeout: z.number().optional().default(5000)
+      })
+    )
+    .mutation(async ({ input }) => {
+      try {
+        const res = await ky(input.url, {
+          timeout: input.timeout,
+          method: input.method,
+          headers: input.headers,
+          json: ['GET', 'DELETE'].includes(input.method)
+            ? undefined
+            : input.params,
+          searchParams: ['GET', 'DELETE'].includes(input.method)
+            ? input.params
+            : undefined
+        })
+        console.log('res', res.status)
+
+        if (res.ok) {
+          return res.text()
+        } else {
+          throw new TRPCError({
+            code: 'BAD_REQUEST',
+            message: await res.text()
+          })
+        }
+      } catch (e: any) {
+        throw new TRPCError({ code: 'BAD_REQUEST', message: e.message })
+      }
     })
 }

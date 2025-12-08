@@ -22,7 +22,9 @@ export const getUrlContent = tool({
   execute: async ({ url }) => {
     const res = await fetch(url).then((res) => res.text())
     const content = getReadability(res, url)
-    const markdown = htmlToMarkdown(content?.content || '')
+    let markdown = htmlToMarkdown(content?.content || '')
+    markdown =
+      markdown.length > 5000 ? markdown.slice(0, 5000) + '...' : markdown
     return content?.content ? markdown : 'Failed to retrieve page content'
   }
 })
@@ -91,6 +93,7 @@ export const createHttpTool = (options: {
         } else {
           data = await response.text()
         }
+
         if (!response.ok) {
           return {
             success: false,

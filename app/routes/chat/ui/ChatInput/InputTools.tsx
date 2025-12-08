@@ -24,7 +24,7 @@ export const InputTools = observer(
       if (store.state.assistant) {
         return store.state.assistant.tools
           .map((t) => store.state.toolsMap.get(t)!)
-          .filter(Boolean)
+          .filter((t) => !t.auto)
       }
       return []
     }, [store.state.tools, store.state.assistant])

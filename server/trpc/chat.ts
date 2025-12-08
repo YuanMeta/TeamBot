@@ -239,10 +239,7 @@ export const chatRouter = {
   getTools: procedure.query(async ({ ctx }) => {
     return ctx.db
       .selectFrom('tools')
-      .where((eb) =>
-        eb.or([eb('auto', '=', false), eb('type', '=', 'web_search')])
-      )
-      .select(['id', 'name', 'description', 'type'])
+      .select(['id', 'name', 'description', 'type', 'auto'])
       .execute()
   }),
   createMessages: procedure
