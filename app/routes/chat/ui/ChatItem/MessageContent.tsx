@@ -18,10 +18,17 @@ const MessageContent = observer<{ msg: MessageData }>(({ msg }) => {
   const store = useStore()
   if (!msg.parts?.length && !msg.terminated) return <BubblesLoading />
   return (
-    <div className={'relative max-w-full'}>
+    <div className={`relative max-w-full`}>
       <div className={'flex flex-col gap-2.5'}>
         {msg.parts?.map((p, index) => (
-          <div key={index}>
+          <div
+            key={index}
+            className={`${
+              msg.terminated && p.type === 'tool' && p.state !== 'completed'
+                ? 'hidden'
+                : ''
+            }`}
+          >
             {p.type === 'text' && (
               <Markdown
                 fontSize={16}
@@ -31,11 +38,6 @@ const MessageContent = observer<{ msg: MessageData }>(({ msg }) => {
                 {formatStreamText(p.text)}
               </Markdown>
             )}
-            {/* {p.type === 'tool' && (
-              <span className={'text-red-500'}>
-                {store.state.toolsMap.get(p.toolName)?.type}
-              </span>
-            )} */}
             {p.type === 'tool' &&
               (!!store.state.toolsMap.get(p.toolName) ||
                 p.toolName === 'fetch_url_content') && (
