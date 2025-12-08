@@ -276,9 +276,7 @@ export const ChatSidebar = observer(() => {
         <AlertDialogContent className={'w-96'}>
           <AlertDialogHeader>
             <AlertDialogTitle>删除聊天?</AlertDialogTitle>
-            <AlertDialogDescription>
-              删除聊天仍然会保留该聊天所使用的Tokens记录。
-            </AlertDialogDescription>
+            <AlertDialogDescription>该操作不可恢复。</AlertDialogDescription>
           </AlertDialogHeader>
           <AlertDialogFooter>
             <AlertDialogCancel>取消</AlertDialogCancel>

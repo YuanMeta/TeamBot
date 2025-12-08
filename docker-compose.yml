@@ -35,8 +35,7 @@ services:
       JWT_SECRET: ${JWT_SECRET}
       COOKIE_SECRET: ${COOKIE_SECRET}
     volumes:
-      - ./logs:/app/logs
-      - ./files:/app/files
+      - app_files:/app/files
     ports:
       - '${PORT:-3000}:3000'
     depends_on:
@@ -47,6 +46,8 @@ services:
 
 volumes:
   postgres_data:
+    driver: local
+  app_files:
     driver: local
 
 networks:

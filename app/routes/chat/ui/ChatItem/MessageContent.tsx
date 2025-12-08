@@ -6,7 +6,6 @@ import { useStore, type MessageData } from '../../store/store'
 import { Reasoning } from './Reasion'
 import { HttpTool, UrlTool, WebSearchTool } from './Tools'
 import { formatStreamText } from '~/lib/chat'
-import type { ToolPart } from 'types'
 
 export interface MessageContentProps {
   fontSize?: number
