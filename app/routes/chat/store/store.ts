@@ -52,6 +52,7 @@ const state = {
       abortController?: AbortController
     }
   >,
+  notSupportImageInputMode: new Set(['deepseek']),
   messages: [] as MessageData[],
   selectedTools: {} as Record<string, string[]>,
   openWebSearchData: {} as Record<string, boolean>,

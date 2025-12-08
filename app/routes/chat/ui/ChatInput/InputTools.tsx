@@ -50,6 +50,9 @@ export const InputTools = observer(
               文档
             </DropdownMenuItem>
             <DropdownMenuItem
+              disabled={store.state.notSupportImageInputMode.has(
+                store.state.assistant?.mode!
+              )}
               onClick={async () => {
                 const file = await fileOpen({
                   extensions: ['.png', '.jpg', '.jpeg', '.webp', '.gif'],

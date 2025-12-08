@@ -1,4 +1,3 @@
-import { sql } from 'kysely'
 import type { KDB } from './instance'
 
 export const isAdmin = async (db: KDB, userId: number) => {

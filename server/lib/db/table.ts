@@ -1,4 +1,3 @@
-import { isJsonObject } from '../utils'
 import { PasswordManager } from '../password'
 import { insertAccesses, insertRoles } from './access'
 import type { KDB } from './instance'
@@ -430,17 +429,6 @@ export const tableSchema = async (db: KDB) => {
       })
       .execute()
   }
-}
-
-export const insertRecord = <T extends Record<string, any>>(data: T): T => {
-  return Object.keys(data).reduce((acc, key) => {
-    if (isJsonObject(data[key])) {
-      acc[key] = JSON.stringify(data[key])
-    } else {
-      acc[key] = data[key]
-    }
-    return acc
-  }, {} as any)
 }
 
 export const parseRecord = <T extends Record<string, any>>(

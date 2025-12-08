@@ -1,6 +1,6 @@
 import { CircleStop, CircleX, Globe, SendHorizontal } from 'lucide-react'
 import { observer } from 'mobx-react-lite'
-import { useCallback } from 'react'
+import { useCallback, useEffect } from 'react'
 import { InputArea } from './InputArea'
 import { useStore } from '../../store/store'
 import { useLocalState } from '~/hooks/localState'
@@ -38,6 +38,15 @@ export const ChatInput = observer(() => {
       }
     })
   }, [])
+  useEffect(() => {
+    if (
+      store.state.notSupportImageInputMode.has(store.state.assistant?.mode!)
+    ) {
+      setState((state) => {
+        state.images = []
+      })
+    }
+  }, [store.state.assistant?.mode])
   return (
     <div className={'chat-input w-full relative px-8'}>
       <div
