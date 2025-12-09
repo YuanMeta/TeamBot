@@ -2,7 +2,10 @@ name: teambot
 
 services:
   postgres:
-    image: pgvector/pgvector:pg18
+    build:
+      context: .
+      dockerfile: Dockerfile.postgres
+    image: teambot-postgres:pg16
     container_name: teambot-postgres
     restart: unless-stopped
     environment:

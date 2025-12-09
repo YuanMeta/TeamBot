@@ -6,6 +6,13 @@ npm-debug.log
 *.log
 logs
 dist
+app
+files
+scripts
+server
+types
+test-client.ts
+*.tar.gz
 .cache
 .vscode
 .idea
