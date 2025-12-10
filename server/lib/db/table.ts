@@ -1,5 +1,5 @@
 import { PasswordManager } from '../password'
-import { insertAccesses, insertRoles } from './access'
+import { insertAccesses, insertRoles } from '../../db/access'
 import type { KDB } from './instance'
 import { sql } from 'kysely'
 const hasTable = async (db: KDB, table: string): Promise<boolean> => {

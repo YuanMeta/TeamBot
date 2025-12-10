@@ -850,27 +850,28 @@ export const manageRouter = {
       })
     )
     .query(async ({ input, ctx }) => {
-      const list = await ctx.db.query.users.findMany({
-        columns: { id: true, email: true, name: true },
+      const list = await ctx.db.query.roles.findFirst({
+        columns: {},
+        where: {
+          id: input.roleId
+        },
         with: {
-          roles: {
-            where: {
-              id: input.roleId
-            }
+          users: {
+            columns: { id: true, email: true, name: true },
+            orderBy: {
+              id: 'desc'
+            },
+            offset: (input.page - 1) * input.pageSize,
+            limit: input.pageSize
           }
-        },
-        orderBy: {
-          id: 'desc'
-        },
-        offset: (input.page - 1) * input.pageSize,
-        limit: input.pageSize
+        }
       })
       const [totalResult] = await ctx.db
         .select({ total: count(userRoles.userId) })
         .from(userRoles)
         .where(eq(userRoles.roleId, input.roleId))
       return {
-        list,
+        list: list?.users || [],
         total: totalResult?.total || 0
       }
     }),
