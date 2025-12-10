@@ -46,3 +46,28 @@ export const checkAllowUseAssistant = async (
     .limit(1)
   return result.length > 0
 }
+
+export const parseRecord = <T extends Record<string, any>>(
+  data: T,
+  boolFields?: string[]
+): T => {
+  return Object.keys(data).reduce((acc, key) => {
+    let value = data[key]
+    if (boolFields?.includes(key) && typeof value === 'number') {
+      value = value === 1
+    }
+    if (
+      typeof value === 'string' &&
+      (value.startsWith('{') || value.startsWith('['))
+    ) {
+      try {
+        acc[key] = JSON.parse(value)
+      } catch (e) {
+        acc[key] = value
+      }
+    } else {
+      acc[key] = value
+    }
+    return acc
+  }, {} as any)
+}

@@ -1,6 +1,5 @@
 import { redirect, useLoaderData, useNavigate } from 'react-router'
 import type { Route } from './+types/publish'
-import { parseRecord } from 'server/lib/db/table'
 import {
   Empty,
   EmptyContent,
@@ -15,6 +14,7 @@ import ChatItem from './ui/ChatItem'
 import { useMemo } from 'react'
 import { ChatStore, StoreContext } from './store/store'
 import { SearchResult } from './ui/SearchResult'
+import { parseRecord } from 'server/db/query'
 
 export const loader = async ({
   context: { db, userId },

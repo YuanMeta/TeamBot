@@ -26,10 +26,7 @@ import { TextHelp } from '~/components/project/text-help'
 import { adminConfirmDialog$ } from '~/components/project/confirm-dialog'
 import { toast } from 'sonner'
 import { useAccess } from '~/lib/access'
-import type { Selectable } from 'kysely'
-import type { Tools } from 'server/lib/db/types'
-
-type ToolData = Selectable<Tools>
+import type { ToolData } from 'server/db/type'
 export default observer(() => {
   const { hasAccess } = useAccess()
   const columns: ColumnDef<ToolData>[] = useMemo(() => {
@@ -130,7 +127,7 @@ export default observer(() => {
         pageSize: state.pageSize
       })
       .then((res) => {
-        setState({ data: res.tools, total: res.total })
+        setState({ data: res.tools as ToolData[], total: res.total })
       })
   }, [])
   useEffect(() => {

@@ -2,7 +2,6 @@ import { tool, type Tool } from 'ai'
 import z from 'zod'
 import { htmlToMarkdown } from '~/lib/utils'
 import { getReadability } from './utils'
-import { parseRecord } from './db/table'
 import { createWebSearchTool } from './search'
 import { google } from '@ai-sdk/google'
 import { openai } from '@ai-sdk/openai'
@@ -150,7 +149,6 @@ export const composeTools = async (
       .select()
       .from(tools)
       .where(inArray(tools.id, customTools))
-    toolsData = toolsData.map((t) => parseRecord(t))
     const hasCustomeWebSearch = toolsData.some((t) => t.type === 'web_search')
     if (!hasCustomeWebSearch) {
       if (assistant.mode === 'gemini' && options.builtinSearch) {

@@ -10,8 +10,10 @@ import { builtInSearchMode } from '~/routes/manage/ui/data'
 import 'dayjs/locale/zh-cn'
 import dayjs from 'dayjs'
 import relativeTime from 'dayjs/plugin/relativeTime'
-import type { Selectable } from 'kysely'
-import type { Assistants, Tools } from 'server/lib/db/types'
+import type {
+  AssistantData as AssistantDataType,
+  ToolData
+} from 'server/db/type'
 dayjs.extend(relativeTime)
 dayjs.locale('zh-cn')
 export interface MessageData {
@@ -30,10 +32,9 @@ export interface MessageData {
   updatedAt: Date
 }
 
-export interface AssistantData extends Selectable<Assistants> {
+export interface AssistantData extends AssistantDataType {
   tools: string[]
 }
-type ToolData = Selectable<Tools>
 
 export interface ChatData {
   id: string

@@ -32,8 +32,6 @@ import { Label } from '~/components/ui/label'
 import { Slider } from '~/components/ui/slider'
 import { Checkbox } from '~/components/ui/checkbox'
 import { TextHelp } from '~/components/project/text-help'
-import type { Selectable } from 'kysely'
-import type { Tools } from 'server/lib/db/types'
 import type { ToolData } from 'server/db/type'
 
 const systemToolsTexts: Record<string, { name: string; description: string }> =

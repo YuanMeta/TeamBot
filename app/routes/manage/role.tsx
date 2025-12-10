@@ -25,10 +25,8 @@ import { toast } from 'sonner'
 import { useAccess } from '~/lib/access'
 import { AddRole } from './ui/AddRole'
 import { RoleMember } from './ui/RoleMember'
-import type { Selectable } from 'kysely'
-import type { Roles } from 'server/lib/db/types'
+import type { RoleData } from 'server/db/type'
 
-type RoleData = Selectable<Roles>
 export default observer(() => {
   const { hasAccess } = useAccess()
   const columns: ColumnDef<RoleData>[] = useMemo(() => {

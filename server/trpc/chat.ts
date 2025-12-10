@@ -3,7 +3,6 @@ import { procedure } from './core'
 import z from 'zod'
 import dayjs from 'dayjs'
 import { tid } from 'server/lib/utils'
-import { parseRecord } from 'server/lib/db/table'
 import { unlink } from 'fs/promises'
 import { join } from 'path'
 import {
@@ -16,6 +15,7 @@ import {
   userRoles
 } from 'server/db/drizzle/schema'
 import { and, desc, eq, ilike, inArray, or } from 'drizzle-orm'
+import { parseRecord } from 'server/db/query'
 export const chatRouter = {
   createChat: procedure
     .input(

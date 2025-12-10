@@ -3,13 +3,13 @@ import { TRPCError } from '@trpc/server'
 import type { MessagePart } from 'types'
 import { createClient } from './checkConnect'
 import { findLast } from '~/lib/utils'
-import { parseRecord } from './db/table'
 import { aesDecrypt } from './utils'
 import type { NodePgDatabase } from 'drizzle-orm/node-postgres'
 import { assistants, chats, messages } from 'server/db/drizzle/schema'
 import { and, eq } from 'drizzle-orm'
 import type { MessageData } from 'server/db/type'
 import { increment } from 'server/db'
+import { parseRecord } from 'server/db/query'
 
 function addDocsContext(
   text: string,

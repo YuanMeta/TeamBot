@@ -28,10 +28,8 @@ import { adminConfirmDialog$ } from '~/components/project/confirm-dialog'
 import { Usage } from './ui/Usage'
 import { useAccess } from '~/lib/access'
 import { Pagination } from '~/components/project/pagination'
-import type { Selectable } from 'kysely'
-import type { Assistants } from 'server/lib/db/types'
+import type { AssistantData } from 'server/db/type'
 
-type AssistantData = Selectable<Assistants>
 export default observer(() => {
   const columns: ColumnDef<AssistantData>[] = useMemo(() => {
     return [

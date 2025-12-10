@@ -230,9 +230,6 @@ importers:
       ky:
         specifier: ^1.14.0
         version: 1.14.0
-      kysely:
-        specifier: ^0.28.8
-        version: 0.28.8
       lexical:
         specifier: ^0.37.0
         version: 0.37.0
@@ -4330,10 +4327,6 @@ packages:
   ky@1.14.0:
     resolution: {integrity: sha512-Rczb6FMM6JT0lvrOlP5WUOCB7s9XKxzwgErzhKlKde1bEV90FXplV1o87fpt4PU/asJFiqjYJxAJyzJhcrxOsQ==}
     engines: {node: '>=18'}
-
-  kysely@0.28.8:
-    resolution: {integrity: sha512-QUOgl5ZrS9IRuhq5FvOKFSsD/3+IA6MLE81/bOOTRA/YQpKDza2sFdN5g6JCB9BOpqMJDGefLCQ9F12hRS13TA==}
-    engines: {node: '>=20.0.0'}
 
   langium@3.3.1:
     resolution: {integrity: sha512-QJv/h939gDpvT+9SiLVlY7tZC3xB2qK57v0J04Sh9wpMb6MP1q8gB21L3WIo8T5P1MSMg3Ep14L7KkDCFG3y4w==}
@@ -10901,8 +10894,6 @@ snapshots:
   khroma@2.1.0: {}
 
   ky@1.14.0: {}
-
-  kysely@0.28.8: {}
 
   langium@3.3.1:
     dependencies:

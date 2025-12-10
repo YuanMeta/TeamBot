@@ -32,10 +32,9 @@ import { Tabs, TabsContent, TabsList, TabsTrigger } from '~/components/ui/tabs'
 import { SSO, type SSOInstance } from './ui/SSO'
 import { useAccess } from '~/lib/access'
 import { Badge } from '~/components/ui/badge'
-import type { Selectable } from 'kysely'
-import type { Users as UserType } from 'server/lib/db/types'
+import type { UserData } from 'server/db/type'
 
-type MemberData = Selectable<UserType> & { roles: string[] }
+type MemberData = UserData & { roles: string[] }
 export default observer(() => {
   const { hasAccess } = useAccess()
   const columns: ColumnDef<MemberData>[] = useMemo(() => {

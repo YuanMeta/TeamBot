@@ -31,10 +31,8 @@ import {
 } from '~/components/ui/table'
 import { useLocalState } from '~/hooks/localState'
 import { toast } from 'sonner'
-import type { Selectable } from 'kysely'
-import type { Users } from 'server/lib/db/types'
+import type { UserData } from 'server/db/type'
 
-type UserData = Selectable<Users>
 export const RoleMember = observer(
   (props: { roleId: number; open: boolean; onClose: () => void }) => {
     const [state, setState] = useLocalState({

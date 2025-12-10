@@ -88,7 +88,6 @@
     "json-schema": "^0.4.0",
     "jsonwebtoken": "^9.0.2",
     "ky": "^1.14.0",
-    "kysely": "^0.28.8",
     "lexical": "^0.37.0",
     "lucide-react": "^0.545.0",
     "mammoth": "^1.11.0",

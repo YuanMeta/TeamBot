@@ -74,7 +74,7 @@ export const AddMember = observer(
                 name: res.name || '',
                 passowrd: '',
                 rePassword: '',
-                roles: res.roles
+                roles: res.roles.map((r) => r.id)
               })
             }
           })

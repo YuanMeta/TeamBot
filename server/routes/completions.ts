@@ -4,7 +4,6 @@ import {
   streamText,
   type APICallError
 } from 'ai'
-import { sql } from 'kysely'
 import z from 'zod'
 import { TRPCError } from '@trpc/server'
 import type { MessagePart, Usage } from 'types'
@@ -15,7 +14,6 @@ import type { Request, Response } from 'express'
 import { saveFileByBase64 } from '../lib/utils'
 import dayjs from 'dayjs'
 import { checkAllowUseAssistant } from 'server/db/query'
-import type { NodePgDatabase } from 'drizzle-orm/node-postgres'
 import { assistantUsages, chats, messages } from 'server/db/drizzle/schema'
 import { and, eq } from 'drizzle-orm'
 import { increment, type DbInstance } from 'server/db'
