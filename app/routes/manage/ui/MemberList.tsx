@@ -74,6 +74,7 @@ export const MemberList = observer(() => {
       <Table
         size={'small'}
         dataSource={state.data}
+        bordered={true}
         rowKey={'id'}
         pagination={{
           pageSize: state.pageSize,

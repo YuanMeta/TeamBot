@@ -346,12 +346,17 @@ export const manageRouter = {
         },
         where: input.keyword
           ? {
-              OR: [
-                { name: { like: `%${input.keyword}%` } },
-                { email: { like: `%${input.keyword}%` } }
+              AND: [
+                { deleted: false },
+                {
+                  OR: [
+                    { name: { like: `%${input.keyword}%` } },
+                    { email: { like: `%${input.keyword}%` } }
+                  ]
+                }
               ]
             }
-          : undefined
+          : { deleted: false }
       })
 
       const total = await ctx.db.$count(

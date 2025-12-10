@@ -1,98 +1,16 @@
-import {
-  type ColumnDef,
-  getCoreRowModel,
-  useReactTable
-} from '@tanstack/react-table'
-import { KeyRound, PencilLine, Trash, Users, Waypoints } from 'lucide-react'
+import { Users, Waypoints } from 'lucide-react'
 
-import { Button } from '~/components/ui/button'
 import { observer } from 'mobx-react-lite'
 import { useLocalState } from '~/hooks/localState'
-import { useCallback, useEffect, useMemo, useRef } from 'react'
+import { useCallback, useEffect } from 'react'
 import { trpc } from '~/.client/trpc'
-import { type SSOInstance } from './ui/SSO'
-import { useAccess } from '~/lib/access'
-import { Badge } from '~/components/ui/badge'
+import { SSO } from './ui/SSO'
 import type { UserData } from 'server/db/type'
 import { Tabs } from 'antd'
 import { MemberList } from './ui/MemberList'
 
 type MemberData = UserData & { roles: string[] }
 export default observer(() => {
-  const { hasAccess } = useAccess()
-  const columns: ColumnDef<MemberData>[] = useMemo(() => {
-    return [
-      {
-        accessorKey: 'name',
-        header: '成员名',
-        cell: ({ row }) => (
-          <div className='capitalize flex items-center gap-1.5'>
-            {row.getValue('name')}
-            {row.original.root && (
-              <KeyRound className='size-3.5 text-blue-500' />
-            )}
-          </div>
-        )
-      },
-      {
-        accessorKey: 'email',
-        header: '邮箱',
-        cell: ({ row }) => <div>{row.getValue('email')}</div>
-      },
-      {
-        header: '角色',
-        accessorKey: 'roles',
-        cell: ({ row }) => (
-          <div className='lowercase flex flex-wrap gap-1'>
-            {row.original.root ? (
-              <Badge variant={'secondary'}>超级管理员</Badge>
-            ) : (
-              (row.getValue('roles') as any)?.map((r: string) => (
-                <Badge key={r} variant={'secondary'}>
-                  {r}
-                </Badge>
-              ))
-            )}
-          </div>
-        )
-      },
-      {
-        id: 'actions',
-        cell: ({ row }) => {
-          const data = row.original
-          return (
-            <div className={'flex gap-2'}>
-              <Button
-                variant='outline'
-                size='icon-sm'
-                disabled={
-                  !hasAccess('manageMemberAndRole') || row.original.root!
-                }
-                onClick={() => {
-                  setState({
-                    selectedMemberId: data.id,
-                    openAddMember: true
-                  })
-                }}
-              >
-                <PencilLine className={'size-3'} />
-              </Button>
-              <Button
-                variant='outline'
-                size='icon-sm'
-                disabled={
-                  !hasAccess('manageMemberAndRole') || row.original.root!
-                }
-              >
-                <Trash className={'size-3'} />
-              </Button>
-            </div>
-          )
-        }
-      }
-    ] as ColumnDef<MemberData>[]
-  }, [])
-  const ssoInstance = useRef<SSOInstance>({} as SSOInstance)
   const [state, setState] = useLocalState({
     page: 1,
     pageSize: 10,
@@ -117,11 +35,6 @@ export default observer(() => {
   useEffect(() => {
     getMembers()
   }, [])
-  const table = useReactTable({
-    data: state.data,
-    columns,
-    getCoreRowModel: getCoreRowModel()
-  })
   return (
     <div className='w-full'>
       <div>
@@ -145,7 +58,7 @@ export default observer(() => {
                   <Waypoints size={16} /> SSO
                 </div>
               ),
-              children: <div></div>
+              children: <SSO />
             }
           ]}
         />
