@@ -14,20 +14,6 @@ const hasTable = async (db: KDB, table: string): Promise<boolean> => {
   return result.rows[0]?.exists ?? false
 }
 export const tableSchema = async (db: KDB) => {
-  // await db.schema.dropTable('user_roles').ifExists().execute()
-  // await db.schema.dropTable('access_roles').ifExists().execute()
-  // await db.schema.dropTable('accesses').ifExists().execute()
-  // await db.schema.dropTable('roles').ifExists().execute()
-  // await db.schema.dropTable('messages').ifExists().execute()
-  // await db.schema.dropTable('chats').ifExists().execute()
-  // await db.schema.dropTable('assistant_tools').ifExists().execute()
-  // await db.schema.dropTable('tools').ifExists().execute()
-  // await db.schema.dropTable('assistant_usages').ifExists().execute()
-  // await db.schema.dropTable('assistants').ifExists().execute()
-  // await db.schema.dropTable('oauth_accounts').ifExists().execute()
-  // await db.schema.dropTable('users').ifExists().execute()
-  // await db.schema.dropTable('auth_providers').ifExists().execute()
-  // await db.schema.dropTable('models').ifExists().execute()
   if (!(await hasTable(db, 'users'))) {
     await db.schema
       .createTable('users')

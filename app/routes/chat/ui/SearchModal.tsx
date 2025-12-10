@@ -25,14 +25,14 @@ import { useStore } from '../store/store'
 interface MessageItem {
   id: string
   text: string
-  updated_at: Date
+  updatedAt: Date
   role: 'user' | 'assistant'
 }
 
 interface ChatItem {
   id: string
   title: string
-  last_chat_time: Date
+  lastChatTime: Date
   messages: MessageItem[]
 }
 
@@ -254,9 +254,7 @@ export const SearchModal = observer(() => {
                           : '无标题对话'}
                       </h3>
                       <p className='text-xs text-muted-foreground'>
-                        {dayjs(chat.last_chat_time).format(
-                          'YYYY-MM-DD HH:mm:ss'
-                        )}
+                        {dayjs(chat.lastChatTime).format('YYYY-MM-DD HH:mm:ss')}
                       </p>
                     </div>
                   </div>
@@ -279,7 +277,7 @@ export const SearchModal = observer(() => {
                               )}
                             </span>
                             <span className='text-[10px] text-muted-foreground'>
-                              {dayjs(message.updated_at).format(
+                              {dayjs(message.updatedAt).format(
                                 'YYYY-MM-DD HH:mm'
                               )}
                             </span>

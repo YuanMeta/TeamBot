@@ -9,15 +9,16 @@ import { TRPCError } from '@trpc/server'
 import { getHTTPStatusCodeFromError } from '@trpc/server/http'
 import { fetchOpenRouterModels } from './lib/openRouterModels'
 import { getUser } from './session'
-import { kdb, type KDB } from './lib/db/instance'
+import { initDbData } from './db/init'
+import { db, type DbInstance } from './db'
 declare module 'react-router' {
   interface AppLoadContext {
-    db: KDB
+    db: DbInstance
     userId: number | null
     root: boolean
   }
 }
-const db = await kdb()
+initDbData(db)
 fetchOpenRouterModels(db)
 
 export const app = express()

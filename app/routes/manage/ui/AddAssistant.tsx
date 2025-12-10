@@ -34,6 +34,7 @@ import { Checkbox } from '~/components/ui/checkbox'
 import { TextHelp } from '~/components/project/text-help'
 import type { Selectable } from 'kysely'
 import type { Tools } from 'server/lib/db/types'
+import type { ToolData } from 'server/db/type'
 
 const systemToolsTexts: Record<string, { name: string; description: string }> =
   {
@@ -43,7 +44,6 @@ const systemToolsTexts: Record<string, { name: string; description: string }> =
     }
   }
 
-type ToolData = Selectable<Tools>
 export const AddAssistant = observer(
   (props: {
     open: boolean
@@ -170,7 +170,7 @@ export const AddAssistant = observer(
           pageSize: 1000
         })
         .then((res) => {
-          setState({ tools: res.tools })
+          setState({ tools: res.tools as ToolData[] })
         })
     }, [])
     useEffect(() => {

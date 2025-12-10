@@ -1,7 +1,8 @@
-import type { KDB } from './db/instance'
+import type { NodePgDatabase } from 'drizzle-orm/node-postgres'
+import { models } from 'server/db/drizzle/schema'
 
 const providerMap = new Map([['google', 'gemini']])
-export const fetchOpenRouterModels = async (db: KDB) => {
+export const fetchOpenRouterModels = async (db: NodePgDatabase) => {
   try {
     const res = await fetch('https://openrouter.ai/api/v1/models').then((res) =>
       res.json()
@@ -20,11 +21,7 @@ export const fetchOpenRouterModels = async (db: KDB) => {
       })
 
     if (modelsToInsert.length > 0) {
-      await db
-        .insertInto('models')
-        .values(modelsToInsert)
-        .onConflict((oc) => oc.columns(['model', 'provider']).doNothing())
-        .execute()
+      await db.insert(models).values(modelsToInsert).onConflictDoNothing()
     }
   } catch (e) {
     console.error('Failed to fetch OpenRouter models', e)

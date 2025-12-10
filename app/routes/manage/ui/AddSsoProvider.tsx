@@ -80,14 +80,14 @@ export const AddSsoProvider = observer(
               form.reset({
                 name: res.name,
                 // issuer: res.issuer,
-                auth_url: res.auth_url,
-                token_url: res.token_url,
-                userinfo_url: res.userinfo_url,
+                auth_url: res.authUrl,
+                token_url: res.tokenUrl,
+                userinfo_url: res.userinfoUrl || '',
                 // jwks_uri: res.jwks_uri,
-                client_id: res.client_id,
-                client_secret: res.client_secret,
-                scopes: res.scopes,
-                use_pkce: res.use_pkce
+                client_id: res.clientId,
+                client_secret: res.clientSecret || '',
+                scopes: res.scopes || '',
+                use_pkce: res.usePkce
               })
             }
           })

@@ -1,0 +1,276 @@
+import {
+  pgSchema,
+  pgTable,
+  integer,
+  varchar,
+  serial,
+  uuid,
+  text,
+  jsonb,
+  bigint,
+  boolean,
+  timestamp,
+  index,
+  foreignKey,
+  primaryKey,
+  unique
+} from 'drizzle-orm/pg-core'
+import { sql } from 'drizzle-orm'
+import type { AssistantOptions } from '../type'
+
+export const drizzle = pgSchema('drizzle')
+
+export const drizzleMigrationsInDrizzle = drizzle.table(
+  '__drizzle_migrations',
+  {
+    id: serial().primaryKey(),
+    hash: text().notNull(),
+    createdAt: bigint('created_at', { mode: 'number' })
+  }
+)
+
+export const accessRoles = pgTable(
+  'access_roles',
+  {
+    roleId: integer('role_id')
+      .notNull()
+      .references(() => roles.id),
+    accessId: varchar('access_id')
+      .notNull()
+      .references(() => accesses.id)
+  },
+  (table) => [
+    primaryKey({
+      columns: [table.roleId, table.accessId]
+    }),
+    index().on(table.roleId)
+  ]
+)
+
+export const accesses = pgTable('accesses', {
+  id: varchar().primaryKey(),
+  remark: text(),
+  trpcAccess: jsonb('trpc_access')
+})
+
+export const assistantTools = pgTable(
+  'assistant_tools',
+  {
+    assistantId: integer('assistant_id')
+      .notNull()
+      .references(() => assistants.id),
+    toolId: varchar('tool_id').references(() => tools.id),
+    systemToolId: varchar('system_tool_id')
+  },
+  (table) => [
+    unique().on(table.assistantId, table.systemToolId),
+    unique().on(table.assistantId, table.toolId)
+  ]
+)
+
+export const assistantUsages = pgTable(
+  'assistant_usages',
+  {
+    id: uuid().defaultRandom().primaryKey(),
+    assistantId: integer('assistant_id')
+      .notNull()
+      .references(() => assistants.id),
+    inputTokens: integer('input_tokens').default(0).notNull(),
+    outputTokens: integer('output_tokens').default(0).notNull(),
+    totalTokens: integer('total_tokens').default(0).notNull(),
+    reasoningTokens: integer('reasoning_tokens').default(0).notNull(),
+    cachedInputTokens: integer('cached_input_tokens').default(0).notNull(),
+    createdAt: timestamp('created_at').notNull()
+  },
+  (table) => [
+    index().on(table.createdAt),
+    unique().on(table.assistantId, table.createdAt)
+  ]
+)
+
+export const assistants = pgTable('assistants', {
+  id: integer().primaryKey().generatedAlwaysAsIdentity(),
+  name: varchar().notNull(),
+  mode: varchar().notNull(),
+  apiKey: varchar('api_key'),
+  baseUrl: text('base_url'),
+  prompt: text(),
+  models: jsonb().notNull().$type<string[]>(),
+  options: jsonb().notNull().$type<AssistantOptions>(),
+  updatedAt: timestamp('updated_at'),
+  createdAt: timestamp('created_at')
+    .default(sql`now()`)
+    .notNull()
+})
+
+export const authProviders = pgTable('auth_providers', {
+  id: integer().primaryKey().generatedAlwaysAsIdentity(),
+  name: varchar().notNull(),
+  issuer: varchar(),
+  authUrl: text('auth_url').notNull(),
+  tokenUrl: text('token_url').notNull(),
+  userinfoUrl: text('userinfo_url'),
+  jwksUri: text('jwks_uri'),
+  clientId: text('client_id').notNull(),
+  clientSecret: text('client_secret'),
+  scopes: varchar(),
+  usePkce: boolean('use_pkce').default(false).notNull(),
+  createdAt: timestamp('created_at')
+    .default(sql`now()`)
+    .notNull(),
+  updatedAt: timestamp('updated_at')
+    .default(sql`now()`)
+    .notNull()
+})
+
+export const chats = pgTable(
+  'chats',
+  {
+    id: varchar().primaryKey(),
+    title: text().notNull(),
+    userId: integer('user_id')
+      .notNull()
+      .references(() => users.id),
+    assistantId: integer('assistant_id').references(() => assistants.id, {
+      onDelete: 'set null'
+    }),
+    public: boolean().default(false),
+    model: varchar(),
+    deleted: boolean().default(false),
+    summary: text(),
+    messageOffset: integer('message_offset').default(0).notNull(),
+    createdAt: timestamp('created_at')
+      .default(sql`now()`)
+      .notNull(),
+    lastChatTime: timestamp('last_chat_time')
+      .default(sql`now()`)
+      .notNull()
+  },
+  (table) => [index().on(table.userId)]
+)
+
+export const messages = pgTable(
+  'messages',
+  {
+    id: varchar().primaryKey(),
+    role: varchar().notNull(),
+    userId: integer('user_id')
+      .notNull()
+      .references(() => users.id),
+    chatId: varchar('chat_id')
+      .notNull()
+      .references(() => chats.id),
+    docs: text(),
+    error: text(),
+    model: varchar(),
+    assistantId: integer('assistant_id').references(() => assistants.id),
+    reasoningDuration: integer('reasoning_duration'),
+    parts: text(),
+    files: jsonb().$type<string[]>(),
+    text: text(),
+    inputTokens: integer('input_tokens').default(0).notNull(),
+    outputTokens: integer('output_tokens').default(0).notNull(),
+    totalTokens: integer('total_tokens').default(0).notNull(),
+    reasoningTokens: integer('reasoning_tokens').default(0).notNull(),
+    cachedInputTokens: integer('cached_input_tokens').default(0).notNull(),
+    steps: text(),
+    terminated: boolean().default(false),
+    createdAt: timestamp('created_at')
+      .default(sql`now()`)
+      .notNull(),
+    updatedAt: timestamp('updated_at')
+      .default(sql`now()`)
+      .notNull()
+  },
+  (table) => [index().on(table.userId, table.chatId)]
+)
+
+export const models = pgTable(
+  'models',
+  {
+    id: integer().primaryKey().generatedAlwaysAsIdentity(),
+    model: varchar().notNull(),
+    provider: varchar().notNull(),
+    options: text()
+  },
+  (table) => [unique().on(table.provider, table.model)]
+)
+
+export const oauthAccounts = pgTable(
+  'oauth_accounts',
+  {
+    providerId: integer('provider_id')
+      .notNull()
+      .references(() => authProviders.id),
+    providerUserId: varchar('provider_user_id').notNull(),
+    userId: integer('user_id')
+      .notNull()
+      .references(() => users.id),
+    profileJson: text('profile_json')
+  },
+  (table) => [unique().on(table.providerId, table.providerUserId)]
+)
+
+export const roles = pgTable('roles', {
+  id: serial().primaryKey(),
+  name: varchar().notNull(),
+  assistants: jsonb().notNull().$type<number[]>(),
+  allAssistants: boolean('all_assistants').notNull(),
+  remark: text()
+})
+
+export const tools = pgTable('tools', {
+  id: varchar().primaryKey(),
+  name: varchar().notNull(),
+  description: text().notNull(),
+  type: varchar().notNull(),
+  params: jsonb().notNull().$type<Record<string, any>>(),
+  auto: boolean().default(true).notNull(),
+  createdAt: timestamp('created_at')
+    .default(sql`now()`)
+    .notNull(),
+  updatedAt: timestamp('updated_at')
+    .default(sql`now()`)
+    .notNull()
+})
+
+export const userRoles = pgTable(
+  'user_roles',
+  {
+    userId: integer('user_id')
+      .notNull()
+      .references(() => users.id),
+    roleId: integer('role_id')
+      .notNull()
+      .references(() => roles.id)
+  },
+  (table) => [
+    primaryKey({
+      columns: [table.userId, table.roleId]
+    }),
+    index().on(table.userId)
+  ]
+)
+
+export const users = pgTable(
+  'users',
+  {
+    id: integer().primaryKey().generatedAlwaysAsIdentity(),
+    name: varchar(),
+    phone: varchar(),
+    email: varchar(),
+    avatar: varchar(),
+    password: varchar(),
+    deleted: boolean().default(false),
+    root: boolean().default(false),
+    updatedAt: timestamp('updated_at'),
+    createdAt: timestamp('created_at')
+      .default(sql`now()`)
+      .notNull()
+  },
+  (table) => [
+    unique().on(table.email),
+    unique().on(table.name),
+    unique().on(table.phone)
+  ]
+)

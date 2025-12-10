@@ -9,6 +9,32 @@ import dayjs from 'dayjs'
 import { deleteUserCache } from 'server/session'
 import { systemTools } from 'server/lib/tools'
 import { aesDecrypt, aesEncrypt } from 'server/lib/utils'
+import {
+  eq,
+  and,
+  or,
+  like,
+  inArray,
+  sql,
+  desc,
+  count,
+  sum,
+  gte
+} from 'drizzle-orm'
+import {
+  assistants,
+  assistantTools,
+  users,
+  userRoles,
+  roles,
+  tools,
+  models,
+  authProviders,
+  oauthAccounts,
+  assistantUsages,
+  accesses,
+  accessRoles
+} from 'server/db/drizzle/schema'
 export const manageRouter = {
   checkConnect: adminProcedure
     .input(
@@ -30,50 +56,49 @@ export const manageRouter = {
       })
     )
     .query(async ({ ctx, input }) => {
-      const list = await ctx.db
-        .selectFrom('assistants')
-        .offset((input.page - 1) * input.pageSize)
-        .limit(input.pageSize)
-        .select([
-          'id',
-          'name',
-          'mode',
-          'models',
-          'api_key',
-          'base_url',
-          'options',
-          'created_at',
-          'prompt'
-        ])
-        .orderBy('id', 'desc')
-        .execute()
-      const total = await ctx.db
-        .selectFrom('assistants')
-        .select((eb) => eb.fn.count<string>('id').as('total'))
-        .executeTakeFirst()
+      const list = await ctx.db.query.assistants.findMany({
+        columns: {
+          id: true,
+          name: true,
+          mode: true,
+          models: true,
+          apiKey: true,
+          baseUrl: true,
+          options: true,
+          createdAt: true,
+          prompt: true
+        },
+        orderBy: {
+          id: 'desc'
+        },
+        offset: (input.page - 1) * input.pageSize,
+        limit: input.pageSize
+      })
+      const total = await ctx.db.$count(assistants)
       return {
         list,
-        total: +(total?.total || 0)
+        total
       }
     }),
   getAssistant: adminProcedure
     .input(z.number())
     .query(async ({ input, ctx }) => {
-      const record = await ctx.db
-        .selectFrom('assistants')
-        .where('id', '=', input)
-        .selectAll()
-        .executeTakeFirst()
+      const [record] = await ctx.db
+        .select()
+        .from(assistants)
+        .where(eq(assistants.id, input))
       if (!record) return null
-      const tools = await ctx.db
-        .selectFrom('assistant_tools')
-        .where('assistant_id', '=', input)
-        .select(['tool_id', 'system_tool_id'])
-        .execute()
+      const toolsList = await ctx.db
+        .select({
+          toolId: assistantTools.toolId,
+          systemToolId: assistantTools.systemToolId
+        })
+        .from(assistantTools)
+        .where(eq(assistantTools.assistantId, input))
       return {
         ...record,
-        api_key: record.api_key ? await aesDecrypt(record.api_key) : null,
-        tools: tools.map((t) => t.tool_id || t.system_tool_id)
+        apiKey: record.apiKey ? await aesDecrypt(record.apiKey) : null,
+        tools: toolsList.map((t) => t.toolId || t.systemToolId)
       }
     }),
   updateAssistant: adminProcedure
@@ -92,45 +117,42 @@ export const manageRouter = {
       })
     )
     .mutation(async ({ input, ctx }) => {
-      await ctx.db.transaction().execute(async (trx) => {
+      await ctx.db.transaction(async (trx) => {
         await trx
-          .updateTable('assistants')
+          .update(assistants)
           .set({
             name: input.data.name,
             mode: input.data.mode,
-            models: JSON.stringify(input.data.models),
-            api_key: input.data.api_key
+            models: input.data.models as any,
+            apiKey: input.data.api_key
               ? await aesEncrypt(input.data.api_key)
               : null,
-            base_url: input.data.base_url,
+            baseUrl: input.data.base_url,
             options: input.data.options as any
           })
-          .where('id', '=', input.id)
-          .execute()
+          .where(eq(assistants.id, input.id))
         await trx
-          .deleteFrom('assistant_tools')
-          .where('assistant_id', '=', input.id)
-          .execute()
+          .delete(assistantTools)
+          .where(eq(assistantTools.assistantId, input.id))
         if (input.tools.length > 0) {
           if (input.tools.length) {
-            await trx
-              .insertInto('assistant_tools')
-              .values(
-                input.tools.map((tool) => {
-                  if (systemTools.includes(tool)) {
-                    return {
-                      assistant_id: input.id,
-                      system_tool_id: tool
-                    }
-                  } else {
-                    return {
-                      assistant_id: input.id,
-                      tool_id: tool
-                    }
+            await trx.insert(assistantTools).values(
+              input.tools.map((tool) => {
+                if (systemTools.includes(tool)) {
+                  return {
+                    assistantId: input.id,
+                    systemToolId: tool,
+                    toolId: null
                   }
-                })
-              )
-              .execute()
+                } else {
+                  return {
+                    assistantId: input.id,
+                    toolId: tool,
+                    systemToolId: null
+                  }
+                }
+              })
+            )
           }
         }
       })
@@ -143,15 +165,11 @@ export const manageRouter = {
       })
     )
     .mutation(async ({ input, ctx }) => {
-      await ctx.db.transaction().execute(async (trx) => {
+      await ctx.db.transaction(async (trx) => {
         await trx
-          .deleteFrom('assistant_tools')
-          .where('assistant_id', '=', input.assistantId)
-          .execute()
-        await trx
-          .deleteFrom('assistants')
-          .where('id', '=', input.assistantId)
-          .execute()
+          .delete(assistantTools)
+          .where(eq(assistantTools.assistantId, input.assistantId))
+        await trx.delete(assistants).where(eq(assistants.id, input.assistantId))
       })
       return { success: true }
     }),
@@ -170,40 +188,38 @@ export const manageRouter = {
       })
     )
     .mutation(async ({ input, ctx }) => {
-      await ctx.db.transaction().execute(async (trx) => {
-        const assistant = await trx
-          .insertInto('assistants')
+      await ctx.db.transaction(async (trx) => {
+        const [assistant] = await trx
+          .insert(assistants)
           .values({
             name: input.data.name,
             mode: input.data.mode,
-            models: JSON.stringify(input.data.models),
-            api_key: input.data.api_key
+            models: input.data.models as any,
+            apiKey: input.data.api_key
               ? await aesEncrypt(input.data.api_key)
               : null,
-            base_url: input.data.base_url,
+            baseUrl: input.data.base_url,
             options: input.data.options as any
           })
-          .returning(['id'])
-          .executeTakeFirstOrThrow()
+          .returning({ id: assistants.id })
         if (input.tools.length) {
-          await trx
-            .insertInto('assistant_tools')
-            .values(
-              input.tools.map((tool) => {
-                if (systemTools.includes(tool)) {
-                  return {
-                    assistant_id: assistant.id,
-                    system_tool_id: tool
-                  }
-                } else {
-                  return {
-                    assistant_id: assistant.id,
-                    tool_id: tool
-                  }
+          await trx.insert(assistantTools).values(
+            input.tools.map((tool) => {
+              if (systemTools.includes(tool)) {
+                return {
+                  assistantId: assistant.id,
+                  systemToolId: tool,
+                  toolId: null
                 }
-              })
-            )
-            .execute()
+              } else {
+                return {
+                  assistantId: assistant.id,
+                  toolId: tool,
+                  systemToolId: null
+                }
+              }
+            })
+          )
         }
       })
       return { success: true }
@@ -218,26 +234,22 @@ export const manageRouter = {
       })
     )
     .mutation(async ({ input, ctx }) => {
-      return ctx.db.transaction().execute(async (trx) => {
-        const user = await trx
-          .insertInto('users')
+      return ctx.db.transaction(async (trx) => {
+        const [user] = await trx
+          .insert(users)
           .values({
             email: input.email,
             password: await PasswordManager.hashPassword(input.password),
             name: input.name
           })
-          .returning(['id'])
-          .executeTakeFirstOrThrow()
+          .returning({ id: users.id })
         if (input.roles.length) {
-          await trx
-            .insertInto('user_roles')
-            .values(
-              input.roles.map((role) => ({
-                user_id: user.id,
-                role_id: role
-              }))
-            )
-            .execute()
+          await trx.insert(userRoles).values(
+            input.roles.map((role) => ({
+              userId: user.id,
+              roleId: role
+            }))
+          )
         }
         return user.id
       })
@@ -253,9 +265,9 @@ export const manageRouter = {
       })
     )
     .mutation(async ({ input, ctx }) => {
-      return ctx.db.transaction().execute(async (trx) => {
+      return ctx.db.transaction(async (trx) => {
         await trx
-          .updateTable('users')
+          .update(users)
           .set({
             email: input.email,
             password: input.password
@@ -263,22 +275,15 @@ export const manageRouter = {
               : undefined,
             name: input.name
           })
-          .where('id', '=', input.userId)
-          .execute()
-        await trx
-          .deleteFrom('user_roles')
-          .where('user_id', '=', input.userId)
-          .execute()
+          .where(eq(users.id, input.userId))
+        await trx.delete(userRoles).where(eq(userRoles.userId, input.userId))
         if (input.roles.length) {
-          await trx
-            .insertInto('user_roles')
-            .values(
-              input.roles.map((role) => ({
-                user_id: input.userId,
-                role_id: role
-              }))
-            )
-            .execute()
+          await trx.insert(userRoles).values(
+            input.roles.map((role) => ({
+              userId: input.userId,
+              roleId: role
+            }))
+          )
         }
         return input.userId
       })
@@ -286,28 +291,28 @@ export const manageRouter = {
   getMember: adminProcedure
     .input(z.object({ id: z.number() }))
     .query(async ({ input, ctx }) => {
-      const member = await ctx.db
-        .selectFrom('users')
-        .where('id', '=', input.id)
-        .select([
-          'id',
-          'email',
-          'avatar',
-          'name',
-          'root',
-          'created_at',
-          'deleted'
-        ])
-        .executeTakeFirst()
-      const roles = await ctx.db
-        .selectFrom('user_roles')
-        .where('user_id', '=', input.id)
-        .select(['role_id'])
-        .execute()
-      return {
-        ...member,
-        roles: roles.map((r) => r.role_id)
-      }
+      const member = await ctx.db.query.users.findFirst({
+        columns: {
+          id: true,
+          email: true,
+          avatar: true,
+          name: true,
+          root: true,
+          createdAt: true,
+          deleted: true
+        },
+        with: {
+          roles: {
+            columns: {
+              id: true
+            }
+          }
+        },
+        where: {
+          id: input.id
+        }
+      })
+      return member
     }),
   getMembers: adminProcedure
     .input(
@@ -318,65 +323,49 @@ export const manageRouter = {
       })
     )
     .query(async ({ input, ctx }) => {
-      let membersQuery = ctx.db.selectFrom('users')
+      const members = await ctx.db.query.users.findMany({
+        columns: {
+          id: true,
+          email: true,
+          name: true,
+          avatar: true,
+          root: true,
+          createdAt: true
+        },
+        orderBy: {
+          id: 'desc'
+        },
+        offset: (input.page - 1) * input.pageSize,
+        limit: input.pageSize,
+        with: {
+          roles: {
+            columns: {
+              id: true,
+              name: true
+            }
+          }
+        },
+        where: input.keyword
+          ? {
+              OR: [
+                { name: { like: `%${input.keyword}%` } },
+                { email: { like: `%${input.keyword}%` } }
+              ]
+            }
+          : undefined
+      })
 
-      if (input.keyword) {
-        membersQuery = membersQuery.where((eb) =>
-          eb.or([
-            eb('name', 'like', `%${input.keyword}%`),
-            eb('email', 'like', `%${input.keyword}%`)
-          ])
-        )
-      }
+      const total = await ctx.db.$count(
+        users,
+        input.keyword
+          ? or(
+              like(users.name, `%${input.keyword}%`),
+              like(users.email, `%${input.keyword}%`)
+            )
+          : undefined
+      )
 
-      const members = await membersQuery
-        .select(['id', 'email', 'name', 'avatar', 'root'])
-        .orderBy('created_at', 'desc')
-        .offset((input.page - 1) * input.pageSize)
-        .limit(input.pageSize)
-        .execute()
-
-      let totalQuery = ctx.db.selectFrom('users')
-      if (input.keyword) {
-        totalQuery = totalQuery.where((eb) =>
-          eb.or([
-            eb('name', 'like', `%${input.keyword}%`),
-            eb('email', 'like', `%${input.keyword}%`)
-          ])
-        )
-      }
-      const total = await totalQuery
-        .select((eb) => eb.fn.count<string>('id').as('total'))
-        .executeTakeFirst()
-
-      const memberIds = members.map((m) => m.id)
-      const userRoles =
-        memberIds.length > 0
-          ? await ctx.db
-              .selectFrom('user_roles')
-              .innerJoin('roles', 'user_roles.role_id', 'roles.id')
-              .where('user_roles.user_id', 'in', memberIds)
-              .select([
-                'user_roles.user_id as user_id',
-                'roles.name as role_name'
-              ])
-              .execute()
-          : []
-
-      const rolesByUser = userRoles.reduce((acc, { user_id, role_name }) => {
-        if (!acc[user_id]) {
-          acc[user_id] = []
-        }
-        acc[user_id].push(role_name)
-        return acc
-      }, {} as Record<number, string[]>)
-
-      const membersWithRoles = members.map((member) => ({
-        ...member,
-        roles: rolesByUser[member.id] || []
-      }))
-
-      return { members: membersWithRoles, total: +(total?.total || 0) }
+      return { members, total }
     }),
   deleteMember: adminProcedure
     .input(
@@ -392,10 +381,9 @@ export const manageRouter = {
         })
       }
       await ctx.db
-        .updateTable('users')
+        .update(users)
         .set({ deleted: true })
-        .where('id', '=', input.memberId)
-        .execute()
+        .where(eq(users.id, input.memberId))
       await deleteUserCache(input.memberId)
       return { success: true }
     }),
@@ -411,30 +399,25 @@ export const manageRouter = {
       })
     )
     .mutation(async ({ input, ctx }) => {
-      const exist =
-        systemTools.includes(input.id) ||
-        !!(await ctx.db
-          .selectFrom('tools')
-          .where('id', '=', input.id)
-          .selectAll()
-          .executeTakeFirst())
+      const [existingTool] = await ctx.db
+        .select()
+        .from(tools)
+        .where(eq(tools.id, input.id))
+      const exist = systemTools.includes(input.id) || !!existingTool
       if (exist) {
         throw new TRPCError({
           code: 'BAD_REQUEST',
           message: '工具ID已存在'
         })
       }
-      await ctx.db
-        .insertInto('tools')
-        .values({
-          id: input.id,
-          name: input.name,
-          description: input.description,
-          type: input.type,
-          auto: input.auto,
-          params: input.params as any
-        })
-        .execute()
+      await ctx.db.insert(tools).values({
+        id: input.id,
+        name: input.name,
+        description: input.description,
+        type: input.type,
+        auto: input.auto,
+        params: input.params as any
+      })
       return { success: true }
     }),
   updateTool: adminProcedure
@@ -452,15 +435,12 @@ export const manageRouter = {
     )
     .mutation(async ({ input, ctx }) => {
       await ctx.db
-        .updateTable('tools')
+        .update(tools)
         .set({
           ...input.data,
-          params: input.data.params
-            ? JSON.stringify(input.data.params)
-            : undefined
+          params: input.data.params ? input.data.params : undefined
         })
-        .where('id', '=', input.id)
-        .execute()
+        .where(eq(tools.id, input.id))
       return { success: true }
     }),
   getTools: adminProcedure
@@ -471,26 +451,29 @@ export const manageRouter = {
       })
     )
     .query(async ({ input, ctx }) => {
-      const tools = await ctx.db
-        .selectFrom('tools')
-        .offset((input.page - 1) * input.pageSize)
-        .limit(input.pageSize)
-        .selectAll()
-        .orderBy('created_at', 'desc')
-        .execute()
-      const total = await ctx.db
-        .selectFrom('tools')
-        .select((eb) => eb.fn.count<string>('id').as('total'))
-        .executeTakeFirst()
-      return { tools, total: +(total?.total || 0) }
+      const toolsData = await ctx.db.query.tools.findMany({
+        columns: {
+          id: true,
+          name: true,
+          auto: true,
+          type: true,
+          createdAt: true,
+          description: true
+        },
+        orderBy: {
+          createdAt: 'desc'
+        },
+        offset: (input.page - 1) * input.pageSize,
+        limit: input.pageSize
+      })
+      const total = await ctx.db.$count(tools)
+      return { tools: toolsData, total }
     }),
   getTool: adminProcedure.input(z.string()).query(async ({ input, ctx }) => {
-    const record = await ctx.db
-      .selectFrom('tools')
-      .where('id', '=', input)
-      .selectAll()
-      .executeTakeFirst()
-    return record ? parseRecord(record, ['auto']) : null
+    const tool = await ctx.db.query.tools.findFirst({
+      where: { id: input }
+    })
+    return tool ?? null
   }),
   deleteTool: adminProcedure
     .input(
@@ -499,18 +482,16 @@ export const manageRouter = {
       })
     )
     .mutation(async ({ input, ctx }) => {
-      const deps = await ctx.db
-        .selectFrom('assistant_tools')
-        .where('tool_id', '=', input.toolId)
-        .selectAll()
-        .executeTakeFirst()
+      const deps = await ctx.db.query.assistantTools.findFirst({
+        where: { toolId: input.toolId }
+      })
       if (deps) {
         throw new TRPCError({
           code: 'BAD_REQUEST',
           message: '工具已被助手使用，无法删除'
         })
       }
-      await ctx.db.deleteFrom('tools').where('id', '=', input.toolId).execute()
+      await ctx.db.delete(tools).where(eq(tools.id, input.toolId))
       return { success: true }
     }),
   connectSearch: adminProcedure
@@ -531,17 +512,32 @@ export const manageRouter = {
       })
     )
     .query(async ({ input, ctx }) => {
-      let query = ctx.db.selectFrom('models')
-      if (input.provider) {
-        query = query.where('provider', '=', input.provider)
-      }
-      return query.select(['id', 'model', 'provider']).execute()
+      const whereCondition = input.provider
+        ? eq(models.provider, input.provider)
+        : undefined
+      return ctx.db
+        .select({
+          id: models.id,
+          model: models.model,
+          provider: models.provider
+        })
+        .from(models)
+        .where(whereCondition)
     }),
   getAuthProviders: adminProcedure.query(async ({ ctx }) => {
-    return ctx.db
-      .selectFrom('auth_providers')
-      .select(['id', 'name', 'scopes', 'created_at', 'use_pkce', 'updated_at'])
-      .execute()
+    return ctx.db.query.authProviders.findMany({
+      columns: {
+        id: true,
+        name: true,
+        scopes: true,
+        createdAt: true,
+        usePkce: true,
+        updatedAt: true
+      },
+      orderBy: {
+        createdAt: 'desc'
+      }
+    })
   }),
   createAuthProvider: adminProcedure
     .input(
@@ -555,26 +551,22 @@ export const manageRouter = {
         client_id: z.string().min(1),
         client_secret: z.string().optional(),
         scopes: z.string().optional(),
-        use_pkce: z.boolean().optional(),
-        allow_jit_provision: z.boolean().optional()
+        use_pkce: z.boolean().optional()
       })
     )
     .mutation(async ({ input, ctx }) => {
-      await ctx.db
-        .insertInto('auth_providers')
-        .values({
-          name: input.name,
-          issuer: input.issuer,
-          auth_url: input.auth_url,
-          token_url: input.token_url,
-          userinfo_url: input.userinfo_url,
-          jwks_uri: input.jwks_uri,
-          client_id: input.client_id,
-          client_secret: input.client_secret,
-          scopes: input.scopes,
-          use_pkce: input.use_pkce
-        })
-        .execute()
+      await ctx.db.insert(authProviders).values({
+        name: input.name,
+        issuer: input.issuer,
+        authUrl: input.auth_url,
+        tokenUrl: input.token_url,
+        userinfoUrl: input.userinfo_url,
+        jwksUri: input.jwks_uri,
+        clientId: input.client_id,
+        clientSecret: input.client_secret,
+        scopes: input.scopes,
+        usePkce: input.use_pkce
+      })
       return { success: true }
     }),
   updateAuthProvider: adminProcedure
@@ -598,10 +590,9 @@ export const manageRouter = {
     )
     .mutation(async ({ input, ctx }) => {
       await ctx.db
-        .updateTable('auth_providers')
+        .update(authProviders)
         .set(input.data)
-        .where('id', '=', input.id)
-        .execute()
+        .where(eq(authProviders.id, input.id))
       return { success: true }
     }),
   deleteAuthProvider: adminProcedure
@@ -611,26 +602,22 @@ export const manageRouter = {
       })
     )
     .mutation(async ({ input, ctx }) => {
-      await ctx.db.transaction().execute(async (trx) => {
+      await ctx.db.transaction(async (trx) => {
         await trx
-          .deleteFrom('oauth_accounts')
-          .where('provider_id', '=', input.providerId)
-          .execute()
+          .delete(oauthAccounts)
+          .where(eq(oauthAccounts.providerId, input.providerId))
         await trx
-          .deleteFrom('auth_providers')
-          .where('id', '=', input.providerId)
-          .execute()
+          .delete(authProviders)
+          .where(eq(authProviders.id, input.providerId))
       })
       return { success: true }
     }),
   getAuthProvider: adminProcedure
     .input(z.number())
     .query(async ({ input, ctx }) => {
-      return ctx.db
-        .selectFrom('auth_providers')
-        .where('id', '=', input)
-        .selectAll()
-        .executeTakeFirst()
+      return ctx.db.query.authProviders.findFirst({
+        where: { id: input }
+      })
     }),
   getUsageInfo: adminProcedure
     .input(
@@ -639,57 +626,46 @@ export const manageRouter = {
       })
     )
     .query(async ({ input, ctx }) => {
-      const date = dayjs().startOf('day')
+      let date = dayjs().startOf('day')
       let dateStr = date.format('YYYY-MM-DD')
       switch (input.date) {
         case 'last3Days':
-          dateStr = date.subtract(3, 'day').format('YYYY-MM-DD')
+          date = date.subtract(3, 'day')
           break
         case 'lastWeek':
-          dateStr = date.subtract(7, 'day').format('YYYY-MM-DD')
+          date = date.subtract(7, 'day')
           break
         case 'lastMonth':
-          dateStr = date.subtract(30, 'day').format('YYYY-MM-DD')
+          date = date.subtract(30, 'day')
           break
         case 'last3Months':
-          dateStr = date.subtract(90, 'day').format('YYYY-MM-DD')
+          date = date.subtract(90, 'day')
           break
       }
 
-      const assistants = await ctx.db
-        .selectFrom('assistants')
-        .select(['id', 'name', 'mode'])
-        .orderBy('created_at', 'desc')
-        .execute()
+      const assistantsList = await ctx.db.query.assistants.findMany({
+        columns: {
+          id: true,
+          name: true,
+          mode: true
+        },
+        orderBy: {
+          createdAt: 'desc'
+        }
+      })
 
       const usage = await ctx.db
-        .selectFrom('assistant_usages')
-        .where('assistant_usages.created_at', '>=', new Date(dateStr))
-        .select([
-          'assistant_usages.assistant_id',
-          (eb) =>
-            eb.fn
-              .sum<string>('assistant_usages.input_tokens')
-              .as('input_tokens'),
-          (eb) =>
-            eb.fn
-              .sum<string>('assistant_usages.output_tokens')
-              .as('output_tokens'),
-          (eb) =>
-            eb.fn
-              .sum<string>('assistant_usages.total_tokens')
-              .as('total_tokens'),
-          (eb) =>
-            eb.fn
-              .sum<string>('assistant_usages.reasoning_tokens')
-              .as('reasoning_tokens'),
-          (eb) =>
-            eb.fn
-              .sum<string>('assistant_usages.cached_input_tokens')
-              .as('cached_input_tokens')
-        ])
-        .groupBy('assistant_usages.assistant_id')
-        .execute()
+        .select({
+          assistant_id: assistantUsages.assistantId,
+          input_tokens: sum(assistantUsages.inputTokens),
+          output_tokens: sum(assistantUsages.outputTokens),
+          total_tokens: sum(assistantUsages.totalTokens),
+          reasoning_tokens: sum(assistantUsages.reasoningTokens),
+          cached_input_tokens: sum(assistantUsages.cachedInputTokens)
+        })
+        .from(assistantUsages)
+        .where(gte(assistantUsages.createdAt, date.toDate()))
+        .groupBy(assistantUsages.assistantId)
 
       const usageMap = new Map(
         usage.map((r) => [
@@ -705,7 +681,7 @@ export const manageRouter = {
       )
 
       // 合并助手信息和使用统计
-      const result = assistants.map((assistant) => {
+      const result = assistantsList.map((assistant) => {
         const usageData = usageMap.get(assistant.id) || {
           input_tokens: 0,
           output_tokens: 0,
@@ -742,58 +718,50 @@ export const manageRouter = {
     )
     .query(async ({ ctx, input }) => {
       const list = await ctx.db
-        .selectFrom('roles')
+        .select({
+          id: roles.id,
+          name: roles.name,
+          remark: roles.remark
+        })
+        .from(roles)
         .offset((input.page - 1) * input.pageSize)
         .limit(input.pageSize)
-        .orderBy('id', 'desc')
-        .select(['id', 'name', 'remark'])
-        .execute()
-      const total = await ctx.db
-        .selectFrom('roles')
-        .select((eb) => eb.fn.count<string>('id').as('total'))
-        .executeTakeFirst()
+        .orderBy(desc(roles.id))
+      const [totalResult] = await ctx.db
+        .select({ total: count(roles.id) })
+        .from(roles)
       return {
         list,
-        total: +(total?.total || 0)
+        total: +(totalResult?.total || 0)
       }
     }),
   getRole: adminProcedure.input(z.number()).query(async ({ input, ctx }) => {
-    const role = await ctx.db
-      .selectFrom('roles')
-      .where('id', '=', input)
-      .select(['id', 'name', 'remark', 'assistants', 'all_assistants'])
-      .executeTakeFirst()
-    const access = await ctx.db
-      .selectFrom('access_roles')
-      .innerJoin('accesses', 'access_roles.access_id', 'accesses.id')
-      .where('role_id', '=', input)
-      .select(['access_roles.access_id'])
-      .execute()
-    return {
-      ...role!,
-      access: access.map((a) => a.access_id)
-    }
+    const role = await ctx.db.query.roles.findFirst({
+      where: { id: input },
+      with: {
+        accesses: {
+          columns: { id: true }
+        }
+      }
+    })
+    return role
   }),
   deleteRole: adminProcedure
     .input(z.number())
     .mutation(async ({ input, ctx }) => {
-      const user = await ctx.db
-        .selectFrom('user_roles')
-        .where('role_id', '=', input)
-        .selectAll()
-        .executeTakeFirst()
+      const [user] = await ctx.db
+        .select()
+        .from(userRoles)
+        .where(eq(userRoles.roleId, input))
       if (user) {
         throw new TRPCError({
           code: 'BAD_REQUEST',
           message: '角色已被用户使用，无法删除'
         })
       }
-      await ctx.db.transaction().execute(async (trx) => {
-        await trx
-          .deleteFrom('access_roles')
-          .where('role_id', '=', input)
-          .execute()
-        await trx.deleteFrom('roles').where('id', '=', input).execute()
+      await ctx.db.transaction(async (trx) => {
+        await trx.delete(accessRoles).where(eq(accessRoles.roleId, input))
+        await trx.delete(roles).where(eq(roles.id, input))
       })
       return { success: true }
     }),
@@ -808,27 +776,23 @@ export const manageRouter = {
       })
     )
     .mutation(async ({ input, ctx }) => {
-      return ctx.db.transaction().execute(async (trx) => {
-        const role = await trx
-          .insertInto('roles')
+      return ctx.db.transaction(async (trx) => {
+        const [role] = await trx
+          .insert(roles)
           .values({
             name: input.name,
             remark: input.remark,
-            assistants: JSON.stringify(input.assistants),
-            all_assistants: input.allAssistants
+            assistants: input.assistants as any,
+            allAssistants: input.allAssistants
           })
-          .returning(['id'])
-          .executeTakeFirstOrThrow()
+          .returning({ id: roles.id })
         if (input.access.length) {
-          await trx
-            .insertInto('access_roles')
-            .values(
-              input.access.map((access) => ({
-                role_id: role.id,
-                access_id: access
-              }))
-            )
-            .execute()
+          await trx.insert(accessRoles).values(
+            input.access.map((access) => ({
+              roleId: role.id,
+              accessId: access
+            }))
+          )
         }
         return role
       })
@@ -847,40 +811,35 @@ export const manageRouter = {
       })
     )
     .mutation(async ({ input, ctx }) => {
-      return ctx.db.transaction().execute(async (trx) => {
+      return ctx.db.transaction(async (trx) => {
         await trx
-          .updateTable('roles')
+          .update(roles)
           .set({
             name: input.data.name,
             remark: input.data.remark,
-            assistants: JSON.stringify(input.data.assistants),
-            all_assistants: input.data.allAssistants
+            assistants: input.data.assistants,
+            allAssistants: input.data.allAssistants
           })
-          .where('id', '=', input.id)
-          .execute()
-        await trx
-          .deleteFrom('access_roles')
-          .where('role_id', '=', input.id)
-          .execute()
+          .where(eq(roles.id, input.id))
+        await trx.delete(accessRoles).where(eq(accessRoles.roleId, input.id))
         if (input.data.access.length) {
-          await trx
-            .insertInto('access_roles')
-            .values(
-              input.data.access.map((access) => ({
-                role_id: input.id,
-                access_id: access
-              }))
-            )
-            .execute()
+          await trx.insert(accessRoles).values(
+            input.data.access.map((access) => ({
+              roleId: input.id,
+              accessId: access
+            }))
+          )
         }
         return input.id
       })
     }),
   getAccesses: adminProcedure.query(async ({ ctx }) => {
-    return ctx.db.selectFrom('accesses').select(['id']).execute()
+    return ctx.db.select({ id: accesses.id }).from(accesses)
   }),
   getAssistantOptions: adminProcedure.query(async ({ ctx }) => {
-    return ctx.db.selectFrom('assistants').select(['id', 'name']).execute()
+    return ctx.db
+      .select({ id: assistants.id, name: assistants.name })
+      .from(assistants)
   }),
   getRoleMembers: adminProcedure
     .input(
@@ -891,22 +850,28 @@ export const manageRouter = {
       })
     )
     .query(async ({ input, ctx }) => {
-      const list = await ctx.db
-        .selectFrom('user_roles')
-        .innerJoin('users', 'user_roles.user_id', 'users.id')
-        .where('user_roles.role_id', '=', input.roleId)
-        .select(['users.id', 'users.email', 'users.name'])
-        .offset((input.page - 1) * input.pageSize)
-        .limit(input.pageSize)
-        .execute()
-      const total = await ctx.db
-        .selectFrom('user_roles')
-        .where('role_id', '=', input.roleId)
-        .select((eb) => eb.fn.count<string>('user_id').as('total'))
-        .executeTakeFirst()
+      const list = await ctx.db.query.users.findMany({
+        columns: { id: true, email: true, name: true },
+        with: {
+          roles: {
+            where: {
+              id: input.roleId
+            }
+          }
+        },
+        orderBy: {
+          id: 'desc'
+        },
+        offset: (input.page - 1) * input.pageSize,
+        limit: input.pageSize
+      })
+      const [totalResult] = await ctx.db
+        .select({ total: count(userRoles.userId) })
+        .from(userRoles)
+        .where(eq(userRoles.roleId, input.roleId))
       return {
         list,
-        total: +(total?.total || 0)
+        total: totalResult?.total || 0
       }
     }),
   remoteRoleFromUser: adminProcedure
@@ -918,10 +883,13 @@ export const manageRouter = {
     )
     .mutation(async ({ input, ctx }) => {
       await ctx.db
-        .deleteFrom('user_roles')
-        .where('user_id', '=', input.userId)
-        .where('role_id', '=', input.roleId)
-        .execute()
+        .delete(userRoles)
+        .where(
+          and(
+            eq(userRoles.userId, input.userId),
+            eq(userRoles.roleId, input.roleId)
+          )
+        )
       return { success: true }
     }),
   searchMembers: adminProcedure
@@ -931,18 +899,18 @@ export const manageRouter = {
       })
     )
     .query(async ({ input, ctx }) => {
-      return ctx.db
-        .selectFrom('users')
-        .where((eb) =>
-          eb.or([
-            eb('name', 'like', `%${input.keyword}%`),
-            eb('email', 'like', `%${input.keyword}%`),
-            eb('phone', 'like', `%${input.keyword}%`)
-          ])
-        )
-        .orderBy('id', 'desc')
-        .select(['id', 'name', 'email'])
-        .execute()
+      return ctx.db.query.users.findMany({
+        columns: { id: true, name: true, email: true },
+        where: {
+          OR: [
+            { name: { like: `%${input.keyword}%` } },
+            { email: { like: `%${input.keyword}%` } }
+          ]
+        },
+        orderBy: {
+          id: 'desc'
+        }
+      })
     }),
   addRoleToUser: adminProcedure
     .input(
@@ -952,12 +920,15 @@ export const manageRouter = {
       })
     )
     .mutation(async ({ input, ctx }) => {
-      const record = await ctx.db
-        .selectFrom('user_roles')
-        .where('user_id', '=', input.userId)
-        .where('role_id', '=', input.roleId)
-        .selectAll()
-        .executeTakeFirst()
+      const [record] = await ctx.db
+        .select()
+        .from(userRoles)
+        .where(
+          and(
+            eq(userRoles.userId, input.userId),
+            eq(userRoles.roleId, input.roleId)
+          )
+        )
       if (record) {
         throw new TRPCError({
           code: 'BAD_REQUEST',
@@ -965,9 +936,8 @@ export const manageRouter = {
         })
       }
       await ctx.db
-        .insertInto('user_roles')
-        .values({ user_id: input.userId, role_id: input.roleId })
-        .execute()
+        .insert(userRoles)
+        .values({ userId: input.userId, roleId: input.roleId })
       return { success: true }
     })
 } satisfies TRPCRouterRecord

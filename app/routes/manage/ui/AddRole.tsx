@@ -28,8 +28,7 @@ import { useLocalState } from '~/hooks/localState'
 const accessLabelMap: Record<string, string> = {
   manageAssistant: '管理助手',
   viewAssistantUsage: '查看助手Token用量',
-  manageMember: '管理成员',
-  manageRole: '管理角色',
+  manageMemberAndRole: '管理成员与角色',
   manageSso: '管理SSO第三方登录',
   manageTools: '管理模型工具'
 }
@@ -83,11 +82,14 @@ export const AddRole = observer(
         if (props.id) {
           trpc.manage.getRole.query(props.id).then((res) => {
             if (res) {
-              form.setFieldValue('access', res.access)
+              form.setFieldValue(
+                'access',
+                res.accesses.map((a) => a.id)
+              )
               form.setFieldValue('assistants', res.assistants || [])
               form.setFieldValue('name', res.name || '')
               form.setFieldValue('remark', res.remark || '')
-              setState({ allAssistant: res.all_assistants })
+              setState({ allAssistant: res.allAssistants })
             }
           })
         }

@@ -20,8 +20,7 @@ import {
 import { useLocalState } from '~/hooks/localState'
 import { AddSsoProvider } from './AddSsoProvider'
 import { useAccess } from '~/lib/access'
-import type { Selectable } from 'kysely'
-import type { AuthProviders } from 'server/lib/db/types'
+import type { AuthProviderData } from 'server/db/type'
 
 export interface SSOInstance {
   add: () => void
@@ -31,7 +30,6 @@ interface SSOProps {
   instance?: SSOInstance
 }
 
-type AuthProviderData = Selectable<AuthProviders>
 export const SSO = observer(({ instance }: SSOProps) => {
   const { hasAccess } = useAccess()
   const columns: ColumnDef<AuthProviderData>[] = useMemo(() => {

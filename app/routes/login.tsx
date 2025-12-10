@@ -23,10 +23,12 @@ import type { Route } from './+types/login'
 import { useEffect } from 'react'
 
 export const loader = async (args: Route.LoaderArgs) => {
-  const providers = await args.context.db
-    .selectFrom('auth_providers')
-    .select(['id', 'name'])
-    .execute()
+  const providers = await args.context.db.query.authProviders.findMany({
+    columns: {
+      id: true,
+      name: true
+    }
+  })
   return providers
 }
 export default observer(() => {

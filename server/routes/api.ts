@@ -13,7 +13,16 @@ import { join, resolve } from 'path'
 import { existsSync, createReadStream, statSync } from 'fs'
 import { lookup } from 'mime-types'
 import { routeInterceptor } from './interceptor'
-import type { KDB } from 'server/lib/db/instance'
+import type { NodePgDatabase } from 'drizzle-orm/node-postgres'
+import {
+  assistants,
+  authProviders,
+  chats,
+  oauthAccounts,
+  users
+} from 'server/db/drizzle/schema'
+import { and, eq, or } from 'drizzle-orm'
+import type { DbInstance } from 'server/db'
 // 防暴力破解：登录尝试记录
 const loginAttempts = new Map<string, { count: number; lockedUntil: number }>()
 const MAX_ATTEMPTS = 5
@@ -39,7 +48,7 @@ const LoginInputSchema = z.object({
   password: z.string().min(6)
 })
 
-export const registerRoutes = (app: Express, db: KDB) => {
+export const registerRoutes = (app: Express, db: DbInstance) => {
   app.post('/api/login', async (req, res) => {
     const input: { nameOrEmail: string; password: string } = req.body
     try {
@@ -66,16 +75,15 @@ export const registerRoutes = (app: Express, db: KDB) => {
     if (attempts.lockedUntil > 0 && attempts.lockedUntil <= Date.now()) {
       loginAttempts.delete(attemptKey)
     }
-    const user = await db
-      .selectFrom('users')
-      .selectAll()
-      .where((eb) =>
-        eb.or([
-          eb('name', '=', input.nameOrEmail),
-          eb('email', '=', input.nameOrEmail)
-        ])
+    const [user] = await db
+      .select()
+      .from(users)
+      .where(
+        or(
+          eq(users.email, input.nameOrEmail),
+          eq(users.name, input.nameOrEmail)
+        )
       )
-      .executeTakeFirst()
     if (!user) {
       recordFailedAttempt(attemptKey)
       return res.status(429).send('用户名或密码错误').end()
@@ -205,22 +213,20 @@ export const registerRoutes = (app: Express, db: KDB) => {
           message: (e as Error).message
         })
       }
-      const chat = await db
-        .selectFrom('chats')
-        .selectAll()
-        .where('id', '=', json.chatId)
-        .executeTakeFirst()
+      const [chat] = await db
+        .select()
+        .from(chats)
+        .where(eq(chats.id, json.chatId))
       if (!chat) {
         throw new TRPCError({
           code: 'NOT_FOUND',
           message: 'Chat not found'
         })
       }
-      const assistant = await db
-        .selectFrom('assistants')
-        .selectAll()
-        .where('id', '=', json.assistantId)
-        .executeTakeFirst()
+      const [assistant] = await db
+        .select()
+        .from(assistants)
+        .where(eq(assistants.id, json.assistantId))
       if (!assistant) {
         throw new TRPCError({
           code: 'NOT_FOUND',
@@ -229,10 +235,8 @@ export const registerRoutes = (app: Express, db: KDB) => {
       }
       const client = createClient({
         mode: assistant!.mode,
-        api_key: assistant?.api_key
-          ? await aesDecrypt(assistant.api_key)
-          : null,
-        base_url: assistant!.base_url
+        api_key: assistant?.apiKey ? await aesDecrypt(assistant.apiKey) : null,
+        base_url: assistant!.baseUrl
       })!
       const messages = [
         {
@@ -255,10 +259,9 @@ The historical dialogue is as follows: \n${messages
             let text = data.content.find((c) => c.type === 'text')?.text
             if (text) {
               await db
-                .updateTable('chats')
+                .update(chats)
                 .set({ title: text })
-                .where('id', '=', json.chatId)
-                .execute()
+                .where(eq(chats.id, json.chatId))
             }
           }
         },
@@ -273,11 +276,10 @@ The historical dialogue is as follows: \n${messages
 
   app.get('/oauth/login/:provider', async (req, res) => {
     const state = randomString(24)
-    const provider = await db
-      .selectFrom('auth_providers')
-      .selectAll()
-      .where('id', '=', Number(req.params.provider))
-      .executeTakeFirst()
+    const [provider] = await db
+      .select()
+      .from(authProviders)
+      .where(eq(authProviders.id, Number(req.params.provider)))
     if (!provider) {
       res.status(404).json({ error: 'Provider not found' })
       return
@@ -289,7 +291,7 @@ The historical dialogue is as follows: \n${messages
       createdAt: Date.now()
     }
     let codeChallenge: string | undefined, codeVerifier: string | undefined
-    if (provider.use_pkce) {
+    if (provider.usePkce) {
       codeVerifier = randomString(64)
       const digest = createHash('sha256').update(codeVerifier).digest()
       codeChallenge = digest.toString('base64url')
@@ -298,7 +300,7 @@ The historical dialogue is as follows: \n${messages
     res.setHeader('Set-Cookie', await oauthStateCookie.serialize(oauthState))
     const params = new URLSearchParams({
       response_type: 'code',
-      client_id: provider.client_id,
+      client_id: provider.clientId,
       redirect_uri: `${origin}/oauth/callback/${provider.id}`,
       scope: provider.scopes || '',
       state
@@ -307,18 +309,17 @@ The historical dialogue is as follows: \n${messages
       params.set('code_challenge', codeChallenge)
       params.set('code_challenge_method', 'S256')
     }
-    const redirectUrl = `${provider.auth_url}?${params.toString()}`
+    const redirectUrl = `${provider.authUrl}?${params.toString()}`
     res.redirect(redirectUrl)
   })
 
   app.get('/oauth/callback/:provider', async (req, res) => {
     try {
       const { code, state } = req.query
-      const provider = await db
-        .selectFrom('auth_providers')
-        .selectAll()
-        .where('id', '=', Number(req.params.provider))
-        .executeTakeFirst()
+      const [provider] = await db
+        .select()
+        .from(authProviders)
+        .where(eq(authProviders.id, Number(req.params.provider)))
       if (!provider) {
         res.status(404).json({ error: 'Provider not found' })
         return
@@ -347,10 +348,10 @@ The historical dialogue is as follows: \n${messages
 
       const origin = `${req.protocol}://${req.get('host')}`
       const tokenResp = await ky
-        .post(provider.token_url, {
+        .post(provider.tokenUrl, {
           json: {
-            client_id: provider.client_id,
-            client_secret: provider.client_secret,
+            client_id: provider.clientId,
+            client_secret: provider.clientSecret,
             code,
             redirect_uri: `${origin}/oauth/callback/${provider.id}`,
             code_verifier: oauthState.codeVerifier || undefined
@@ -359,70 +360,64 @@ The historical dialogue is as follows: \n${messages
         .json<{ access_token: string }>()
       const access_token = tokenResp.access_token
       const userResp = await ky
-        .get(provider.userinfo_url!, {
+        .get(provider.userinfoUrl!, {
           headers: {
             Authorization: `Bearer ${access_token}`
           }
         })
         .json<{ id: string; email?: string; phone?: string; name?: string }>()
       if (userResp?.id) {
-        const user = await db
-          .selectFrom('oauth_accounts')
-          .select('user_id')
-          .where('provider_id', '=', provider.id)
-          .where('provider_user_id', '=', userResp.id)
-          .executeTakeFirst()
+        const [user] = await db
+          .select()
+          .from(oauthAccounts)
+          .where(
+            and(
+              eq(oauthAccounts.providerId, provider.id),
+              eq(oauthAccounts.providerUserId, userResp.id)
+            )
+          )
         if (user) {
-          const token = generateToken({ uid: user.user_id, root: false })
+          const token = generateToken({ uid: user.userId, root: false })
           res.setHeader('Set-Cookie', await userCookie.serialize(token))
         } else {
           if (userResp.email || userResp.phone) {
             let user: { id: number } | undefined
             if (userResp.email) {
-              user = await db
-                .selectFrom('users')
-                .select('id')
-                .where('email', '=', userResp.email)
-                .executeTakeFirst()
+              ;[user] = await db
+                .select({ id: users.id })
+                .from(users)
+                .where(eq(users.email, userResp.email))
             }
             if (!user && userResp.phone) {
-              user = await db
-                .selectFrom('users')
-                .select('id')
-                .where('phone', '=', userResp.phone)
-                .executeTakeFirst()
+              ;[user] = await db
+                .select({ id: users.id })
+                .from(users)
+                .where(eq(users.phone, userResp.phone))
             }
             if (user) {
-              await db
-                .insertInto('oauth_accounts')
-                .values({
-                  provider_id: provider.id,
-                  provider_user_id: userResp.id,
-                  user_id: user.id,
-                  profile_json: JSON.stringify(userResp) as any
-                })
-                .execute()
+              await db.insert(oauthAccounts).values({
+                providerId: provider.id,
+                providerUserId: userResp.id,
+                userId: user.id,
+                profileJson: JSON.stringify(userResp) as any
+              })
             } else {
-              const user = await db.transaction().execute(async (trx) => {
-                const newUser = await trx
-                  .insertInto('users')
+              const user = await db.transaction(async (t) => {
+                const [newUser] = await t
+                  .insert(users)
                   .values({
                     email: userResp.email ?? null,
                     phone: userResp.phone ?? null,
                     name: userResp.name ?? null,
                     password: null
                   })
-                  .returningAll()
-                  .executeTakeFirstOrThrow()
-                await trx
-                  .insertInto('oauth_accounts')
-                  .values({
-                    provider_id: provider.id,
-                    provider_user_id: userResp.id,
-                    user_id: newUser.id!,
-                    profile_json: JSON.stringify(userResp) as any
-                  })
-                  .execute()
+                  .returning()
+                await t.insert(oauthAccounts).values({
+                  providerId: provider.id,
+                  providerUserId: userResp.id,
+                  userId: newUser.id,
+                  profileJson: JSON.stringify(userResp) as any
+                })
                 return newUser
               })
               const token = generateToken({ uid: user.id!, root: false })

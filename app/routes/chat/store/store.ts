@@ -38,8 +38,8 @@ type ToolData = Selectable<Tools>
 export interface ChatData {
   id: string
   title: string
-  last_chat_time: Date
-  assistant_id: number | null
+  lastChatTime: Date
+  assistantId: number | null
   model: string | null
   messages?: MessageData[]
 }
@@ -74,8 +74,8 @@ const state = {
   selectedChat: null as null | {
     id: string
     title: string
-    last_chat_time: Date
-    assistant_id: number | null
+    lastChatTime: Date
+    assistantId: number | null
     model: string | null
     messages?: MessageData[]
   },
@@ -84,7 +84,7 @@ const state = {
   },
   get assistant(): null | AssistantData {
     if (this.selectedChat) {
-      const as = this.assistantMap[this.selectedChat?.assistant_id!]
+      const as = this.assistantMap[this.selectedChat?.assistantId!]
       if (as) {
         return as
       }
@@ -291,14 +291,14 @@ export class ChatStore extends StructStore<typeof state> {
   async selectModel(assistantId: number, model: string) {
     if (this.state.selectedChat) {
       this.setState((state) => {
-        state.selectedChat!.assistant_id = assistantId
+        state.selectedChat!.assistantId = assistantId
         state.selectedChat!.model = model
       })
       trpc.chat.updateChat.mutate({
         id: this.state.selectedChat.id,
         data: {
           model,
-          assistant_id: assistantId
+          assistantId: assistantId
         }
       })
     }

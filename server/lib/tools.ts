@@ -7,9 +7,10 @@ import { createWebSearchTool } from './search'
 import { google } from '@ai-sdk/google'
 import { openai } from '@ai-sdk/openai'
 import { anthropic } from '@ai-sdk/anthropic'
-import type { KDB } from './db/instance'
-import type { Selectable } from 'kysely'
-import type { Assistants } from './db/types'
+import { assistantTools, tools } from 'server/db/drizzle/schema'
+import { eq, inArray } from 'drizzle-orm'
+import type { AssistantData } from 'server/db/type'
+import type { DbInstance } from 'server/db'
 
 export const systemTools = ['fetch_url_content']
 
@@ -117,61 +118,62 @@ export const createHttpTool = (options: {
 }
 
 export const composeTools = async (
-  db: KDB,
-  assistant: Selectable<Assistants>,
+  db: DbInstance,
+  assistant: AssistantData,
   selectedTools: string[],
   options: {
     builtinSearch: boolean
   }
 ) => {
-  const toolsId = await db
-    .selectFrom('assistant_tools')
-    .where('assistant_id', '=', assistant.id)
-    .select(['tool_id', 'system_tool_id'])
-    .execute()
-  const tools: Record<string, Tool> = {}
+  const toolsIds = await db
+    .select({
+      tool_id: assistantTools.toolId,
+      system_tool_id: assistantTools.systemToolId
+    })
+    .from(assistantTools)
+    .where(eq(assistantTools.assistantId, assistant.id))
+  const toolsRecord: Record<string, Tool> = {}
 
-  const sytemToolsRecord = toolsId
+  const sytemToolsRecord = toolsIds
     .filter((t) => t.system_tool_id)
     .map((t) => t.system_tool_id)
-  const customTools = toolsId.filter((t) => t.tool_id).map((t) => t.tool_id)
+  const customTools = toolsIds.filter((t) => t.tool_id).map((t) => t.tool_id!)
   if (sytemToolsRecord.length) {
     for (let t of sytemToolsRecord) {
       if (t === 'fetch_url_content') {
-        tools[t] = getUrlContent
+        toolsRecord[t] = getUrlContent
       }
     }
   }
   if (customTools.length) {
     let toolsData = await db
-      .selectFrom('tools')
-      .where('id', 'in', customTools)
-      .selectAll()
-      .execute()
+      .select()
+      .from(tools)
+      .where(inArray(tools.id, customTools))
     toolsData = toolsData.map((t) => parseRecord(t))
     const hasCustomeWebSearch = toolsData.some((t) => t.type === 'web_search')
     if (!hasCustomeWebSearch) {
       if (assistant.mode === 'gemini' && options.builtinSearch) {
-        tools.google_search = google.tools.googleSearch({})
-        tools.url_context = google.tools.urlContext({})
+        toolsRecord.google_search = google.tools.googleSearch({})
+        toolsRecord.url_context = google.tools.urlContext({})
       }
       if (assistant.mode === 'openai' && options.builtinSearch) {
-        tools.web_search = openai.tools.webSearch({})
+        toolsRecord.web_search = openai.tools.webSearch({})
       }
       if (assistant.mode === 'anthropic' && options.builtinSearch) {
-        tools.web_search = anthropic.tools.webSearch_20250305({})
+        toolsRecord.web_search = anthropic.tools.webSearch_20250305({})
       }
       if (assistant.mode === 'z-ai' && options.builtinSearch) {
-        tools['web_search'] = createWebSearchTool({
+        toolsRecord['web_search'] = createWebSearchTool({
           mode: 'zhipu',
-          apiKey: assistant.api_key!
+          apiKey: assistant.apiKey!
         })
       }
     }
 
     for (let t of toolsData) {
       if (t.type === 'web_search' && (t.auto || selectedTools.includes(t.id))) {
-        tools[t.id] = createWebSearchTool({
+        toolsRecord[t.id] = createWebSearchTool({
           mode: t.params.mode as any,
           apiKey: t.params.apiKey,
           cseId: t.params.cseId,
@@ -181,7 +183,7 @@ export const composeTools = async (
       if (t.type === 'http' && (t.auto || selectedTools.includes(t.id))) {
         try {
           const http = JSON.parse(t.params.http)
-          tools[t.id] = createHttpTool({
+          toolsRecord[t.id] = createHttpTool({
             description: t.description,
             ...http
           })
@@ -191,5 +193,5 @@ export const composeTools = async (
       }
     }
   }
-  return tools
+  return toolsRecord
 }

@@ -1,17 +1,27 @@
 import { procedure } from './core'
-import { checkAllowUseAssistant, isAdmin } from 'server/lib/db/query'
+import { isAdmin } from 'server/db/query'
 import z from 'zod'
 import { PasswordManager } from 'server/lib/password'
 import { TRPCError } from '@trpc/server'
 import ky from 'ky'
+import {
+  users,
+  accesses,
+  userRoles,
+  accessRoles
+} from 'server/db/drizzle/schema'
+import { eq } from 'drizzle-orm'
 
 export const commonRouter = {
   getUserInfo: procedure.query(async ({ ctx }) => {
-    const user = await ctx.db
-      .selectFrom('users')
-      .where('id', '=', ctx.userId)
-      .select(['name', 'email', 'root'])
-      .executeTakeFirst()
+    const user = await ctx.db.query.users.findFirst({
+      columns: {
+        name: true,
+        email: true,
+        root: true
+      },
+      where: { id: ctx.userId }
+    })
     if (!user) return null
     if (user.root) {
       return {
@@ -31,23 +41,18 @@ export const commonRouter = {
   }),
   getUserAccess: procedure.query(async ({ ctx }) => {
     if (ctx.root) {
-      const accesses = await ctx.db
-        .selectFrom('accesses')
-        .select(['id'])
-        .execute()
-      return accesses.map((access) => access.id)
+      const accessData = await ctx.db.select({ id: accesses.id }).from(accesses)
+      return accessData.map((access) => access.id)
     }
-
     const result = await ctx.db
-      .selectFrom('user_roles as ur')
-      .innerJoin('access_roles as ar', 'ur.role_id', 'ar.role_id')
-      .innerJoin('accesses as a', 'ar.access_id', 'a.id')
-      .where('ur.user_id', '=', ctx.userId)
-      .select('a.id')
-      .distinct()
-      .execute()
-
-    return result.map((row) => row.id)
+      .selectDistinct({
+        access: accesses.id
+      })
+      .from(userRoles)
+      .innerJoin(accessRoles, eq(userRoles.roleId, accessRoles.roleId))
+      .innerJoin(accesses, eq(accessRoles.accessId, accesses.id))
+      .where(eq(userRoles.userId, ctx.userId))
+    return result.map((row) => row.access)
   }),
   changePassword: procedure
     .input(
@@ -58,11 +63,11 @@ export const commonRouter = {
       })
     )
     .mutation(async ({ ctx, input }) => {
-      const user = await ctx.db
-        .selectFrom('users')
-        .where('id', '=', ctx.userId)
-        .selectAll()
-        .executeTakeFirst()
+      const user = await ctx.db.query.users.findFirst({
+        where: {
+          id: ctx.userId
+        }
+      })
       if (!user) return null
       if (
         user.password &&
@@ -74,12 +79,11 @@ export const commonRouter = {
         throw new TRPCError({ code: 'BAD_REQUEST', message: '原密码不正确' })
       }
       await ctx.db
-        .updateTable('users')
+        .update(users)
         .set({
           password: await PasswordManager.hashPassword(input.password)
         })
-        .where('id', '=', ctx.userId)
-        .execute()
+        .where(eq(users.id, ctx.userId))
       return { success: true }
     }),
   httpTest: procedure

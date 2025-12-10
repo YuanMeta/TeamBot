@@ -14,8 +14,11 @@ import { getUser } from '../session'
 import type { Request, Response } from 'express'
 import { saveFileByBase64 } from '../lib/utils'
 import dayjs from 'dayjs'
-import type { KDB } from 'server/lib/db/instance'
-import { checkAllowUseAssistant } from 'server/lib/db/query'
+import { checkAllowUseAssistant } from 'server/db/query'
+import type { NodePgDatabase } from 'drizzle-orm/node-postgres'
+import { assistantUsages, chats, messages } from 'server/db/drizzle/schema'
+import { and, eq } from 'drizzle-orm'
+import { increment, type DbInstance } from 'server/db'
 const InputSchema = z.object({
   chatId: z.string(),
   assistantId: z.number(),
@@ -25,7 +28,11 @@ const InputSchema = z.object({
   webSearch: z.boolean().optional()
 })
 
-export const completions = async (req: Request, res: Response, db: KDB) => {
+export const completions = async (
+  req: Request,
+  res: Response,
+  db: DbInstance
+) => {
   const json: z.infer<typeof InputSchema> = req.body
   const user = await getUser(req)
   if (!user) {
@@ -71,13 +78,11 @@ export const completions = async (req: Request, res: Response, db: KDB) => {
       const path = saveFileByBase64(image)
       paths.push(path)
     }
-    await db
-      .updateTable('messages')
+    db.update(messages)
       .set({
-        files: JSON.stringify(paths) as any
+        files: paths
       })
-      .where('id', '=', userMsg.id)
-      .execute()
+      .where(eq(messages.id, userMsg.id))
   }
   const tools = await composeTools(db, assistant, json.tools, {
     builtinSearch: assistant.options.builtin_search && !!json.webSearch
@@ -88,14 +93,13 @@ export const completions = async (req: Request, res: Response, db: KDB) => {
   })
   let text = ''
   await db
-    .updateTable('chats')
+    .update(chats)
     .set({
-      last_chat_time: new Date(),
-      model: chat.model!,
-      assistant_id: assistant.id
+      lastChatTime: new Date(),
+      model: chat.model,
+      assistantId: assistant.id
     })
-    .where('id', '=', chat.id)
-    .execute()
+    .where(eq(chats.id, chat.id))
 
   const result = streamText({
     model: client(chat.model!),
@@ -132,12 +136,11 @@ export const completions = async (req: Request, res: Response, db: KDB) => {
     },
     onAbort: async () => {
       await db
-        .updateTable('messages')
+        .update(messages)
         .set({
           terminated: true
         })
-        .where('id', '=', assistantMessage.id)
-        .execute()
+        .where(eq(messages.id, assistantMessage.id))
     },
     onChunk: (data) => {
       if (data.chunk.type === 'text-delta' && data.chunk.text) {
@@ -213,64 +216,76 @@ export const completions = async (req: Request, res: Response, db: KDB) => {
       }
       if (parts.length) {
         await db
-          .updateTable('messages')
+          .update(messages)
           .set({
-            parts: JSON.stringify(parts) as any,
-            steps: JSON.stringify(steps) as any,
-            input_tokens: usage.inputTokens,
-            output_tokens: usage.outputTokens,
-            total_tokens: usage.totalTokens,
+            parts: JSON.stringify(parts),
+            steps: JSON.stringify(steps),
+            inputTokens: usage.inputTokens,
+            outputTokens: usage.outputTokens,
+            totalTokens: usage.totalTokens,
             text: text,
-            reasoning_tokens: usage.reasoningTokens,
-            cached_input_tokens: usage.cachedInputTokens,
+            reasoningTokens: usage.reasoningTokens,
+            cachedInputTokens: usage.cachedInputTokens,
             model: chat.model
           })
-          .where('id', '=', assistantMessage.id)
-          .execute()
+          .where(eq(messages.id, assistantMessage.id))
       }
-      const today = dayjs().format('YYYY-MM-DD')
-      const record = await db
-        .selectFrom('assistant_usages')
-        .selectAll()
-        .where('assistant_id', '=', assistant.id)
-        .where('created_at', '=', today as any)
-        .executeTakeFirst()
+      const today = dayjs().startOf('day')
+      const [record] = await db
+        .select()
+        .from(assistantUsages)
+        .where(
+          and(
+            eq(assistantUsages.assistantId, assistant.id),
+            eq(assistantUsages.createdAt, today.toDate())
+          )
+        )
       if (record) {
         await db
-          .updateTable('assistant_usages')
+          .update(assistantUsages)
           .set({
-            input_tokens: sql`input_tokens + ${usage.inputTokens}`,
-            output_tokens: sql`output_tokens + ${usage.outputTokens}`,
-            total_tokens: sql`total_tokens + ${usage.totalTokens}`,
-            reasoning_tokens: sql`reasoning_tokens + ${usage.reasoningTokens}`,
-            cached_input_tokens: sql`cached_input_tokens + ${usage.cachedInputTokens}`
+            inputTokens: increment(
+              assistantUsages.inputTokens,
+              usage.inputTokens
+            ),
+            outputTokens: increment(
+              assistantUsages.outputTokens,
+              usage.outputTokens
+            ),
+            totalTokens: increment(
+              assistantUsages.totalTokens,
+              usage.totalTokens
+            ),
+            reasoningTokens: increment(
+              assistantUsages.reasoningTokens,
+              usage.reasoningTokens
+            ),
+            cachedInputTokens: increment(
+              assistantUsages.cachedInputTokens,
+              usage.cachedInputTokens
+            )
           })
-          .where('id', '=', record.id)
-          .execute()
+          .where(eq(assistantUsages.id, record.id))
       } else {
-        await db
-          .insertInto('assistant_usages')
-          .values({
-            assistant_id: assistant.id,
-            input_tokens: usage.inputTokens!,
-            output_tokens: usage.outputTokens!,
-            total_tokens: usage.totalTokens!,
-            reasoning_tokens: usage.reasoningTokens!,
-            cached_input_tokens: usage.cachedInputTokens!,
-            created_at: today as any
-          })
-          .execute()
+        await db.insert(assistantUsages).values({
+          assistantId: assistant.id,
+          inputTokens: usage.inputTokens,
+          outputTokens: usage.outputTokens,
+          totalTokens: usage.totalTokens,
+          reasoningTokens: usage.reasoningTokens,
+          cachedInputTokens: usage.cachedInputTokens,
+          createdAt: today.toDate()
+        })
       }
     },
     onError: async (error: any) => {
       let err = error.error as APICallError
       await db
-        .updateTable('messages')
+        .update(messages)
         .set({
           error: err.message
         })
-        .where('id', '=', assistantMessage.id)
-        .execute()
+        .where(eq(messages.id, assistantMessage.id))
       console.log('err request', JSON.stringify(err.requestBodyValues))
     }
   })

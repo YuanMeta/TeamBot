@@ -3,7 +3,7 @@ import { observer } from 'mobx-react-lite'
 import { ManageSideBar } from './ui/SideBar'
 import { AccessProvider } from '~/lib/access'
 import type { Route } from './+types/manage'
-import { isAdmin } from 'server/lib/db/query'
+import { isAdmin } from 'server/db/query'
 
 export const loader = async ({ context }: Route.LoaderArgs) => {
   if (context.root) {

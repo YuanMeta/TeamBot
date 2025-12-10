@@ -4,10 +4,12 @@ import type { MessagePart } from 'types'
 import { createClient } from './checkConnect'
 import { findLast } from '~/lib/utils'
 import { parseRecord } from './db/table'
-import { sql, type Selectable } from 'kysely'
-import type { KDB } from './db/instance'
-import type { Messages } from './db/types'
 import { aesDecrypt } from './utils'
+import type { NodePgDatabase } from 'drizzle-orm/node-postgres'
+import { assistants, chats, messages } from 'server/db/drizzle/schema'
+import { and, eq } from 'drizzle-orm'
+import type { MessageData } from 'server/db/type'
+import { increment } from 'server/db'
 
 function addDocsContext(
   text: string,
@@ -23,7 +25,7 @@ function addDocsContext(
 export class MessageManager {
   static async compreTokena(data: {
     model: LanguageModel
-    messages: Selectable<Messages>[]
+    messages: MessageData[]
     previousSummary?: string | null
   }) {
     const conversation = data.messages.map((m) => {
@@ -58,7 +60,7 @@ Output only the summarized version of the conversation.`,
   }
 
   static async getStreamMessage(
-    db: KDB,
+    db: NodePgDatabase,
     data: {
       chatId: string
       userId: number
@@ -68,66 +70,61 @@ Output only the summarized version of the conversation.`,
     }
   ) {
     const { chatId, userId } = data
-    const chat = await db
-      .selectFrom('chats')
-      .selectAll()
-      .where('id', '=', chatId)
-      .where('user_id', '=', userId)
-      .executeTakeFirst()
+    const [chat] = await db
+      .select()
+      .from(chats)
+      .where(and(eq(chats.id, chatId), eq(chats.userId, userId)))
     if (!chat) {
       throw new TRPCError({
         code: 'NOT_FOUND',
         message: 'Chat not found'
       })
     }
-    let assistant = await db
-      .selectFrom('assistants')
-      .selectAll()
-      .where('id', '=', data.assistantId)
-      .executeTakeFirst()
+    let [assistant] = await db
+      .select()
+      .from(assistants)
+      .where(eq(assistants.id, data.assistantId))
     if (!assistant) {
       throw new TRPCError({
         code: 'NOT_FOUND',
         message: 'Assistant not found'
       })
     }
-    let messages = await db
-      .selectFrom('messages')
-      .selectAll()
-      .where('chat_id', '=', chatId)
-      .where('user_id', '=', userId)
-      .orderBy('created_at', 'asc')
-      .offset(chat.message_offset)
-      .execute()
-    messages = messages.map((m) => parseRecord(m))
-    if (!messages.length) {
+    let messagesData = await db
+      .select()
+      .from(messages)
+      .where(and(eq(messages.chatId, chatId), eq(messages.userId, userId)))
+      .offset(chat.messageOffset)
+      .orderBy(messages.createdAt)
+    messagesData = messagesData.map((m) => parseRecord(m))
+    if (!messagesData.length) {
       throw new TRPCError({
         code: 'BAD_REQUEST',
         message: 'No messages found'
       })
     }
-    assistant.api_key = assistant.api_key
-      ? await aesDecrypt(assistant.api_key)
+    assistant.apiKey = assistant.apiKey
+      ? await aesDecrypt(assistant.apiKey)
       : null
     const client = createClient({
       mode: assistant.mode,
-      api_key: assistant.api_key,
-      base_url: assistant.base_url
+      api_key: assistant.apiKey,
+      base_url: assistant.baseUrl
     })!
     let summary = chat.summary
     const maxTokens = Number(assistant.options?.maxContextTokens) || 20000
-    const [userMessage, assistantMessage] = messages.slice(-2)
+    const [userMessage, assistantMessage] = messagesData.slice(-2)
     const uiMessages: UIMessage[] = []
-    if (messages.length > 2) {
-      let history = messages.slice(0, -2)
+    if (messagesData.length > 2) {
+      let history = messagesData.slice(0, -2)
       const totalTokens =
-        findLast(history, (m) => m.role === 'assistant')?.total_tokens || 0
+        findLast(history, (m) => m.role === 'assistant')?.totalTokens || 0
       if (totalTokens > maxTokens && history.length >= 2) {
         let compreMessages = history.slice()
         if (
           history.length >= 6 &&
-          (history.slice(-4).find((m) => m.role === 'assistant')
-            ?.total_tokens || 0) < maxTokens
+          (history.slice(-4).find((m) => m.role === 'assistant')?.totalTokens ||
+            0) < maxTokens
         ) {
           // 保留最后两轮对话
           history = history.slice(-4)
@@ -143,13 +140,15 @@ Output only the summarized version of the conversation.`,
           })
           chat.summary = summary
           await db
-            .updateTable('chats')
+            .update(chats)
             .set({
               summary,
-              message_offset: sql`message_offset + ${compreMessages.length}`
+              messageOffset: increment(
+                chats.messageOffset,
+                compreMessages.length
+              )
             })
-            .where('id', '=', chat.id)
-            .execute()
+            .where(eq(chats.id, chat.id))
         }
       }
       history.map((m) => {

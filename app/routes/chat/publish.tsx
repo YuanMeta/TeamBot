@@ -16,37 +16,35 @@ import { useMemo } from 'react'
 import { ChatStore, StoreContext } from './store/store'
 import { SearchResult } from './ui/SearchResult'
 
-export const loader = async (args: Route.LoaderArgs) => {
-  const userId = args.context.userId
+export const loader = async ({
+  context: { db, userId },
+  params
+}: Route.LoaderArgs) => {
   if (!userId) {
     return redirect('/login')
   }
-  const { params } = args
   const { id } = params
-  const chat = await args.context.db
-    .selectFrom('chats')
-    .where('id', '=', id as string)
-    .select(['id', 'title', 'last_chat_time', 'user_id'])
-    .executeTakeFirst()
+  const chat = await db.query.chats.findFirst({
+    columns: {
+      id: true,
+      title: true,
+      lastChatTime: true,
+      userId: true
+    },
+    where: {
+      id: id as string
+    }
+  })
 
   if (!chat) {
     return { chat: null, messages: [] }
   }
-  const messages = await args.context.db
-    .selectFrom('messages')
-    .where('chat_id', '=', id as string)
-    .select([
-      'id',
-      'role',
-      'text',
-      'created_at',
-      'parts',
-      'updated_at',
-      'model',
-      'user_id'
-    ])
-    .orderBy('created_at', 'asc')
-    .execute()
+  const messages = await db.query.messages.findMany({
+    where: { chatId: id as string },
+    orderBy: {
+      createdAt: 'asc'
+    }
+  })
   return { chat, messages: messages.map((m) => parseRecord(m)) }
 }
 
