@@ -45,7 +45,7 @@ export default observer(() => {
     <div className='w-full'>
       {context}
       <div>
-        <div className='flex items-center pb-4 justify-between'>
+        <div className='flex items-center pb-2 justify-between'>
           <div></div>
           <div>
             <AButton

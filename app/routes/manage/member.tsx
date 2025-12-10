@@ -1,38 +1,21 @@
 import {
   type ColumnDef,
-  flexRender,
   getCoreRowModel,
   useReactTable
 } from '@tanstack/react-table'
-import {
-  KeyRound,
-  PencilLine,
-  Plus,
-  Trash,
-  Users,
-  Waypoints
-} from 'lucide-react'
+import { KeyRound, PencilLine, Trash, Users, Waypoints } from 'lucide-react'
 
-import {
-  Table,
-  TableBody,
-  TableCell,
-  TableHead,
-  TableHeader,
-  TableRow
-} from '~/components/ui/table'
 import { Button } from '~/components/ui/button'
 import { observer } from 'mobx-react-lite'
 import { useLocalState } from '~/hooks/localState'
 import { useCallback, useEffect, useMemo, useRef } from 'react'
 import { trpc } from '~/.client/trpc'
-import { Pagination } from '~/components/project/pagination'
-import { AddMember } from './ui/AddMemeber'
-import { Tabs, TabsContent, TabsList, TabsTrigger } from '~/components/ui/tabs'
-import { SSO, type SSOInstance } from './ui/SSO'
+import { type SSOInstance } from './ui/SSO'
 import { useAccess } from '~/lib/access'
 import { Badge } from '~/components/ui/badge'
 import type { UserData } from 'server/db/type'
+import { Tabs } from 'antd'
+import { MemberList } from './ui/MemberList'
 
 type MemberData = UserData & { roles: string[] }
 export default observer(() => {
@@ -143,6 +126,30 @@ export default observer(() => {
     <div className='w-full'>
       <div>
         <Tabs
+          type={'card'}
+          defaultActiveKey='member'
+          items={[
+            {
+              key: 'member',
+              label: (
+                <div className={'flex items-center gap-1.5'}>
+                  <Users size={16} /> 成员
+                </div>
+              ),
+              children: <MemberList />
+            },
+            {
+              key: 'sso',
+              label: (
+                <div className={'flex items-center gap-1.5'}>
+                  <Waypoints size={16} /> SSO
+                </div>
+              ),
+              children: <div></div>
+            }
+          ]}
+        />
+        {/* <Tabs
           value={state.tab}
           onValueChange={(value) =>
             setState({ tab: value as 'member' | 'sso' })
@@ -256,7 +263,7 @@ export default observer(() => {
           onUpdate={() => getMembers()}
           id={state.selectedMemberId || undefined}
           onClose={() => setState({ openAddMember: false })}
-        />
+        /> */}
       </div>
     </div>
   )
