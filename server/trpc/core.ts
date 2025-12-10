@@ -5,7 +5,7 @@ import { verifyUser } from '../session'
 import * as trpcExpress from '@trpc/server/adapters/express'
 import { publicAccess } from 'server/db/access'
 import { db } from 'server/db'
-import { and, eq, sql } from 'drizzle-orm'
+import { eq } from 'drizzle-orm'
 import { accesses, accessRoles, userRoles } from 'server/db/drizzle/schema'
 
 export const createContext = async ({
@@ -81,7 +81,6 @@ export const adminProcedure = t.procedure.use(async ({ ctx, next }) => {
       .innerJoin(accessRoles, eq(userRoles.roleId, accessRoles.roleId))
       .innerJoin(accesses, eq(accessRoles.accessId, accesses.id))
       .where(eq(userRoles.userId, user.id))
-      .execute()
 
     const allTrpcAccess = new Set<string>()
     for (const access of userAccessList) {

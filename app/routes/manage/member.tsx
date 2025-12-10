@@ -83,7 +83,9 @@ export default observer(() => {
               <Button
                 variant='outline'
                 size='icon-sm'
-                disabled={!hasAccess('manageMember') || row.original.root!}
+                disabled={
+                  !hasAccess('manageMemberAndRole') || row.original.root!
+                }
                 onClick={() => {
                   setState({
                     selectedMemberId: data.id,
@@ -96,7 +98,9 @@ export default observer(() => {
               <Button
                 variant='outline'
                 size='icon-sm'
-                disabled={!hasAccess('manageMember') || row.original.root!}
+                disabled={
+                  !hasAccess('manageMemberAndRole') || row.original.root!
+                }
               >
                 <Trash className={'size-3'} />
               </Button>
@@ -159,7 +163,7 @@ export default observer(() => {
             <div>
               {state.tab === 'member' && (
                 <Button
-                  disabled={!hasAccess('manageMember')}
+                  disabled={!hasAccess('manageMemberAndRole')}
                   onClick={() => {
                     setState({ openAddMember: true, selectedMemberId: null })
                   }}

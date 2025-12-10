@@ -68,7 +68,7 @@ export default observer(() => {
               <Button
                 variant='outline'
                 size='icon-sm'
-                disabled={!hasAccess('manageTools')}
+                disabled={!hasAccess('manageMemberAndRole')}
                 onClick={() => {
                   setState({
                     selectedRoleId: data.id,
@@ -81,7 +81,7 @@ export default observer(() => {
               <Button
                 variant='outline'
                 size='icon-sm'
-                disabled={!hasAccess('manageRole')}
+                disabled={!hasAccess('manageMemberAndRole')}
                 onClick={() => {
                   adminConfirmDialog$.next({
                     title: '提示',
@@ -146,6 +146,7 @@ export default observer(() => {
           <div></div>
           <div>
             <Button
+              disabled={!hasAccess('manageMemberAndRole')}
               onClick={() => {
                 setState({ openAddRole: true, selectedRoleId: null })
               }}
