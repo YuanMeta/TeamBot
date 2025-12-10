@@ -4,7 +4,12 @@ import { ManageSideBar } from './ui/SideBar'
 import { AccessProvider } from '~/lib/access'
 import type { Route } from './+types/manage'
 import { isAdmin } from 'server/db/query'
-
+import { theme, ConfigProvider, message } from 'antd'
+import { useTheme } from 'remix-themes'
+import zhCN from 'antd/locale/zh_CN'
+import 'dayjs/locale/zh-cn'
+import { useSubject } from '~/hooks/localState'
+import { adminConfirmDialog$ } from '~/components/project/confirm-dialog'
 export const loader = async ({ context }: Route.LoaderArgs) => {
   if (context.root) {
     return null
@@ -16,13 +21,27 @@ export const loader = async ({ context }: Route.LoaderArgs) => {
   return redirect('/chat')
 }
 export default observer(() => {
+  const [themeMode] = useTheme()
   return (
-    <AccessProvider>
-      <ManageSideBar>
-        <div className={'overflow-y-auto h-0 flex-1 p-4'}>
-          <Outlet />
-        </div>
-      </ManageSideBar>
-    </AccessProvider>
+    <ConfigProvider
+      locale={zhCN}
+      theme={{
+        token: {
+          colorPrimary: '#2f54eb',
+          borderRadius: 8,
+          colorError: '#c94043'
+        },
+        algorithm:
+          themeMode === 'dark' ? theme.darkAlgorithm : theme.defaultAlgorithm
+      }}
+    >
+      <AccessProvider>
+        <ManageSideBar>
+          <div className={'overflow-y-auto h-0 flex-1 p-4'}>
+            <Outlet />
+          </div>
+        </ManageSideBar>
+      </AccessProvider>
+    </ConfigProvider>
   )
 })

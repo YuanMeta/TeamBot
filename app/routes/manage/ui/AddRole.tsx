@@ -1,9 +1,9 @@
-import { useForm } from '@tanstack/react-form'
+// import { useForm } from '@tanstack/react-form'
 import { observer } from 'mobx-react-lite'
 import { useEffect } from 'react'
 import { trpc } from '~/.client/trpc'
 import { Button } from '~/components/ui/button'
-import { Checkbox } from '~/components/ui/checkbox'
+// import { Checkbox } from '~/components/ui/checkbox'
 import {
   Dialog,
   DialogClose,
@@ -18,12 +18,13 @@ import {
   Field,
   FieldError
 } from '~/components/ui/field'
-import { Input } from '~/components/ui/input'
+// import { Input } from '~/components/ui/input'
 import { Label } from '~/components/ui/label'
 import { SelectFilter } from '~/components/project/select-filter'
 import { Spinner } from '~/components/ui/spinner'
 import { Textarea } from '~/components/ui/textarea'
 import { useLocalState } from '~/hooks/localState'
+import { Checkbox, Form, Input, Modal, Select } from 'antd'
 
 const accessLabelMap: Record<string, string> = {
   manageAssistant: '管理助手',
@@ -42,54 +43,56 @@ export const AddRole = observer(
     const [state, setState] = useLocalState({
       access: [] as string[],
       allAssistant: true,
+      selectedAccess: [] as string[],
       assistants: [] as { id: number; name: string }[]
     })
-    const form = useForm({
-      defaultValues: {
-        name: '',
-        remark: '',
-        assistants: [] as number[],
-        access: [] as string[]
-      },
-      onSubmit: async ({ value }) => {
-        if (props.id) {
-          await trpc.manage.updateRole.mutate({
-            id: props.id,
-            data: {
-              name: value.name,
-              remark: value.remark,
-              access: value.access,
-              assistants: value.assistants,
-              allAssistants: state.allAssistant
-            }
-          })
-        } else {
-          await trpc.manage.createRole.mutate({
-            name: value.name,
-            remark: value.remark,
-            access: value.access,
-            assistants: value.assistants,
-            allAssistants: state.allAssistant
-          })
-        }
-        props.onUpdate()
-        props.onClose()
-      }
-    })
+    const [form] = Form.useForm()
+    const allAssistant = Form.useWatch('allAssistant', form)
+    // const form = useForm({
+    //   defaultValues: {
+    //     name: '',
+    //     remark: '',
+    //     assistants: [] as number[],
+    //     access: [] as string[]
+    //   },
+    //   onSubmit: async ({ value }) => {
+    //     if (props.id) {
+    //       await trpc.manage.updateRole.mutate({
+    //         id: props.id,
+    //         data: {
+    //           name: value.name,
+    //           remark: value.remark,
+    //           access: value.access,
+    //           assistants: value.assistants,
+    //           allAssistants: state.allAssistant
+    //         }
+    //       })
+    //     } else {
+    //       await trpc.manage.createRole.mutate({
+    //         name: value.name,
+    //         remark: value.remark,
+    //         access: value.access,
+    //         assistants: value.assistants,
+    //         allAssistants: state.allAssistant
+    //       })
+    //     }
+    //     props.onUpdate()
+    //     props.onClose()
+    //   }
+    // })
     useEffect(() => {
       if (props.open) {
-        form.reset()
+        form.resetFields()
         if (props.id) {
           trpc.manage.getRole.query(props.id).then((res) => {
             if (res) {
-              form.setFieldValue(
-                'access',
-                res.accesses.map((a) => a.id)
-              )
-              form.setFieldValue('assistants', res.assistants || [])
-              form.setFieldValue('name', res.name || '')
-              form.setFieldValue('remark', res.remark || '')
-              setState({ allAssistant: res.allAssistants })
+              form.setFieldsValue({
+                name: res.name,
+                remark: res.remark,
+                allAssistant: res.allAssistants,
+                assistants: res.assistants || []
+              })
+              setState({ selectedAccess: res.accesses.map((a) => a.id) })
             }
           })
         }
@@ -102,209 +105,95 @@ export const AddRole = observer(
       }
     }, [props.open, props.id])
     return (
-      <Dialog
+      <Modal
         open={props.open}
-        onOpenChange={(open) => {
-          if (!open) {
-            props.onClose()
-          }
+        title={props.id ? '编辑角色' : '添加角色'}
+        width={460}
+        onCancel={() => {
+          props.onClose()
         }}
       >
-        <DialogContent>
-          <DialogHeader>
-            <DialogTitle>添加角色</DialogTitle>
-          </DialogHeader>
-          <div className={'modal-content'}>
-            <form>
-              <FieldGroup>
-                <form.Field
-                  name={'name'}
-                  validators={{
-                    onSubmit: ({ value }) => {
-                      if (!value) {
-                        return { message: '请输入名称' }
-                      }
-                      return undefined
-                    }
-                  }}
-                  children={(field) => {
-                    const isInvalid =
-                      field.state.meta.isTouched && !field.state.meta.isValid
-                    return (
-                      <Field data-invalid={isInvalid}>
-                        <FieldLabel htmlFor={field.name} required>
-                          名称
-                        </FieldLabel>
-                        <Input
-                          maxLength={200}
-                          id={field.name}
-                          name={field.name}
-                          value={field.state.value}
-                          onBlur={field.handleBlur}
-                          onChange={(e) => field.handleChange(e.target.value)}
-                          aria-invalid={isInvalid}
-                          placeholder='输入名称'
-                          autoComplete='off'
-                        />
-                        {isInvalid && (
-                          <FieldError errors={field.state.meta.errors} />
-                        )}
-                      </Field>
-                    )
-                  }}
-                />
-                <form.Field
-                  name={'remark'}
-                  validators={{
-                    onSubmit: ({ value }) => {
-                      if (!value) {
-                        return undefined
-                      }
-                    }
-                  }}
-                  children={(field) => {
-                    const isInvalid =
-                      field.state.meta.isTouched && !field.state.meta.isValid
-                    return (
-                      <Field data-invalid={isInvalid}>
-                        <FieldLabel htmlFor={field.name}>备注</FieldLabel>
-                        <Textarea
-                          maxLength={200}
-                          id={field.name}
-                          name={field.name}
-                          value={field.state.value}
-                          onBlur={field.handleBlur}
-                          onChange={(e) => field.handleChange(e.target.value)}
-                          aria-invalid={isInvalid}
-                          placeholder='输入备注'
-                          autoComplete='off'
-                        />
-                        {isInvalid && (
-                          <FieldError errors={field.state.meta.errors} />
-                        )}
-                      </Field>
-                    )
-                  }}
-                />
-                <form.Field
-                  name={'assistants'}
-                  key={
-                    JSON.stringify(state.assistants) + state.allAssistant
-                      ? 'all'
-                      : 'selecte'
-                  }
-                  children={(field) => {
-                    const isInvalid =
-                      field.state.meta.isTouched && !field.state.meta.isValid
-                    return (
-                      <Field data-invalid={isInvalid}>
-                        <FieldLabel htmlFor={field.name}>
-                          添加授权助手
-                        </FieldLabel>
-                        <div className='flex items-center gap-2'>
-                          <Checkbox
-                            id='all-assistants'
-                            checked={state.allAssistant}
-                            onCheckedChange={(checked: boolean) =>
-                              setState({ allAssistant: checked })
-                            }
-                          />
-                          <Label htmlFor='all-assistants'>所有助手</Label>
-                        </div>
-                        {!state.allAssistant && (
-                          <SelectFilter
-                            options={state.assistants.map((a) => ({
-                              label: a.name,
-                              value: a.id
-                            }))}
-                            value={field.state.value}
-                            placeholder={'选择助手'}
-                            onValueChange={(value) => {
-                              const assistants = value as number[]
-                              field.setValue(
-                                assistants.includes(0) ? [0] : assistants
-                              )
-                            }}
-                            multiple={true}
-                          />
-                        )}
+        <Form form={form} layout={'vertical'}>
+          <Form.Item
+            name={'name'}
+            label={'名称'}
+            rules={[{ required: true, message: '请输入名称' }]}
+          >
+            <Input placeholder='请输入名称' />
+          </Form.Item>
 
-                        {isInvalid && (
-                          <FieldError errors={field.state.meta.errors} />
-                        )}
-                      </Field>
-                    )
-                  }}
-                />
-                <form.Subscribe selector={(form) => [form.values.access]}>
-                  {([access]) => (
-                    <Field>
-                      <FieldLabel help={'开启管理员权限后，成员可进入管理系统'}>
-                        管理员
-                      </FieldLabel>
-                      <div className='flex items-center mb-2 gap-1.5'>
-                        <Checkbox
-                          id='admin'
-                          checked={access.includes('admin')}
-                          onCheckedChange={(e) => {
-                            form.setFieldValue('access', e ? state.access : [])
-                          }}
-                        />
-                        <Label htmlFor='admin'>开启管理员权限</Label>
-                      </div>
-                      {access.includes('admin') && (
-                        <div className='flex items-center gap-3 flex-wrap'>
-                          {state.access
-                            .filter((a) => a !== 'admin')
-                            .map((a) => (
-                              <div
-                                className={'flex items-center gap-1.5'}
-                                key={a}
-                              >
-                                <Checkbox
-                                  id={a}
-                                  checked={access.includes(a)}
-                                  onCheckedChange={(e) => {
-                                    form.setFieldValue(
-                                      'access',
-                                      e
-                                        ? [...access, a]
-                                        : access.filter((item) => item !== a)
-                                    )
-                                  }}
-                                />
-                                <Label htmlFor={a}>{accessLabelMap[a]}</Label>
-                              </div>
-                            ))}
-                        </div>
-                      )}
-                    </Field>
-                  )}
-                </form.Subscribe>
-              </FieldGroup>
-            </form>
-          </div>
-          <form.Subscribe
-            selector={(state) => state.isSubmitting}
-            children={(isSubmitting) => (
-              <DialogFooter>
-                <DialogClose asChild>
-                  <Button variant='outline'>取消</Button>
-                </DialogClose>
-                <Button
-                  disabled={isSubmitting}
-                  onClick={() => {
-                    form.handleSubmit()
-                  }}
-                >
-                  {isSubmitting && <Spinner />}
-                  添加
-                </Button>
-              </DialogFooter>
+          <Form.Item
+            label={'添加授权助手'}
+            className={'space-y-5'}
+            required={true}
+          >
+            <Form.Item
+              noStyle={true}
+              name={'allAssistant'}
+              initialValue={true}
+              valuePropName={'checked'}
+            >
+              <Checkbox>所有助手</Checkbox>
+            </Form.Item>
+            {!allAssistant && (
+              <div className={'mt-3'}>
+                <Form.Item noStyle={true} name={'assistants'}>
+                  <Select
+                    mode='multiple'
+                    allowClear
+                    options={state.assistants.map((a) => ({
+                      label: a.name,
+                      value: a.id
+                    }))}
+                    style={{ width: '100%' }}
+                    placeholder='选择助手'
+                  />
+                </Form.Item>
+              </div>
             )}
-          />
-        </DialogContent>
-      </Dialog>
+          </Form.Item>
+          <Form.Item
+            label={'权限'}
+            className={'space-y-5'}
+            tooltip={'开启管理员权限后，成员可进入管理系统'}
+          >
+            <Form.Item noStyle={true}>
+              <Checkbox
+                checked={state.selectedAccess.includes('admin')}
+                onChange={(e) => {
+                  setState({
+                    selectedAccess: e.target.checked ? [...state.access] : []
+                  })
+                }}
+              >
+                管理员
+              </Checkbox>
+            </Form.Item>
+            {state.selectedAccess.includes('admin') && (
+              <div className={'mt-3'}>
+                <Form.Item noStyle={true}>
+                  <Select
+                    mode='multiple'
+                    allowClear
+                    value={state.selectedAccess.filter((a) => a !== 'admin')}
+                    options={state.access
+                      .filter((a) => a !== 'admin')
+                      .map((a) => ({
+                        label: accessLabelMap[a],
+                        value: a
+                      }))}
+                    style={{ width: '100%' }}
+                    placeholder='权限'
+                  />
+                </Form.Item>
+              </div>
+            )}
+          </Form.Item>
+          <Form.Item name={'remark'} label={'备注'}>
+            <Input.TextArea placeholder='请输入备注' />
+          </Form.Item>
+        </Form>
+      </Modal>
     )
   }
 )

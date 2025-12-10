@@ -11,7 +11,6 @@ import {
   boolean,
   timestamp,
   index,
-  foreignKey,
   primaryKey,
   unique
 } from 'drizzle-orm/pg-core'
@@ -223,6 +222,7 @@ export const tools = pgTable('tools', {
   id: varchar().primaryKey(),
   name: varchar().notNull(),
   description: text().notNull(),
+  // http system
   type: varchar().notNull(),
   params: jsonb().notNull().$type<Record<string, any>>(),
   auto: boolean().default(true).notNull(),

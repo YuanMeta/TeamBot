@@ -1,38 +1,13 @@
-import {
-  flexRender,
-  getCoreRowModel,
-  getFilteredRowModel,
-  getPaginationRowModel,
-  getSortedRowModel,
-  useReactTable,
-  type ColumnDef
-} from '@tanstack/react-table'
-import { Delete, Plus } from 'lucide-react'
+import { Delete } from 'lucide-react'
 import { observer } from 'mobx-react-lite'
-import { useCallback, useEffect, useMemo } from 'react'
+import { useCallback, useEffect, useRef } from 'react'
 import { trpc } from '~/.client/trpc'
-import { Pagination } from '~/components/project/pagination'
-import { PopConfirm } from '~/components/project/popconfirm'
-import { Button } from '~/components/ui/button'
-import {
-  Dialog,
-  DialogContent,
-  DialogHeader,
-  DialogTitle
-} from '~/components/ui/dialog'
-import { SelectFilter } from '~/components/project/select-filter'
-import {
-  Table,
-  TableBody,
-  TableCell,
-  TableHead,
-  TableHeader,
-  TableRow
-} from '~/components/ui/table'
+import { Button as SButton } from '~/components/ui/button'
+import { Button, Popconfirm, Select, Spin, Table } from 'antd'
 import { useLocalState } from '~/hooks/localState'
 import { toast } from 'sonner'
 import type { UserData } from 'server/db/type'
-
+import { Modal } from 'antd'
 export const RoleMember = observer(
   (props: { roleId: number; open: boolean; onClose: () => void }) => {
     const [state, setState] = useLocalState({
@@ -40,62 +15,31 @@ export const RoleMember = observer(
       page: 1,
       pageSize: 10,
       total: 0,
+      loading: false,
+      options: [] as { label: string; value: number }[],
       selectedMemberId: null as null | number
     })
-    const columns: ColumnDef<UserData>[] = useMemo(() => {
-      return [
-        {
-          accessorKey: 'name',
-          header: '成员名',
-          cell: ({ row }) => (
-            <div className='capitalize flex items-center gap-1.5'>
-              <div className={'truncate'}>{row.getValue('name')}</div>
-            </div>
-          )
-        },
-        {
-          accessorKey: 'email',
-          header: '邮箱',
-          cell: ({ row }) => (
-            <div className='lowercase'>{row.getValue('email')}</div>
-          )
-        },
-        {
-          accessorKey: 'action',
-          header: null,
-          cell: ({ row }) => (
-            <div>
-              <PopConfirm
-                description={'移除后该成员不在拥有该角色，是否继续？'}
-                okButtonProps={{ variant: 'destructive' }}
-                onOk={() => {
-                  return trpc.manage.remoteRoleFromUser
-                    .mutate({
-                      roleId: props.roleId,
-                      userId: row.original.id
-                    })
-                    .then(() => {
-                      getRoleMembers()
-                    })
-                }}
-              >
-                <Button size={'icon-sm'} variant={'ghost'}>
-                  <Delete />
-                </Button>
-              </PopConfirm>
-            </div>
-          )
-        }
-      ] as ColumnDef<UserData>[]
-    }, [props.roleId])
-    const table = useReactTable({
-      data: state.data,
-      columns,
-      getCoreRowModel: getCoreRowModel(),
-      getPaginationRowModel: getPaginationRowModel(),
-      getSortedRowModel: getSortedRowModel(),
-      getFilteredRowModel: getFilteredRowModel()
-    })
+    const timer = useRef(0)
+    const fetchOptions = useCallback(
+      (keyword: string) => {
+        clearTimeout(timer.current)
+        timer.current = window.setTimeout(() => {
+          if (!keyword) {
+            setState({ options: [] })
+          } else {
+            trpc.manage.searchMembers.query({ keyword }).then((res) => {
+              setState({
+                options: res.map((item) => ({
+                  label: item.name ?? item.email!,
+                  value: item.id
+                }))
+              })
+            })
+          }
+        }, 300)
+      },
+      [props.roleId]
+    )
     const getRoleMembers = useCallback(() => {
       trpc.manage.getRoleMembers
         .query({
@@ -117,132 +61,103 @@ export const RoleMember = observer(
       }
     }, [props.open, props.roleId])
     return (
-      <Dialog
+      <Modal
         open={props.open}
-        onOpenChange={(open) => {
-          if (!open) {
-            props.onClose()
-          }
+        title={'角色成员'}
+        width={700}
+        onCancel={() => {
+          props.onClose()
         }}
+        footer={null}
       >
-        <DialogContent
-          className={'max-w-[700px]! w-[700px]!'}
-          autoFocus={false}
-        >
-          <DialogHeader>
-            <DialogTitle className={'flex items-center gap-3'}>
-              角色成员
-            </DialogTitle>
-          </DialogHeader>
-          <div className={'px-3 mt-1 pb-3 max-h-[400px] overflow-y-auto'}>
-            <div className={'flex items-center gap-3 justify-between py-1'}>
-              <div className={'flex items-center gap-3'}>
-                <SelectFilter
-                  size={'sm'}
-                  className={'w-36'}
-                  value={state.selectedMemberId}
-                  onValueChange={(value) => {
-                    setState({ selectedMemberId: value as number })
-                  }}
-                  fetchOptions={(keyword) =>
-                    trpc.manage.searchMembers.query({ keyword }).then((res) =>
-                      res.map((item) => ({
-                        label: item.name!,
-                        value: item.id
-                      }))
-                    )
-                  }
-                  placeholder={'选择成员'}
-                />
-                <Button
-                  size={'sm'}
-                  onClick={() => {
-                    if (state.selectedMemberId) {
-                      trpc.manage.addRoleToUser
-                        .mutate({
-                          roleId: props.roleId,
-                          userId: state.selectedMemberId
-                        })
-                        .then(() => {
-                          getRoleMembers()
-                          setState({ selectedMemberId: null })
-                        })
-                        .catch((error: any) => {
-                          toast.error(error.message, {
-                            position: 'top-right'
-                          })
-                        })
-                    }
+        <div className={'flex items-center gap-3 justify-between mb-2'}>
+          <div className={'flex items-center gap-2'}>
+            <Select
+              placeholder={'选择成员'}
+              className={'w-48'}
+              allowClear={true}
+              value={state.selectedMemberId}
+              onChange={(e) => {
+                setState({ selectedMemberId: e as number })
+              }}
+              options={state.options}
+              showSearch={{ filterOption: false, onSearch: fetchOptions }}
+              notFoundContent={state.loading ? <Spin size='small' /> : null}
+            />
+            <Button
+              disabled={!state.selectedMemberId}
+              onClick={() => {
+                if (state.selectedMemberId) {
+                  trpc.manage.addRoleToUser
+                    .mutate({
+                      roleId: props.roleId,
+                      userId: state.selectedMemberId
+                    })
+                    .then(() => {
+                      getRoleMembers()
+                      setState({ selectedMemberId: null })
+                    })
+                    .catch((error: any) => {
+                      toast.error(error.message)
+                    })
+                }
+              }}
+            >
+              添加
+            </Button>
+          </div>
+        </div>
+        <Table
+          size={'small'}
+          columns={[
+            {
+              title: '成员名',
+              dataIndex: 'name',
+              key: 'name'
+            },
+            {
+              title: '邮箱',
+              dataIndex: 'email',
+              key: 'email'
+            },
+            {
+              title: '操作',
+              dataIndex: 'action',
+              key: 'action',
+              render: (_, record) => (
+                <Popconfirm
+                  title={'移除后该成员不在拥有该角色，是否继续？'}
+                  okButtonProps={{ danger: true }}
+                  onConfirm={() => {
+                    return trpc.manage.remoteRoleFromUser
+                      .mutate({
+                        roleId: props.roleId,
+                        userId: record.id
+                      })
+                      .then(() => {
+                        getRoleMembers()
+                      })
                   }}
                 >
-                  <Plus />
-                  添加
-                </Button>
-              </div>
-
-              <div>
-                <Pagination
-                  page={state.page}
-                  pageSize={state.pageSize}
-                  total={state.total}
-                  onPageChange={(page) => {
-                    setState({ page })
-                    getRoleMembers()
-                  }}
-                />
-              </div>
-            </div>
-            <Table>
-              <TableHeader>
-                {table.getHeaderGroups().map((headerGroup) => (
-                  <TableRow key={headerGroup.id}>
-                    {headerGroup.headers.map((header) => {
-                      return (
-                        <TableHead key={header.id}>
-                          {header.isPlaceholder
-                            ? null
-                            : flexRender(
-                                header.column.columnDef.header,
-                                header.getContext()
-                              )}
-                        </TableHead>
-                      )
-                    })}
-                  </TableRow>
-                ))}
-              </TableHeader>
-              <TableBody>
-                {table.getRowModel().rows?.length ? (
-                  table.getRowModel().rows.map((row) => (
-                    <TableRow
-                      key={row.id}
-                      data-state={row.getIsSelected() && 'selected'}
-                    >
-                      {row.getVisibleCells().map((cell) => (
-                        <TableCell key={cell.id}>
-                          {flexRender(
-                            cell.column.columnDef.cell,
-                            cell.getContext()
-                          )}
-                        </TableCell>
-                      ))}
-                    </TableRow>
-                  ))
-                ) : (
-                  <TableRow>
-                    <TableCell
-                      colSpan={columns.length}
-                      className='h-24 text-center'
-                    >
-                      暂无结果。
-                    </TableCell>
-                  </TableRow>
-                )}
-              </TableBody>
-            </Table>
-          </div>
-        </DialogContent>
-      </Dialog>
+                  <SButton size={'icon-sm'} variant={'outline'}>
+                    <Delete />
+                  </SButton>
+                </Popconfirm>
+              )
+            }
+          ]}
+          dataSource={state.data}
+          pagination={{
+            pageSize: state.pageSize,
+            total: state.total,
+            current: state.page,
+            onChange: (page) => {
+              setState({ page })
+              getRoleMembers()
+            }
+          }}
+        />
+      </Modal>
     )
   }
 )

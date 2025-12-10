@@ -61,11 +61,12 @@ export const adminProcedure = t.procedure.use(async ({ ctx, next }) => {
     .slice(1)
     .split(',')
     .filter((p) => !p.startsWith('chat.') && !p.startsWith('common.'))
-  if (ctx.root || paths.every((p) => publicAccess.includes(p))) {
+  if (user.root || paths.every((p) => publicAccess.includes(p))) {
     return next({
       ctx: {
         ...ctx,
-        userId: user.id
+        userId: user.id,
+        root: user.root
       }
     })
   }

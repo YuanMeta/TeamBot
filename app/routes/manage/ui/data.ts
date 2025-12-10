@@ -1,3 +1,5 @@
+import { Subject } from 'rxjs'
+
 export const builtInSearchMode = new Set([
   'openai',
   'doubao',

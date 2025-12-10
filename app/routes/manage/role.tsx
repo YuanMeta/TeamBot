@@ -1,114 +1,22 @@
-import {
-  type ColumnDef,
-  flexRender,
-  getCoreRowModel,
-  useReactTable
-} from '@tanstack/react-table'
-import { PencilLine, Plus, Trash, Users } from 'lucide-react'
+import { PencilLine, Trash, Users } from 'lucide-react'
 
-import {
-  Table,
-  TableBody,
-  TableCell,
-  TableHead,
-  TableHeader,
-  TableRow
-} from '~/components/ui/table'
 import { Button } from '~/components/ui/button'
+import { Button as AButton, message, Modal } from 'antd'
 import { observer } from 'mobx-react-lite'
 import { useLocalState } from '~/hooks/localState'
-import { useCallback, useEffect, useMemo } from 'react'
+import { useCallback, useEffect } from 'react'
 import { trpc } from '~/.client/trpc'
-import { Pagination } from '~/components/project/pagination'
-import { adminConfirmDialog$ } from '~/components/project/confirm-dialog'
-import { toast } from 'sonner'
 import { useAccess } from '~/lib/access'
 import { AddRole } from './ui/AddRole'
 import { RoleMember } from './ui/RoleMember'
 import type { RoleData } from 'server/db/type'
+import { PlusOutlined } from '@ant-design/icons'
+import { Table } from 'antd'
+import { toast } from 'sonner'
+import { adminConfirmDialog$ } from '~/components/project/confirm-dialog'
 
 export default observer(() => {
   const { hasAccess } = useAccess()
-  const columns: ColumnDef<RoleData>[] = useMemo(() => {
-    return [
-      {
-        accessorKey: 'name',
-        header: '名称',
-        cell: ({ row }) => <div>{row.getValue('name')}</div>
-      },
-      {
-        accessorKey: 'remark',
-        header: '备注',
-        cell: ({ row }) => (
-          <span className='text-sm text-secondary-foreground/90'>
-            {row.getValue('remark')}
-          </span>
-        )
-      },
-      {
-        id: 'actions',
-        cell: ({ row }) => {
-          const data = row.original
-          return (
-            <div className={'flex gap-2'}>
-              <Button
-                variant={'outline'}
-                size={'icon-sm'}
-                onClick={() => {
-                  setState({
-                    selectedRoleId: data.id,
-                    openRoleMember: true
-                  })
-                }}
-              >
-                <Users />
-              </Button>
-              <Button
-                variant='outline'
-                size='icon-sm'
-                disabled={!hasAccess('manageMemberAndRole')}
-                onClick={() => {
-                  setState({
-                    selectedRoleId: data.id,
-                    openAddRole: true
-                  })
-                }}
-              >
-                <PencilLine className={'size-3'} />
-              </Button>
-              <Button
-                variant='outline'
-                size='icon-sm'
-                disabled={!hasAccess('manageMemberAndRole')}
-                onClick={() => {
-                  adminConfirmDialog$.next({
-                    title: '提示',
-                    description: '无法删除已被用户使用的角色，是否继续？',
-                    destructive: true,
-                    onConfirm: () => {
-                      return trpc.manage.deleteRole
-                        .mutate(data.id)
-                        .then(() => {
-                          getRoles()
-                        })
-                        .catch((error) => {
-                          toast.error(error.message, {
-                            position: 'top-right'
-                          })
-                          throw error
-                        })
-                    }
-                  })
-                }}
-              >
-                <Trash className={'size-3'} />
-              </Button>
-            </div>
-          )
-        }
-      }
-    ] as ColumnDef<RoleData>[]
-  }, [])
   const [state, setState] = useLocalState({
     page: 1,
     pageSize: 10,
@@ -119,6 +27,7 @@ export default observer(() => {
     total: 0,
     openRoleMember: false
   })
+  const [modalApi, context] = Modal.useModal()
   const getRoles = useCallback(() => {
     trpc.manage.getRoles
       .query({
@@ -132,88 +41,107 @@ export default observer(() => {
   useEffect(() => {
     getRoles()
   }, [])
-  const table = useReactTable({
-    data: state.data,
-    columns,
-    getCoreRowModel: getCoreRowModel()
-  })
   return (
     <div className='w-full'>
+      {context}
       <div>
         <div className='flex items-center pb-4 justify-between'>
           <div></div>
           <div>
-            <Button
+            <AButton
               disabled={!hasAccess('manageMemberAndRole')}
+              icon={<PlusOutlined />}
               onClick={() => {
                 setState({ openAddRole: true, selectedRoleId: null })
               }}
             >
-              <Plus />
               角色
-            </Button>
+            </AButton>
           </div>
         </div>
-        <div className='overflow-hidden rounded-md border'>
-          <Table>
-            <TableHeader>
-              {table.getHeaderGroups().map((headerGroup) => (
-                <TableRow key={headerGroup.id}>
-                  {headerGroup.headers.map((header) => {
-                    return (
-                      <TableHead key={header.id}>
-                        {header.isPlaceholder
-                          ? null
-                          : flexRender(
-                              header.column.columnDef.header,
-                              header.getContext()
-                            )}
-                      </TableHead>
-                    )
-                  })}
-                </TableRow>
-              ))}
-            </TableHeader>
-            <TableBody>
-              {table.getRowModel().rows?.length ? (
-                table.getRowModel().rows.map((row) => (
-                  <TableRow
-                    key={row.id}
-                    data-state={row.getIsSelected() && 'selected'}
-                  >
-                    {row.getVisibleCells().map((cell) => (
-                      <TableCell key={cell.id}>
-                        {flexRender(
-                          cell.column.columnDef.cell,
-                          cell.getContext()
-                        )}
-                      </TableCell>
-                    ))}
-                  </TableRow>
-                ))
-              ) : (
-                <TableRow>
-                  <TableCell
-                    colSpan={columns.length}
-                    className='h-24 text-center'
-                  >
-                    暂无结果。
-                  </TableCell>
-                </TableRow>
-              )}
-            </TableBody>
-          </Table>
+        <div className='overflow-hidden'>
+          <Table
+            size={'small'}
+            bordered={true}
+            rowKey={'id'}
+            pagination={{
+              total: state.total,
+              pageSize: state.pageSize,
+              current: state.page,
+              onChange: (page) => {
+                setState({ page })
+                getRoles()
+              }
+            }}
+            columns={[
+              {
+                title: '名称',
+                dataIndex: 'name',
+                key: 'name'
+              },
+              {
+                title: '备注',
+                dataIndex: 'remark',
+                key: 'remark'
+              },
+              {
+                title: '操作',
+                dataIndex: 'actions',
+                key: 'actions',
+                render: (_, record) => {
+                  return (
+                    <div className={'space-x-2'}>
+                      <Button
+                        size={'icon-sm'}
+                        variant={'outline'}
+                        onClick={() => {
+                          setState({
+                            selectedRoleId: record.id,
+                            openRoleMember: true
+                          })
+                        }}
+                      >
+                        <Users />
+                      </Button>
+                      <Button
+                        size={'icon-sm'}
+                        variant={'outline'}
+                        onClick={() => {
+                          setState({
+                            selectedRoleId: record.id,
+                            openAddRole: true
+                          })
+                        }}
+                      >
+                        <PencilLine />
+                      </Button>
+                      <Button
+                        size={'icon-sm'}
+                        variant={'outline'}
+                        onClick={() => {
+                          adminConfirmDialog$.next({
+                            title: '提示',
+                            content: '无法删除已被用户使用的角色，是否继续？',
+                            okButtonProps: { danger: true },
+                            onOk: async () => {
+                              await trpc.manage.deleteRole
+                                .mutate(record.id)
+                                .then(() => getRoles())
+                                .catch((error) => toast.error(error.message))
+                            }
+                          })
+                        }}
+                      >
+                        <Trash />
+                      </Button>
+                    </div>
+                  )
+                }
+              }
+            ]}
+            dataSource={state.data}
+          />
         </div>
-        <Pagination
-          page={state.page}
-          pageSize={state.pageSize}
-          total={state.total}
-          className={'mt-3'}
-          onPageChange={(page) => {
-            setState({ page })
-            getRoles()
-          }}
-        />
         <AddRole
           open={state.openAddRole}
           id={state.selectedRoleId}
