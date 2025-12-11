@@ -8,6 +8,7 @@ import { useLocalState } from '~/hooks/localState'
 import { toast } from 'sonner'
 import type { UserData } from 'server/db/type'
 import { Modal } from 'antd'
+import { TableHeader } from './TableHeader'
 export const RoleMember = observer(
   (props: { roleId: number; open: boolean; onClose: () => void }) => {
     const [state, setState] = useLocalState({
@@ -70,43 +71,52 @@ export const RoleMember = observer(
         }}
         footer={null}
       >
-        <div className={'flex items-center gap-3 justify-between mb-2'}>
-          <div className={'flex items-center gap-2'}>
-            <Select
-              placeholder={'选择成员'}
-              className={'w-48'}
-              allowClear={true}
-              value={state.selectedMemberId}
-              onChange={(e) => {
-                setState({ selectedMemberId: e as number })
-              }}
-              options={state.options}
-              showSearch={{ filterOption: false, onSearch: fetchOptions }}
-              notFoundContent={state.loading ? <Spin size='small' /> : null}
-            />
-            <Button
-              disabled={!state.selectedMemberId}
-              onClick={() => {
-                if (state.selectedMemberId) {
-                  trpc.manage.addRoleToUser
-                    .mutate({
-                      roleId: props.roleId,
-                      userId: state.selectedMemberId
-                    })
-                    .then(() => {
-                      getRoleMembers()
-                      setState({ selectedMemberId: null })
-                    })
-                    .catch((error: any) => {
-                      toast.error(error.message)
-                    })
-                }
-              }}
-            >
-              添加
-            </Button>
-          </div>
-        </div>
+        <TableHeader
+          pagination={{
+            pageSize: state.pageSize,
+            total: state.total,
+            current: state.page,
+            onChange: (page) => {
+              setState({ page })
+              getRoleMembers()
+            }
+          }}
+        >
+          <Select
+            placeholder={'选择成员'}
+            className={'w-48'}
+            allowClear={true}
+            value={state.selectedMemberId}
+            onChange={(e) => {
+              setState({ selectedMemberId: e as number })
+            }}
+            options={state.options}
+            showSearch={{ filterOption: false, onSearch: fetchOptions }}
+            notFoundContent={state.loading ? <Spin size='small' /> : null}
+          />
+          <Button
+            disabled={!state.selectedMemberId}
+            type={'primary'}
+            onClick={() => {
+              if (state.selectedMemberId) {
+                trpc.manage.addRoleToUser
+                  .mutate({
+                    roleId: props.roleId,
+                    userId: state.selectedMemberId
+                  })
+                  .then(() => {
+                    getRoleMembers()
+                    setState({ selectedMemberId: null })
+                  })
+                  .catch((error: any) => {
+                    toast.error(error.message)
+                  })
+              }
+            }}
+          >
+            添加
+          </Button>
+        </TableHeader>
         <Table
           size={'small'}
           columns={[
@@ -147,15 +157,7 @@ export const RoleMember = observer(
             }
           ]}
           dataSource={state.data}
-          pagination={{
-            pageSize: state.pageSize,
-            total: state.total,
-            current: state.page,
-            onChange: (page) => {
-              setState({ page })
-              getRoleMembers()
-            }
-          }}
+          pagination={false}
         />
       </Modal>
     )

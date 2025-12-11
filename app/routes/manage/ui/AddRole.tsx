@@ -154,7 +154,6 @@ export const AddRole = observer(
           </Form.Item>
           <Form.Item
             label={'权限'}
-            className={'space-y-5'}
             tooltip={'开启管理员权限后，成员可进入管理系统'}
           >
             <Form.Item noStyle={true}>
@@ -170,7 +169,7 @@ export const AddRole = observer(
               </Checkbox>
             </Form.Item>
             {state.selectedAccess.includes('admin') && (
-              <div className={'mt-3'}>
+              <div className={'pt-3'}>
                 <Form.Item noStyle={true}>
                   <Select
                     mode='multiple'

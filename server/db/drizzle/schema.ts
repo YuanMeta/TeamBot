@@ -93,6 +93,7 @@ export const assistants = pgTable('assistants', {
   mode: varchar().notNull(),
   apiKey: varchar('api_key'),
   baseUrl: text('base_url'),
+  webSearchId: integer('web_search_id').references(() => webSearch.id),
   prompt: text(),
   models: jsonb().notNull().$type<string[]>(),
   options: jsonb().notNull().$type<AssistantOptions>(),
@@ -107,6 +108,7 @@ export const authProviders = pgTable('auth_providers', {
   name: varchar().notNull(),
   issuer: varchar(),
   authUrl: text('auth_url').notNull(),
+  description: text('description'),
   tokenUrl: text('token_url').notNull(),
   userinfoUrl: text('userinfo_url'),
   jwksUri: text('jwks_uri'),
@@ -274,3 +276,23 @@ export const users = pgTable(
     unique().on(table.phone)
   ]
 )
+
+export const webSearch = pgTable('web_search', {
+  id: integer().primaryKey().generatedAlwaysAsIdentity(),
+  url: text().notNull(),
+  title: text().notNull(),
+  description: text(),
+  mode: varchar().notNull(),
+  params: jsonb().notNull().$type<Record<string, any>>(),
+  createdAt: timestamp('created_at')
+    .default(sql`now()`)
+    .notNull(),
+  updatedAt: timestamp('updated_at')
+    .default(sql`now()`)
+    .notNull()
+})
+
+export const settings = pgTable('settings', {
+  id: varchar().primaryKey(),
+  value: jsonb().notNull().$type<any>()
+})

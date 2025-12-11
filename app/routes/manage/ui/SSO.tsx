@@ -1,11 +1,6 @@
-import {
-  getCoreRowModel,
-  useReactTable,
-  type ColumnDef
-} from '@tanstack/react-table'
 import { PencilLine, Trash } from 'lucide-react'
 import { observer } from 'mobx-react-lite'
-import { useCallback, useEffect, useMemo } from 'react'
+import { useCallback, useEffect } from 'react'
 import { trpc } from '~/.client/trpc'
 import { Button } from '~/components/ui/button'
 import { Button as AButton, Table } from 'antd'
@@ -18,54 +13,6 @@ import { adminConfirmDialog$ } from '~/components/project/confirm-dialog'
 
 export const SSO = observer(() => {
   const { hasAccess } = useAccess()
-  const columns: ColumnDef<AuthProviderData>[] = useMemo(() => {
-    return [
-      {
-        accessorKey: 'name',
-        header: '名称',
-        cell: ({ row }) => (
-          <div className='capitalize'>{row.getValue('name')}</div>
-        )
-      },
-      {
-        accessorKey: 'scopes',
-        header: 'scopes',
-        cell: ({ row }) => (
-          <div className='capitalize'>{row.getValue('scopes')}</div>
-        )
-      },
-      {
-        id: 'actions',
-        cell: ({ row }) => {
-          const data = row.original
-          return (
-            <div className={'flex gap-2'}>
-              <Button
-                variant='outline'
-                size='icon-sm'
-                disabled={!hasAccess('manageSso')}
-                onClick={() => {
-                  setState({
-                    selectedSsoProviderId: data.id,
-                    openAddSsoProvider: true
-                  })
-                }}
-              >
-                <PencilLine className={'size-3'} />
-              </Button>
-              <Button
-                variant='outline'
-                size='icon-sm'
-                disabled={!hasAccess('manageSso')}
-              >
-                <Trash className={'size-3'} />
-              </Button>
-            </div>
-          )
-        }
-      }
-    ] as ColumnDef<AuthProviderData>[]
-  }, [])
   const [state, setState] = useLocalState({
     data: [] as AuthProviderData[],
     openAddSsoProvider: false,
@@ -81,28 +28,22 @@ export const SSO = observer(() => {
     getProviders()
   }, [])
 
-  const table = useReactTable({
-    data: state.data,
-    columns,
-    getCoreRowModel: getCoreRowModel()
-  })
   return (
     <div>
       <div className={'flex items-center justify-between mb-2'}>
-        <div></div>
-        <div>
-          <AButton
-            icon={<PlusOutlined />}
-            onClick={() => {
-              setState({
-                openAddSsoProvider: true,
-                selectedSsoProviderId: null
-              })
-            }}
-          >
-            SSO
-          </AButton>
-        </div>
+        <AButton
+          type={'primary'}
+          icon={<PlusOutlined />}
+          disabled={!hasAccess('manageSso')}
+          onClick={() => {
+            setState({
+              openAddSsoProvider: true,
+              selectedSsoProviderId: null
+            })
+          }}
+        >
+          SSO
+        </AButton>
       </div>
       <Table
         size={'small'}
@@ -115,9 +56,12 @@ export const SSO = observer(() => {
             dataIndex: 'name',
             key: 'name'
           },
-
           {
-            title: 'actions',
+            title: '描述',
+            dataIndex: 'description',
+            key: 'description'
+          },
+          {
             dataIndex: 'actions',
             key: 'actions',
             render: (value, record) => {

@@ -55,7 +55,8 @@ export const AddSsoProvider = observer(
                   client_id: value.client_id,
                   client_secret: value.client_secret,
                   scopes: value.scopes,
-                  use_pkce: value.use_pkce
+                  use_pkce: value.use_pkce,
+                  description: value.description
                 }
               })
             } else {
@@ -67,7 +68,8 @@ export const AddSsoProvider = observer(
                 client_id: value.client_id,
                 client_secret: value.client_secret,
                 scopes: value.scopes,
-                use_pkce: value.use_pkce
+                use_pkce: value.use_pkce,
+                description: value.description
               })
             }
             props.onUpdate()
@@ -136,6 +138,9 @@ export const AddSsoProvider = observer(
             initialValue={false}
           >
             <Switch />
+          </Form.Item>
+          <Form.Item name='description' label='备注'>
+            <Input.TextArea placeholder={'请输入备注'} />
           </Form.Item>
         </Form>
       </Modal>

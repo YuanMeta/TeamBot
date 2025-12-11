@@ -27,14 +27,25 @@ export default observer(() => {
       locale={zhCN}
       theme={{
         token: {
-          colorPrimary: '#2f54eb',
+          colorPrimary: '#13c2c2',
           borderRadius: 8,
           colorError: '#c94043'
         },
         components: {
           Button: {
-            colorPrimary: themeMode === 'dark' ? '#ffffff' : '#000000',
-            primaryColor: themeMode === 'dark' ? '#000000' : '#ffffff'
+            boxShadow: 'none',
+            primaryColor:
+              themeMode !== 'dark'
+                ? 'rgba(255,255,255,1)'
+                : 'rgba(10, 10, 10, 1)',
+            colorPrimary:
+              themeMode === 'dark'
+                ? 'rgba(255,255,255,1)'
+                : 'rgba(10, 10, 10, 1)',
+            colorPrimaryHover:
+              themeMode === 'dark'
+                ? 'rgba(255,255,255, .85)'
+                : 'rgba(10, 10, 10, .85)'
           }
         },
         algorithm:

@@ -322,6 +322,19 @@ export const manageRouter = {
       })
     )
     .query(async ({ input, ctx }) => {
+      const where = input.keyword
+        ? {
+            AND: [
+              { deleted: false },
+              {
+                OR: [
+                  { name: { like: `%${input.keyword}%` } },
+                  { email: { like: `%${input.keyword}%` } }
+                ]
+              }
+            ]
+          }
+        : { deleted: false }
       const members = await ctx.db.query.users.findMany({
         columns: {
           id: true,
@@ -344,29 +357,20 @@ export const manageRouter = {
             }
           }
         },
-        where: input.keyword
-          ? {
-              AND: [
-                { deleted: false },
-                {
-                  OR: [
-                    { name: { like: `%${input.keyword}%` } },
-                    { email: { like: `%${input.keyword}%` } }
-                  ]
-                }
-              ]
-            }
-          : { deleted: false }
+        where
       })
 
       const total = await ctx.db.$count(
         users,
         input.keyword
-          ? or(
-              like(users.name, `%${input.keyword}%`),
-              like(users.email, `%${input.keyword}%`)
+          ? and(
+              eq(users.deleted, false),
+              or(
+                like(users.name, `%${input.keyword}%`),
+                like(users.email, `%${input.keyword}%`)
+              )
             )
-          : undefined
+          : eq(users.deleted, false)
       )
 
       return { members, total }
@@ -536,7 +540,8 @@ export const manageRouter = {
         scopes: true,
         createdAt: true,
         usePkce: true,
-        updatedAt: true
+        updatedAt: true,
+        description: true
       },
       orderBy: {
         createdAt: 'desc'
@@ -555,7 +560,8 @@ export const manageRouter = {
         client_id: z.string().min(1),
         client_secret: z.string().optional(),
         scopes: z.string().optional(),
-        use_pkce: z.boolean().optional()
+        use_pkce: z.boolean().optional(),
+        description: z.string().optional()
       })
     )
     .mutation(async ({ input, ctx }) => {
@@ -569,7 +575,8 @@ export const manageRouter = {
         clientId: input.client_id,
         clientSecret: input.client_secret,
         scopes: input.scopes,
-        usePkce: input.use_pkce
+        usePkce: input.use_pkce,
+        description: input.description
       })
       return { success: true }
     }),
@@ -588,7 +595,7 @@ export const manageRouter = {
           client_secret: z.string().optional(),
           scopes: z.string().optional(),
           use_pkce: z.boolean().optional(),
-          allow_jit_provision: z.boolean().optional()
+          description: z.string().optional()
         })
       })
     )

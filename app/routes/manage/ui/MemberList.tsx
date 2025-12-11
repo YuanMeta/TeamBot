@@ -1,4 +1,4 @@
-import { Input, Table } from 'antd'
+import { Input, Table, Tooltip } from 'antd'
 import { KeyRound, PencilLine, Trash } from 'lucide-react'
 import { observer } from 'mobx-react-lite'
 import { useCallback, useEffect } from 'react'
@@ -13,6 +13,7 @@ import { PlusOutlined, SearchOutlined } from '@ant-design/icons'
 import isHotkey from 'is-hotkey'
 import { adminConfirmDialog$ } from '~/components/project/confirm-dialog'
 import { toast } from 'sonner'
+import { TableHeader } from './TableHeader'
 export const MemberList = observer(() => {
   const { hasAccess } = useAccess()
   const [state, setState] = useLocalState({
@@ -40,7 +41,17 @@ export const MemberList = observer(() => {
   }, [])
   return (
     <div>
-      <div className={'mb-2 flex items-center justify-between'}>
+      <TableHeader
+        pagination={{
+          pageSize: state.pageSize,
+          total: state.total,
+          current: state.page,
+          onChange: (page) => {
+            setState({ page })
+            getMembers()
+          }
+        }}
+      >
         <div>
           <Input
             placeholder='搜索'
@@ -57,34 +68,25 @@ export const MemberList = observer(() => {
             }}
           />
         </div>
-        <div>
-          <AButton
-            icon={<PlusOutlined />}
-            onClick={() => {
-              setState({
-                selectedMemberId: null,
-                openAddMember: true
-              })
-            }}
-          >
-            成员
-          </AButton>
-        </div>
-      </div>
+        <AButton
+          icon={<PlusOutlined />}
+          type={'primary'}
+          onClick={() => {
+            setState({
+              selectedMemberId: null,
+              openAddMember: true
+            })
+          }}
+        >
+          成员
+        </AButton>
+      </TableHeader>
       <Table
         size={'small'}
         dataSource={state.data}
         bordered={true}
         rowKey={'id'}
-        pagination={{
-          pageSize: state.pageSize,
-          total: state.total,
-          current: state.page,
-          onChange: (page) => {
-            setState({ page })
-            getMembers()
-          }
-        }}
+        pagination={false}
         columns={[
           {
             title: '成员名',
@@ -92,7 +94,11 @@ export const MemberList = observer(() => {
             render: (value, record) => (
               <div className={'flex items-center gap-2'}>
                 {value}
-                {record.root && <KeyRound className='size-3.5 text-blue-500' />}
+                {record.root && (
+                  <Tooltip title={'超级管理员'}>
+                    <KeyRound className='size-3.5 text-blue-500' />
+                  </Tooltip>
+                )}
               </div>
             )
           },

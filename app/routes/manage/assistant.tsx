@@ -7,7 +7,15 @@ import {
   getSortedRowModel,
   useReactTable
 } from '@tanstack/react-table'
-import { CircleGauge, PencilLine, Plus, Trash } from 'lucide-react'
+import {
+  Bot,
+  CircleGauge,
+  Globe,
+  PencilLine,
+  Plus,
+  Shovel,
+  Trash
+} from 'lucide-react'
 
 import {
   Table,
@@ -29,6 +37,7 @@ import { Usage } from './ui/Usage'
 import { useAccess } from '~/lib/access'
 import { Pagination } from '~/components/project/pagination'
 import type { AssistantData } from 'server/db/type'
+import { Tabs } from 'antd'
 
 export default observer(() => {
   const columns: ColumnDef<AssistantData>[] = useMemo(() => {
@@ -85,19 +94,19 @@ export default observer(() => {
                 size='icon-sm'
                 aria-label='Submit'
                 onClick={() => {
-                  adminConfirmDialog$.next({
-                    title: '提示',
-                    description:
-                      '该操作无法撤销，删除后无法在使用此助手进行对话，确定要删除该助手吗？',
-                    destructive: true,
-                    onConfirm: () => {
-                      return trpc.manage.deleteAssistant
-                        .mutate({ assistantId: data.id })
-                        .then(() => {
-                          getAssistantsList()
-                        })
-                    }
-                  })
+                  // adminConfirmDialog$.next({
+                  //   title: '提示',
+                  //   description:
+                  //     '该操作无法撤销，删除后无法在使用此助手进行对话，确定要删除该助手吗？',
+                  //   destructive: true,
+                  //   onConfirm: () => {
+                  //     return trpc.manage.deleteAssistant
+                  //       .mutate({ assistantId: data.id })
+                  //       .then(() => {
+                  //         getAssistantsList()
+                  //       })
+                  //   }
+                  // })
                 }}
               >
                 <Trash className={'size-3'} />
@@ -144,6 +153,42 @@ export default observer(() => {
   })
   return (
     <div className='w-full'>
+      <Tabs
+        type={'card'}
+        defaultActiveKey='member'
+        items={[
+          {
+            key: 'assistant',
+            label: (
+              <div className={'flex items-center gap-1.5'}>
+                <Bot size={16} />
+                助手
+              </div>
+            ),
+            children: <></>
+          },
+          {
+            key: 'tool',
+            label: (
+              <div className={'flex items-center gap-1.5'}>
+                <Shovel size={16} />
+                工具
+              </div>
+            ),
+            children: <></>
+          },
+          {
+            key: 'webSearch',
+            label: (
+              <div className={'flex items-center gap-1.5'}>
+                <Globe size={16} />
+                网络搜索
+              </div>
+            ),
+            children: <></>
+          }
+        ]}
+      />
       <div className={`${state.openProviderForm ? 'hidden' : ''}`}>
         <div className='flex items-center pb-4 justify-between'>
           <div></div>
