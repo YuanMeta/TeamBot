@@ -6,7 +6,7 @@ import type {
   tools,
   chats,
   messages,
-  webSearch,
+  webSearches,
   settings
 } from './drizzle/schema'
 
@@ -26,7 +26,7 @@ export type MessageData = typeof messages.$inferSelect
 
 export type AuthProviderData = typeof authProviders.$inferSelect
 
-export type WebSearchData = typeof webSearch.$inferSelect
+export type WebSearchData = typeof webSearches.$inferSelect
 
 export type SettingsData = typeof settings.$inferSelect
 
@@ -38,4 +38,14 @@ export type AssistantOptions = {
   presencePenalty: { open: boolean; value: number }
   temperature: { open: boolean; value: number }
   top_p: { open: boolean; value: number }
+}
+
+export type WebSearchParams = {
+  apiKey?: string
+  cseId?: string
+  http?: {
+    url: string
+    method: 'GET' | 'POST'
+    headers?: Record<string, string>
+  }
 }

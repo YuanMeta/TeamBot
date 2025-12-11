@@ -10,7 +10,8 @@ const accessLabelMap: Record<string, string> = {
   viewAssistantUsage: '查看助手Token用量',
   manageMemberAndRole: '管理成员与角色',
   manageSso: '管理SSO第三方登录',
-  manageTools: '管理模型工具'
+  manageTools: '管理模型工具',
+  manageWebSearch: '管理网络搜索'
 }
 export const AddRole = observer(
   (props: {
@@ -99,6 +100,9 @@ export const AddRole = observer(
               </div>
             )}
           </Form.Item>
+          <Form.Item name={'remark'} label={'备注'}>
+            <Input.TextArea placeholder='请输入备注' />
+          </Form.Item>
           <Form.Item
             label={'权限'}
             tooltip={'开启管理员权限后，成员可进入管理系统'}
@@ -134,9 +138,6 @@ export const AddRole = observer(
                 </Form.Item>
               </div>
             )}
-          </Form.Item>
-          <Form.Item name={'remark'} label={'备注'}>
-            <Input.TextArea placeholder='请输入备注' />
           </Form.Item>
         </Form>
       </Modal>

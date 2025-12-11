@@ -4,6 +4,7 @@ import z from 'zod'
 import { webSearches } from 'server/db/drizzle/schema'
 import { eq } from 'drizzle-orm'
 import { runWebSearch } from 'server/lib/search'
+import type { WebSearchParams } from 'server/db/type'
 
 export const webSearchRouter = {
   connectSearch: adminProcedure
@@ -15,7 +16,14 @@ export const webSearchRouter = {
       })
     )
     .mutation(async ({ input }) => {
-      return runWebSearch('Latest news about iPhone', input)
+      try {
+        return await runWebSearch('Latest news about iPhone', input)
+      } catch (e: any) {
+        throw new TRPCError({
+          code: 'INTERNAL_SERVER_ERROR',
+          message: e.message
+        })
+      }
     }),
   getWebSearches: adminProcedure
     .input(
@@ -60,11 +68,10 @@ export const webSearchRouter = {
   createWebSearch: adminProcedure
     .input(
       z.object({
-        url: z.string(),
         title: z.string(),
-        description: z.string(),
+        description: z.string().optional(),
         mode: z.string(),
-        params: z.record(z.string(), z.any())
+        params: z.record(z.string(), z.any()) as z.ZodType<WebSearchParams>
       })
     )
     .mutation(async ({ input, ctx }) => {
@@ -78,11 +85,10 @@ export const webSearchRouter = {
       z.object({
         id: z.number(),
         data: z.object({
-          url: z.string(),
           title: z.string(),
-          description: z.string(),
+          description: z.string().optional(),
           mode: z.string(),
-          params: z.record(z.string(), z.any())
+          params: z.record(z.string(), z.any()) as z.ZodType<WebSearchParams>
         })
       })
     )

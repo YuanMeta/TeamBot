@@ -15,7 +15,7 @@ import {
   unique
 } from 'drizzle-orm/pg-core'
 import { sql } from 'drizzle-orm'
-import type { AssistantOptions } from '../type'
+import type { AssistantOptions, WebSearchParams } from '../type'
 
 export const drizzle = pgSchema('drizzle')
 
@@ -279,11 +279,10 @@ export const users = pgTable(
 
 export const webSearches = pgTable('web_searches', {
   id: integer().primaryKey().generatedAlwaysAsIdentity(),
-  url: text().notNull(),
   title: text().notNull(),
   description: text(),
   mode: varchar().notNull(),
-  params: jsonb().notNull().$type<Record<string, any>>(),
+  params: jsonb().notNull().$type<WebSearchParams>(),
   createdAt: timestamp('created_at')
     .default(sql`now()`)
     .notNull(),
