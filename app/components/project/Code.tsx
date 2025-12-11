@@ -9,7 +9,7 @@ import { useTheme } from 'remix-themes'
 export type CodeEditorLanguage = 'javascript' | 'json'
 
 export interface CodeEditorProps {
-  value: string
+  value?: string
   language?: CodeEditorLanguage
   onChange?: (value: string) => void
   readOnly?: boolean

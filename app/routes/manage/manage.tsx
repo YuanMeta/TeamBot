@@ -4,12 +4,10 @@ import { ManageSideBar } from './ui/SideBar'
 import { AccessProvider } from '~/lib/access'
 import type { Route } from './+types/manage'
 import { isAdmin } from 'server/db/query'
-import { theme, ConfigProvider, message } from 'antd'
+import { theme, ConfigProvider } from 'antd'
 import { useTheme } from 'remix-themes'
 import zhCN from 'antd/locale/zh_CN'
 import 'dayjs/locale/zh-cn'
-import { useSubject } from '~/hooks/localState'
-import { adminConfirmDialog$ } from '~/components/project/confirm-dialog'
 export const loader = async ({ context }: Route.LoaderArgs) => {
   if (context.root) {
     return null
@@ -34,6 +32,7 @@ export default observer(() => {
         components: {
           Button: {
             boxShadow: 'none',
+            primaryShadow: 'none',
             primaryColor:
               themeMode !== 'dark'
                 ? 'rgba(255,255,255,1)'

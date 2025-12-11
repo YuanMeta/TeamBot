@@ -5,12 +5,14 @@ import { useCallback } from 'react'
 import { trpc } from '~/.client/trpc'
 import type { ToolData } from 'server/db/type'
 import { useEffect } from 'react'
-import { Table } from 'antd'
+import { Button, Table } from 'antd'
 import { IconButton } from '~/components/project/icon-button'
 import { adminConfirmDialog$ } from '~/components/project/confirm-dialog'
 import { PencilLine, Trash } from 'lucide-react'
 import { toast } from 'sonner'
 import { AddTool } from './AddTool'
+import { TableHeader } from './TableHeader'
+import { PlusOutlined } from '@ant-design/icons'
 
 export const ToolList = observer(() => {
   const { hasAccess } = useAccess()
@@ -38,6 +40,28 @@ export const ToolList = observer(() => {
   }, [])
   return (
     <div>
+      <TableHeader
+        pagination={{
+          total: state.total,
+          pageSize: state.pageSize,
+          current: state.page,
+          onChange: (page) => {
+            setState({ page })
+            getTools()
+          }
+        }}
+      >
+        <Button
+          icon={<PlusOutlined />}
+          type={'primary'}
+          disabled={!hasAccess('manageTools')}
+          onClick={() => {
+            setState({ openAddTool: true, selectedToolId: null })
+          }}
+        >
+          工具
+        </Button>
+      </TableHeader>
       <Table
         size={'small'}
         bordered={true}
@@ -103,15 +127,7 @@ export const ToolList = observer(() => {
             }
           }
         ]}
-        pagination={{
-          total: state.total,
-          pageSize: state.pageSize,
-          current: state.page,
-          onChange: (page) => {
-            setState({ page })
-            getTools()
-          }
-        }}
+        pagination={false}
       />
       <AddTool
         open={state.openAddTool}

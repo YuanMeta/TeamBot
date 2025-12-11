@@ -7,6 +7,7 @@ import { trpc } from '~/.client/trpc'
 import type { AssistantData } from 'server/db/type'
 import { Tabs } from 'antd'
 import { AssistantList } from './ui/AssistantList'
+import { ToolList } from './ui/ToolList'
 
 export default observer(() => {
   const [state, setState] = useLocalState({
@@ -57,7 +58,7 @@ export default observer(() => {
                 工具
               </div>
             ),
-            children: <></>
+            children: <ToolList />
           },
           {
             key: 'webSearch',

@@ -401,8 +401,6 @@ export const manageRouter = {
         name: z.string().min(1),
         id: z.string().min(1),
         description: z.string().min(1),
-        type: z.enum(['web_search', 'http']),
-        auto: z.boolean(),
         params: z.record(z.string(), z.any())
       })
     )
@@ -421,9 +419,8 @@ export const manageRouter = {
       await ctx.db.insert(tools).values({
         id: input.id,
         name: input.name,
+        type: 'http',
         description: input.description,
-        type: input.type,
-        auto: input.auto,
         params: input.params as any
       })
       return { success: true }
@@ -435,8 +432,6 @@ export const manageRouter = {
         data: z.object({
           name: z.string().min(1).optional(),
           description: z.string().min(1).optional(),
-          auto: z.boolean().optional(),
-          type: z.enum(['web_search', 'http']).optional(),
           params: z.record(z.string(), z.any()).optional()
         })
       })

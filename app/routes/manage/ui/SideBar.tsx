@@ -60,11 +60,6 @@ const items = [
     icon: Bot
   },
   {
-    title: '模型工具',
-    url: '/manage/tool',
-    icon: Wrench
-  },
-  {
     title: '成员',
     url: '/manage/member',
     icon: Users
