@@ -2,7 +2,6 @@ import { observer } from 'mobx-react-lite'
 
 import {
   Users,
-  Wrench,
   EllipsisVertical,
   MonitorCog,
   Sun,
@@ -81,7 +80,7 @@ function Header() {
             onClick={() => {
               toggleSidebar()
             }}
-            className='data-[slot=sidebar-menu-button]:!p-1.5'
+            className='data-[slot=sidebar-menu-button]:p-1.5!'
           >
             <img
               src='/logo-128.png'

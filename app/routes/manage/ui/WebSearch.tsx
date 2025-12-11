@@ -1,22 +1,50 @@
-import { PencilLine, Trash, Users } from 'lucide-react'
-
-import { Button } from 'antd'
 import { observer } from 'mobx-react-lite'
+import googleIcon from '~/assets/google.png'
+import exaIcon from '~/assets/exa.png'
+import tavilyIcon from '~/assets/tavily.png'
+import bochaIcon from '~/assets/bocha.png'
+import zhipuIcon from '~/assets/zhipu.png'
+import { useAccess } from '~/lib/access'
 import { useLocalState } from '~/hooks/localState'
 import { useCallback, useEffect } from 'react'
 import { trpc } from '~/.client/trpc'
-import { useAccess } from '~/lib/access'
-import { AddRole } from './ui/AddRole'
-import { RoleMember } from './ui/RoleMember'
-import type { RoleData } from 'server/db/type'
+import { TableHeader } from './TableHeader'
+import { Button, Table } from 'antd'
 import { PlusOutlined } from '@ant-design/icons'
-import { Table } from 'antd'
-import { toast } from 'sonner'
-import { adminConfirmDialog$ } from '~/components/project/confirm-dialog'
-import { TableHeader } from './ui/TableHeader'
 import { IconButton } from '~/components/project/icon-button'
+import { PencilLine, Trash } from 'lucide-react'
+import { adminConfirmDialog$ } from '~/components/project/confirm-dialog'
+import { toast } from 'sonner'
+import type { WebSearchData } from 'server/db/type'
+const searchModes = [
+  {
+    value: 'zhipu',
+    label: '智谱搜索',
+    icon: zhipuIcon
+  },
+  {
+    value: 'bocha',
+    label: '博查搜索',
+    icon: bochaIcon
+  },
+  {
+    value: 'google',
+    label: 'Google',
+    icon: googleIcon
+  },
+  {
+    value: 'tavily',
+    label: 'Tavily',
+    icon: tavilyIcon
+  },
+  {
+    value: 'exa',
+    label: 'Exa',
+    icon: exaIcon
+  }
+]
 
-export default observer(() => {
+export const WebSearch = observer(() => {
   const { hasAccess } = useAccess()
   const [state, setState] = useLocalState({
     page: 1,
@@ -24,7 +52,7 @@ export default observer(() => {
     keyword: '',
     openAddRole: false,
     selectedRoleId: null as null | number,
-    data: [] as RoleData[],
+    data: [] as WebSearchData[],
     total: 0,
     openRoleMember: false
   })
@@ -62,7 +90,7 @@ export default observer(() => {
             setState({ openAddRole: true, selectedRoleId: null })
           }}
         >
-          角色
+          搜索工具
         </Button>
       </TableHeader>
       <Table
@@ -73,13 +101,12 @@ export default observer(() => {
         columns={[
           {
             title: '名称',
-            dataIndex: 'name',
-            key: 'name'
+            dataIndex: 'title'
           },
           {
             title: '备注',
-            dataIndex: 'remark',
-            key: 'remark'
+            dataIndex: 'description',
+            ellipsis: true
           },
           {
             title: '操作',
@@ -88,16 +115,6 @@ export default observer(() => {
             render: (_, record) => {
               return (
                 <div className={'space-x-2'}>
-                  <IconButton
-                    onClick={() => {
-                      setState({
-                        selectedRoleId: record.id,
-                        openRoleMember: true
-                      })
-                    }}
-                  >
-                    <Users />
-                  </IconButton>
                   <IconButton
                     onClick={() => {
                       setState({
@@ -131,23 +148,6 @@ export default observer(() => {
           }
         ]}
         dataSource={state.data}
-      />
-      <AddRole
-        open={state.openAddRole}
-        id={state.selectedRoleId}
-        onClose={() => {
-          setState({ openAddRole: false, selectedRoleId: null })
-        }}
-        onUpdate={() => {
-          getRoles()
-        }}
-      />
-      <RoleMember
-        open={state.openRoleMember}
-        onClose={() => {
-          setState({ openRoleMember: false })
-        }}
-        roleId={state.selectedRoleId!}
       />
     </div>
   )

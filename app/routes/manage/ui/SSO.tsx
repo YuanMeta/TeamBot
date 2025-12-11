@@ -10,18 +10,27 @@ import type { AuthProviderData } from 'server/db/type'
 import { PlusOutlined } from '@ant-design/icons'
 import { adminConfirmDialog$ } from '~/components/project/confirm-dialog'
 import { IconButton } from '~/components/project/icon-button'
+import { TableHeader } from './TableHeader'
 
 export const SSO = observer(() => {
   const { hasAccess } = useAccess()
   const [state, setState] = useLocalState({
     data: [] as AuthProviderData[],
     openAddSsoProvider: false,
+    page: 1,
+    pageSize: 10,
+    total: 0,
     selectedSsoProviderId: null as null | number
   })
   const getProviders = useCallback(() => {
-    trpc.manage.getAuthProviders.query().then((res) => {
-      setState({ data: res as AuthProviderData[] })
-    })
+    trpc.manage.getAuthProviders
+      .query({
+        page: state.page,
+        pageSize: state.pageSize
+      })
+      .then((res) => {
+        setState({ data: res.list as AuthProviderData[], total: res.total })
+      })
   }, [])
 
   useEffect(() => {
@@ -30,7 +39,17 @@ export const SSO = observer(() => {
 
   return (
     <div>
-      <div className={'flex items-center justify-between mb-2'}>
+      <TableHeader
+        pagination={{
+          pageSize: state.pageSize,
+          total: state.total,
+          current: state.page,
+          onChange: (page) => {
+            setState({ page })
+            getProviders()
+          }
+        }}
+      >
         <Button
           type={'primary'}
           icon={<PlusOutlined />}
@@ -44,7 +63,7 @@ export const SSO = observer(() => {
         >
           SSO
         </Button>
-      </div>
+      </TableHeader>
       <Table
         size={'small'}
         bordered={true}

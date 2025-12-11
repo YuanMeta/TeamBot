@@ -93,7 +93,7 @@ export const assistants = pgTable('assistants', {
   mode: varchar().notNull(),
   apiKey: varchar('api_key'),
   baseUrl: text('base_url'),
-  webSearchId: integer('web_search_id').references(() => webSearch.id),
+  webSearchId: integer('web_search_id').references(() => webSearches.id),
   prompt: text(),
   models: jsonb().notNull().$type<string[]>(),
   options: jsonb().notNull().$type<AssistantOptions>(),
@@ -277,7 +277,7 @@ export const users = pgTable(
   ]
 )
 
-export const webSearch = pgTable('web_search', {
+export const webSearches = pgTable('web_searches', {
   id: integer().primaryKey().generatedAlwaysAsIdentity(),
   url: text().notNull(),
   title: text().notNull(),

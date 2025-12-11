@@ -1,5 +1,5 @@
 import { createCallerFactory, createTRPCRouter } from './core'
-import { manageRouter } from './manage'
+import { manageRouter } from './manage/manage'
 import { chatRouter } from './chat'
 import { commonRouter } from './common'
 

@@ -10,5 +10,6 @@ export const publicAccess = [
   'manage.getAccesses',
   'manage.getAssistantOptions',
   'manage.getRoleMembers',
-  'manage.searchMembers'
+  'manage.searchMembers',
+  'manage.getWebSearches'
 ]

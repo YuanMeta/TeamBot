@@ -8,6 +8,7 @@ import type { AssistantData } from 'server/db/type'
 import { Tabs } from 'antd'
 import { AssistantList } from './ui/AssistantList'
 import { ToolList } from './ui/ToolList'
+import { WebSearch } from './ui/WebSearch'
 
 export default observer(() => {
   const [state, setState] = useLocalState({
@@ -68,7 +69,7 @@ export default observer(() => {
                 网络搜索
               </div>
             ),
-            children: <></>
+            children: <WebSearch />
           }
         ]}
       />

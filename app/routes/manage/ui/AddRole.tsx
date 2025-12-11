@@ -2,27 +2,6 @@
 import { observer } from 'mobx-react-lite'
 import { useEffect } from 'react'
 import { trpc } from '~/.client/trpc'
-import { Button } from '~/components/ui/button'
-// import { Checkbox } from '~/components/ui/checkbox'
-import {
-  Dialog,
-  DialogClose,
-  DialogContent,
-  DialogFooter,
-  DialogHeader,
-  DialogTitle
-} from '~/components/ui/dialog'
-import {
-  FieldGroup,
-  FieldLabel,
-  Field,
-  FieldError
-} from '~/components/ui/field'
-// import { Input } from '~/components/ui/input'
-import { Label } from '~/components/ui/label'
-import { SelectFilter } from '~/components/project/select-filter'
-import { Spinner } from '~/components/ui/spinner'
-import { Textarea } from '~/components/ui/textarea'
 import { useLocalState } from '~/hooks/localState'
 import { Checkbox, Form, Input, Modal, Select } from 'antd'
 
@@ -48,38 +27,6 @@ export const AddRole = observer(
     })
     const [form] = Form.useForm()
     const allAssistant = Form.useWatch('allAssistant', form)
-    // const form = useForm({
-    //   defaultValues: {
-    //     name: '',
-    //     remark: '',
-    //     assistants: [] as number[],
-    //     access: [] as string[]
-    //   },
-    //   onSubmit: async ({ value }) => {
-    //     if (props.id) {
-    //       await trpc.manage.updateRole.mutate({
-    //         id: props.id,
-    //         data: {
-    //           name: value.name,
-    //           remark: value.remark,
-    //           access: value.access,
-    //           assistants: value.assistants,
-    //           allAssistants: state.allAssistant
-    //         }
-    //       })
-    //     } else {
-    //       await trpc.manage.createRole.mutate({
-    //         name: value.name,
-    //         remark: value.remark,
-    //         access: value.access,
-    //         assistants: value.assistants,
-    //         allAssistants: state.allAssistant
-    //       })
-    //     }
-    //     props.onUpdate()
-    //     props.onClose()
-    //   }
-    // })
     useEffect(() => {
       if (props.open) {
         form.resetFields()

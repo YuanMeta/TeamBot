@@ -51,6 +51,16 @@ export const initDbData = async (db: NodePgDatabase) => {
           'manage.updateTool',
           'manage.deleteTool'
         ]
+      },
+      {
+        id: 'manageWebSearch',
+        trpcAccess: [
+          'manage.connectSearch',
+          'manage.getWebSearch',
+          'manage.deleteWebSearch',
+          'manage.createWebSearch',
+          'manage.updateWebSearch'
+        ]
       }
     ])
   }

@@ -26,9 +26,9 @@ export const relations = defineRelations(schema, (r) => ({
       to: r.users.id.through(r.chats.userId)
     }),
     messages: r.many.messages(),
-    webSearch: r.one.webSearch({
+    webSearch: r.one.webSearches({
       from: r.assistants.webSearchId,
-      to: r.webSearch.id
+      to: r.webSearches.id
     })
   },
   tools: {

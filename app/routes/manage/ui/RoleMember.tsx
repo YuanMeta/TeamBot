@@ -141,7 +141,7 @@ export const RoleMember = observer(
                   title={'移除后该成员不在拥有该角色，是否继续？'}
                   okButtonProps={{ danger: true }}
                   onConfirm={() => {
-                    return trpc.manage.remoteRoleFromUser
+                    return trpc.manage.removeRoleFromUser
                       .mutate({
                         roleId: props.roleId,
                         userId: record.id

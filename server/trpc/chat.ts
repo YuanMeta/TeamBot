@@ -11,7 +11,6 @@ import {
   chats,
   messages,
   roles,
-  tools,
   userRoles
 } from 'server/db/drizzle/schema'
 import { and, desc, eq, ilike, inArray, or } from 'drizzle-orm'

@@ -5,7 +5,9 @@ import type {
   models,
   tools,
   chats,
-  messages
+  messages,
+  webSearch,
+  settings
 } from './drizzle/schema'
 
 export type UserData = typeof users.$inferSelect
@@ -23,6 +25,10 @@ export type ChatData = typeof chats.$inferSelect
 export type MessageData = typeof messages.$inferSelect
 
 export type AuthProviderData = typeof authProviders.$inferSelect
+
+export type WebSearchData = typeof webSearch.$inferSelect
+
+export type SettingsData = typeof settings.$inferSelect
 
 export type AssistantOptions = {
   builtin_search: boolean

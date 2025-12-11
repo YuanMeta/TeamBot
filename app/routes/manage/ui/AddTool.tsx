@@ -2,12 +2,7 @@ import { observer } from 'mobx-react-lite'
 import { useCallback, useEffect, useMemo, useRef } from 'react'
 import z, { ZodError } from 'zod'
 import { trpc } from '~/.client/trpc'
-import googleIcon from '~/assets/google.png'
-import exaIcon from '~/assets/exa.png'
-import tavilyIcon from '~/assets/tavily.png'
 import CodeEditor from '~/components/project/Code'
-import bochaIcon from '~/assets/bocha.png'
-import zhipuIcon from '~/assets/zhipu.png'
 import { toast } from 'sonner'
 import { useLocalState } from '~/hooks/localState'
 import { Button, Form, Input, Modal } from 'antd'
@@ -32,34 +27,6 @@ const httpJsonSchema = z.object({
     .array()
     .optional()
 })
-
-const searchModes = [
-  {
-    value: 'zhipu',
-    label: '智谱搜索',
-    icon: zhipuIcon
-  },
-  {
-    value: 'bocha',
-    label: '博查搜索',
-    icon: bochaIcon
-  },
-  {
-    value: 'google',
-    label: 'Google',
-    icon: googleIcon
-  },
-  {
-    value: 'tavily',
-    label: 'Tavily',
-    icon: tavilyIcon
-  },
-  {
-    value: 'exa',
-    label: 'Exa',
-    icon: exaIcon
-  }
-]
 
 const useTexts = () => {
   return useMemo(
