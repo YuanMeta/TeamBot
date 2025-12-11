@@ -31,6 +31,12 @@ export default observer(() => {
           borderRadius: 8,
           colorError: '#c94043'
         },
+        components: {
+          Button: {
+            colorPrimary: themeMode === 'dark' ? '#ffffff' : '#000000',
+            primaryColor: themeMode === 'dark' ? '#000000' : '#ffffff'
+          }
+        },
         algorithm:
           themeMode === 'dark' ? theme.darkAlgorithm : theme.defaultAlgorithm
       }}
