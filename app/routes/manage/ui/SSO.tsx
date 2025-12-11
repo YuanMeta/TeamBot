@@ -2,14 +2,14 @@ import { PencilLine, Trash } from 'lucide-react'
 import { observer } from 'mobx-react-lite'
 import { useCallback, useEffect } from 'react'
 import { trpc } from '~/.client/trpc'
-import { Button } from '~/components/ui/button'
-import { Button as AButton, Table } from 'antd'
+import { Button, Table } from 'antd'
 import { useLocalState } from '~/hooks/localState'
 import { AddSsoProvider } from './AddSsoProvider'
 import { useAccess } from '~/lib/access'
 import type { AuthProviderData } from 'server/db/type'
 import { PlusOutlined } from '@ant-design/icons'
 import { adminConfirmDialog$ } from '~/components/project/confirm-dialog'
+import { IconButton } from '~/components/project/icon-button'
 
 export const SSO = observer(() => {
   const { hasAccess } = useAccess()
@@ -31,7 +31,7 @@ export const SSO = observer(() => {
   return (
     <div>
       <div className={'flex items-center justify-between mb-2'}>
-        <AButton
+        <Button
           type={'primary'}
           icon={<PlusOutlined />}
           disabled={!hasAccess('manageSso')}
@@ -43,7 +43,7 @@ export const SSO = observer(() => {
           }}
         >
           SSO
-        </AButton>
+        </Button>
       </div>
       <Table
         size={'small'}
@@ -59,18 +59,18 @@ export const SSO = observer(() => {
           {
             title: '描述',
             dataIndex: 'description',
+            ellipsis: true,
             key: 'description'
           },
           {
             dataIndex: 'actions',
+            title: '操作',
             key: 'actions',
             render: (value, record) => {
               return (
                 <div className={'flex gap-2'}>
-                  <Button
-                    variant='outline'
-                    size='icon-sm'
-                    disabled={!hasAccess('manageSso')}
+                  <IconButton
+                    hidden={!hasAccess('manageSso')}
                     onClick={() => {
                       setState({
                         selectedSsoProviderId: record.id,
@@ -79,11 +79,9 @@ export const SSO = observer(() => {
                     }}
                   >
                     <PencilLine className={'size-3'} />
-                  </Button>
-                  <Button
-                    variant='outline'
-                    size='icon-sm'
-                    disabled={!hasAccess('manageSso')}
+                  </IconButton>
+                  <IconButton
+                    hidden={!hasAccess('manageSso')}
                     onClick={() => {
                       adminConfirmDialog$.next({
                         title: '提示',
@@ -96,8 +94,8 @@ export const SSO = observer(() => {
                       })
                     }}
                   >
-                    <Trash className={'size-3'} />
-                  </Button>
+                    <Trash />
+                  </IconButton>
                 </div>
               )
             }

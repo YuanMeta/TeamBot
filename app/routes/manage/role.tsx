@@ -1,7 +1,6 @@
 import { PencilLine, Trash, Users } from 'lucide-react'
 
-import { Button } from '~/components/ui/button'
-import { Button as AButton, message, Modal } from 'antd'
+import { Button, message, Modal } from 'antd'
 import { observer } from 'mobx-react-lite'
 import { useLocalState } from '~/hooks/localState'
 import { useCallback, useEffect } from 'react'
@@ -15,6 +14,7 @@ import { Table } from 'antd'
 import { toast } from 'sonner'
 import { adminConfirmDialog$ } from '~/components/project/confirm-dialog'
 import { TableHeader } from './ui/TableHeader'
+import { IconButton } from '~/components/project/icon-button'
 
 export default observer(() => {
   const { hasAccess } = useAccess()
@@ -54,7 +54,7 @@ export default observer(() => {
           }
         }}
       >
-        <AButton
+        <Button
           disabled={!hasAccess('manageMemberAndRole')}
           icon={<PlusOutlined />}
           type={'primary'}
@@ -63,7 +63,7 @@ export default observer(() => {
           }}
         >
           角色
-        </AButton>
+        </Button>
       </TableHeader>
       <Table
         size={'small'}
@@ -88,9 +88,7 @@ export default observer(() => {
             render: (_, record) => {
               return (
                 <div className={'space-x-2'}>
-                  <Button
-                    size={'icon-sm'}
-                    variant={'outline'}
+                  <IconButton
                     onClick={() => {
                       setState({
                         selectedRoleId: record.id,
@@ -99,10 +97,8 @@ export default observer(() => {
                     }}
                   >
                     <Users />
-                  </Button>
-                  <Button
-                    size={'icon-sm'}
-                    variant={'outline'}
+                  </IconButton>
+                  <IconButton
                     onClick={() => {
                       setState({
                         selectedRoleId: record.id,
@@ -111,10 +107,8 @@ export default observer(() => {
                     }}
                   >
                     <PencilLine />
-                  </Button>
-                  <Button
-                    size={'icon-sm'}
-                    variant={'outline'}
+                  </IconButton>
+                  <IconButton
                     onClick={() => {
                       adminConfirmDialog$.next({
                         title: '提示',
@@ -130,7 +124,7 @@ export default observer(() => {
                     }}
                   >
                     <Trash />
-                  </Button>
+                  </IconButton>
                 </div>
               )
             }

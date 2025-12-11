@@ -11,6 +11,7 @@ import { toast } from 'sonner'
 import { useAccess } from '~/lib/access'
 import type { ToolData } from 'server/db/type'
 import { PlusOutlined } from '@ant-design/icons'
+import { IconButton } from '~/components/project/icon-button'
 export default observer(() => {
   const { hasAccess } = useAccess()
   const [state, setState] = useLocalState({

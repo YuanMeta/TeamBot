@@ -9,6 +9,7 @@ import { toast } from 'sonner'
 import type { UserData } from 'server/db/type'
 import { Modal } from 'antd'
 import { TableHeader } from './TableHeader'
+import { IconButton } from '~/components/project/icon-button'
 export const RoleMember = observer(
   (props: { roleId: number; open: boolean; onClose: () => void }) => {
     const [state, setState] = useLocalState({
@@ -119,6 +120,7 @@ export const RoleMember = observer(
         </TableHeader>
         <Table
           size={'small'}
+          rowKey={'id'}
           columns={[
             {
               title: '成员名',
@@ -149,9 +151,11 @@ export const RoleMember = observer(
                       })
                   }}
                 >
-                  <SButton size={'icon-sm'} variant={'outline'}>
-                    <Delete />
-                  </SButton>
+                  <div className={'inline-flex'}>
+                    <IconButton>
+                      <Delete />
+                    </IconButton>
+                  </div>
                 </Popconfirm>
               )
             }

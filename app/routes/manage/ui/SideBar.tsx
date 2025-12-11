@@ -1,7 +1,6 @@
 import { observer } from 'mobx-react-lite'
 
 import {
-  BotMessageSquare,
   Users,
   Wrench,
   EllipsisVertical,
@@ -12,7 +11,8 @@ import {
   UserRound,
   MessageCircleMore,
   ShieldUser,
-  KeyRound
+  KeyRound,
+  Bot
 } from 'lucide-react'
 import { NavLink, useLocation, useNavigate } from 'react-router'
 import {
@@ -57,7 +57,7 @@ const items = [
   {
     title: 'AI助手',
     url: '/manage/assistant',
-    icon: BotMessageSquare
+    icon: Bot
   },
   {
     title: '模型工具',

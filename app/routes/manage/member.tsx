@@ -39,7 +39,6 @@ export default observer(() => {
     <div className='w-full'>
       <div>
         <Tabs
-          type={'card'}
           defaultActiveKey='member'
           items={[
             {

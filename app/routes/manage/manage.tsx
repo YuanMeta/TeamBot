@@ -55,7 +55,9 @@ export default observer(() => {
       <AccessProvider>
         <ManageSideBar>
           <div className={'overflow-y-auto h-0 flex-1 p-4'}>
-            <Outlet />
+            <div className={'max-w-[1400px] mx-auto'}>
+              <Outlet />
+            </div>
           </div>
         </ManageSideBar>
       </AccessProvider>

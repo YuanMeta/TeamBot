@@ -4,16 +4,16 @@ import { observer } from 'mobx-react-lite'
 import { useCallback, useEffect } from 'react'
 import type { UserData } from 'server/db/type'
 import { trpc } from '~/.client/trpc'
-import { Button } from '~/components/ui/button'
 import { useLocalState } from '~/hooks/localState'
 import { useAccess } from '~/lib/access'
 import { AddMember } from './AddMemeber'
-import { Button as AButton } from 'antd'
+import { Button } from 'antd'
 import { PlusOutlined, SearchOutlined } from '@ant-design/icons'
 import isHotkey from 'is-hotkey'
 import { adminConfirmDialog$ } from '~/components/project/confirm-dialog'
 import { toast } from 'sonner'
 import { TableHeader } from './TableHeader'
+import { IconButton } from '~/components/project/icon-button'
 export const MemberList = observer(() => {
   const { hasAccess } = useAccess()
   const [state, setState] = useLocalState({
@@ -68,7 +68,7 @@ export const MemberList = observer(() => {
             }}
           />
         </div>
-        <AButton
+        <Button
           icon={<PlusOutlined />}
           type={'primary'}
           onClick={() => {
@@ -79,7 +79,7 @@ export const MemberList = observer(() => {
           }}
         >
           成员
-        </AButton>
+        </Button>
       </TableHeader>
       <Table
         size={'small'}
@@ -108,14 +108,12 @@ export const MemberList = observer(() => {
             key: 'email'
           },
           {
-            dataIndex: 'actions',
             key: 'actions',
+            title: '操作',
             render: (_, record) => (
               <div className={'space-x-2'}>
-                <Button
-                  size={'icon-sm'}
-                  variant={'outline'}
-                  disabled={!hasAccess('manageMemberAndRole') || record.root!}
+                <IconButton
+                  hidden={!hasAccess('manageMemberAndRole') || record.root!}
                   onClick={() => {
                     setState({
                       openAddMember: true,
@@ -124,11 +122,9 @@ export const MemberList = observer(() => {
                   }}
                 >
                   <PencilLine />
-                </Button>
-                <Button
-                  size={'icon-sm'}
-                  variant={'outline'}
-                  disabled={!hasAccess('manageMemberAndRole') || record.root!}
+                </IconButton>
+                <IconButton
+                  hidden={!hasAccess('manageMemberAndRole') || record.root!}
                   onClick={() => {
                     adminConfirmDialog$.next({
                       title: '提示',
@@ -147,7 +143,7 @@ export const MemberList = observer(() => {
                   }}
                 >
                   <Trash className={'size-3'} />
-                </Button>
+                </IconButton>
               </div>
             )
           }
