@@ -11,5 +11,60 @@ export const publicAccess = [
   'manage.getAssistantOptions',
   'manage.getRoleMembers',
   'manage.searchMembers',
-  'manage.getWebSearches'
+  'manage.getWebSearches',
+  'manage.getWebSearch'
+]
+
+export const privateAccess = [
+  {
+    id: 'admin'
+  },
+  {
+    id: 'manageAssistant',
+    trpcAccess: [
+      'manage.createAssistant',
+      'manage.updateAssistant',
+      'manage.deleteAssistant',
+      'manage.getSystemTools'
+    ]
+  },
+  {
+    id: 'viewAssistantUsage',
+    trpcAccess: ['manage.getUsageInfo']
+  },
+  {
+    id: 'manageMemberAndRole',
+    trpcAccess: [
+      'manage.createMember',
+      'manage.updateMember',
+      'manage.deleteMember',
+      'manage.createRole',
+      'manage.updateRole',
+      'manage.deleteRole',
+      'manage.remoteRoleFromUser',
+      'manage.addRoleToUser'
+    ]
+  },
+  {
+    id: 'manageSso',
+    trpcAccess: [
+      'manage.getAuthProviders',
+      'manage.createAuthProvider',
+      'manage.updateAuthProvider',
+      'manage.deleteAuthProvider'
+    ]
+  },
+  {
+    id: 'manageTools',
+    trpcAccess: ['manage.createTool', 'manage.updateTool', 'manage.deleteTool']
+  },
+  {
+    id: 'manageWebSearch',
+    trpcAccess: [
+      'manage.connectSearch',
+      'manage.deleteWebSearch',
+      'manage.createWebSearch',
+      'manage.updateWebSearch'
+    ]
+  }
 ]

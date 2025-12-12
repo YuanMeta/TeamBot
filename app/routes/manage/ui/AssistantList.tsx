@@ -5,7 +5,7 @@ import { trpc } from '~/.client/trpc'
 import { useLocalState } from '~/hooks/localState'
 import { useAccess } from '~/lib/access'
 import { TableHeader } from './TableHeader'
-import { Button, Table } from 'antd'
+import { Button, Table, Tag } from 'antd'
 import { DashboardOutlined, PlusOutlined } from '@ant-design/icons'
 import { PencilLine, Trash } from 'lucide-react'
 import { adminConfirmDialog$ } from '~/components/project/confirm-dialog'
@@ -13,6 +13,7 @@ import { toast } from 'sonner'
 import { Usage } from './Usage'
 import { AddAssistant } from './AddAssistant'
 import { IconButton } from '~/components/project/icon-button'
+import { ModelIcon } from '~/lib/ModelIcon'
 
 export const AssistantList = observer(() => {
   const [state, setState] = useLocalState({
@@ -85,17 +86,24 @@ export const AssistantList = observer(() => {
             {
               title: '名称',
               dataIndex: 'name',
-              key: 'name'
-            },
-            {
-              title: '提供者',
-              dataIndex: 'mode',
-              key: 'mode'
+              render: (value, record) => (
+                <div className={'flex items-center gap-2'}>
+                  <ModelIcon mode={record.mode} size={16} />
+                  {value}
+                </div>
+              )
             },
             {
               title: '模型',
               dataIndex: 'models',
-              key: 'models'
+              key: 'models',
+              render: (v) => (
+                <div className={'flex flex-wrap gap-1'}>
+                  {v.map((m: string) => (
+                    <Tag key={m}>{m}</Tag>
+                  ))}
+                </div>
+              )
             },
             {
               title: '操作',

@@ -17,6 +17,7 @@ import {
 import { ModelIcon } from '~/lib/ModelIcon'
 import { searchModes } from './data'
 import { LeftOutlined } from '@ant-design/icons'
+import { toast } from 'sonner'
 
 const modeData = [
   {
@@ -126,7 +127,7 @@ export const AddAssistant = observer(
       webSearchTools: [] as WebSearchData[],
       remoteModels: [] as { id: number; model: string; provider: string }[]
     })
-    const [form] = Form.useForm<AssistantData>()
+    const [form] = Form.useForm<AssistantData & { tools: string[] }>()
     const mode = Form.useWatch('mode', form)
     const webSearchMode = Form.useWatch(['options', 'webSearchMode'], form)
     const openFrequencyPenalty = Form.useWatch(
@@ -194,6 +195,56 @@ export const AddAssistant = observer(
     useEffect(() => {
       form.setFieldValue(['options', 'webSearchMode'], 'none')
     }, [mode])
+
+    const submit = useCallback(() => {
+      form.validateFields().then(async (v) => {
+        console.log('v', v)
+
+        setState({ submitting: true })
+        try {
+          await trpc.manage.checkConnect.mutate({
+            api_key: v.apiKey || null,
+            base_url: v.baseUrl || null,
+            mode: v.mode,
+            models: v.models
+          })
+          if (props.id) {
+            await trpc.manage.updateAssistant.mutate({
+              tools: v.tools,
+              id: props.id,
+              data: {
+                name: v.name,
+                mode: v.mode,
+                models: v.models,
+                api_key: v.apiKey || null,
+                base_url: v.baseUrl || null,
+                prompt: v.prompt || null,
+                options: v.options
+              }
+            })
+          } else {
+            await trpc.manage.createAssistant.mutate({
+              tools: v.tools,
+              data: {
+                name: v.name,
+                mode: v.mode,
+                models: v.models,
+                api_key: v.apiKey || null,
+                base_url: v.baseUrl || null,
+                prompt: v.prompt || null,
+                options: v.options
+              }
+            })
+          }
+          props.onChange()
+          props.onClose()
+        } catch (e: any) {
+          toast.error(e.message)
+        } finally {
+          setState({ submitting: false })
+        }
+      })
+    }, [props.id])
     return (
       <div className={'max-w-[1000px] mx-auto py-4'}>
         <Card className='w-full'>
@@ -239,11 +290,11 @@ export const AddAssistant = observer(
                       options={modelOptions}
                     />
                   </Form.Item>
-                  <Form.Item name={'api_key'} label={'API Key'}>
-                    <Input placeholder={'请输入API Key'} type={'password'} />
+                  <Form.Item name={'apiKey'} label={'API Key'}>
+                    <Input.Password placeholder={'请输入API Key'} />
                   </Form.Item>
                   <Form.Item
-                    name={'base_url'}
+                    name={'baseUrl'}
                     label={'Base URL'}
                     rules={[
                       {
@@ -255,7 +306,11 @@ export const AddAssistant = observer(
                   >
                     <Input placeholder={'请输入Base URL'} />
                   </Form.Item>
-                  <Form.Item name={'tools'} label={'调用工具'}>
+                  <Form.Item
+                    name={'tools'}
+                    label={'调用工具'}
+                    initialValue={[]}
+                  >
                     <Select
                       mode='multiple'
                       placeholder={'选择模型工具'}
@@ -568,8 +623,9 @@ export const AddAssistant = observer(
               <div className={'flex justify-center mt-3 px-5'}>
                 <Button
                   type={'primary'}
+                  onClick={submit}
                   className={'w-96 max-w-96'}
-                  disabled={state.submitting}
+                  loading={state.submitting}
                 >
                   {props.id ? '更新' : '创建'}
                 </Button>

@@ -12,6 +12,7 @@ import { eq, gte, sum } from 'drizzle-orm'
 import { aesDecrypt, aesEncrypt } from 'server/lib/utils'
 import { assistantTools } from 'server/db/drizzle/schema'
 import dayjs from 'dayjs'
+import type { AssistantOptions } from 'server/db/type'
 
 export const assistantRouter = {
   checkConnect: adminProcedure
@@ -89,7 +90,8 @@ export const assistantRouter = {
           models: z.array(z.string()).min(1),
           api_key: z.string().nullable(),
           base_url: z.string().nullable(),
-          options: z.record(z.string(), z.any())
+          prompt: z.string().nullable(),
+          options: z.record(z.string(), z.any()) as unknown as AssistantOptions
         })
       })
     )
@@ -101,11 +103,12 @@ export const assistantRouter = {
             name: input.data.name,
             mode: input.data.mode,
             models: input.data.models as any,
+            prompt: input.data.prompt,
             apiKey: input.data.api_key
               ? await aesEncrypt(input.data.api_key)
               : null,
             baseUrl: input.data.base_url,
-            options: input.data.options as any
+            options: input.data.options as AssistantOptions
           })
           .where(eq(assistants.id, input.id))
         await trx
@@ -149,9 +152,10 @@ export const assistantRouter = {
           name: z.string().min(1),
           mode: z.string().min(1),
           models: z.array(z.string()).min(1),
+          prompt: z.string().nullable(),
           api_key: z.string().nullable(),
           base_url: z.string().nullable(),
-          options: z.record(z.string(), z.any())
+          options: z.record(z.string(), z.any()) as unknown as AssistantOptions
         })
       })
     )
@@ -162,12 +166,13 @@ export const assistantRouter = {
           .values({
             name: input.data.name,
             mode: input.data.mode,
-            models: input.data.models as any,
+            models: input.data.models,
+            prompt: input.data.prompt,
             apiKey: input.data.api_key
               ? await aesEncrypt(input.data.api_key)
               : null,
             baseUrl: input.data.base_url,
-            options: input.data.options as any
+            options: input.data.options as unknown as AssistantOptions
           })
           .returning({ id: assistants.id })
         if (input.tools.length) {

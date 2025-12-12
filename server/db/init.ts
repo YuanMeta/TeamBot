@@ -1,6 +1,7 @@
 import { PasswordManager } from 'server/lib/password'
 import { accesses, accessRoles, roles, tools, users } from './drizzle/schema'
 import type { NodePgDatabase } from 'drizzle-orm/node-postgres'
+import { privateAccess } from './access'
 
 export const initDbData = async (db: NodePgDatabase) => {
   await db
@@ -15,67 +16,7 @@ export const initDbData = async (db: NodePgDatabase) => {
       }
     ])
     .onConflictDoNothing()
-  await db
-    .insert(accesses)
-    .values([
-      {
-        id: 'admin'
-      },
-      {
-        id: 'manageAssistant',
-        trpcAccess: [
-          'manage.createAssistant',
-          'manage.updateAssistant',
-          'manage.deleteAssistant',
-          'manage.getSystemTools'
-        ]
-      },
-      {
-        id: 'viewAssistantUsage',
-        trpcAccess: ['manage.getUsageInfo']
-      },
-      {
-        id: 'manageMemberAndRole',
-        trpcAccess: [
-          'manage.createMember',
-          'manage.updateMember',
-          'manage.deleteMember',
-          'manage.createRole',
-          'manage.updateRole',
-          'manage.deleteRole',
-          'manage.remoteRoleFromUser',
-          'manage.addRoleToUser'
-        ]
-      },
-      {
-        id: 'manageSso',
-        trpcAccess: [
-          'manage.getAuthProviders',
-          'manage.createAuthProvider',
-          'manage.updateAuthProvider',
-          'manage.deleteAuthProvider'
-        ]
-      },
-      {
-        id: 'manageTools',
-        trpcAccess: [
-          'manage.createTool',
-          'manage.updateTool',
-          'manage.deleteTool'
-        ]
-      },
-      {
-        id: 'manageWebSearch',
-        trpcAccess: [
-          'manage.connectSearch',
-          'manage.getWebSearch',
-          'manage.deleteWebSearch',
-          'manage.createWebSearch',
-          'manage.updateWebSearch'
-        ]
-      }
-    ])
-    .onConflictDoNothing()
+  await db.insert(accesses).values(privateAccess).onConflictDoNothing()
   const rolesCount = await db.$count(roles)
   if (!rolesCount) {
     const res = await db
@@ -122,6 +63,6 @@ export const initDbData = async (db: NodePgDatabase) => {
       root: true
     })
   }
-  await db.execute('CREATE EXTENSION IF NOT EXISTS vector')
   await db.execute('CREATE EXTENSION IF NOT EXISTS pg_jieba')
+  // await db.execute('CREATE EXTENSION IF NOT EXISTS vector')
 }

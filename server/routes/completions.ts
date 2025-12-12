@@ -104,7 +104,9 @@ export const completions = async (
     stopWhen: stepCountIs(20),
     tools,
     maxOutputTokens: Number(assistant.options.maxOutputTokens) || undefined,
-    temperature: Number(assistant.options.temperature) || undefined,
+    temperature: assistant.options.temperature.open
+      ? Number(assistant.options.temperature)
+      : undefined,
     topP: assistant.options.topP.open
       ? Number(assistant.options.topP.value)
       : undefined,
