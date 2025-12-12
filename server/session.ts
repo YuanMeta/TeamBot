@@ -48,7 +48,7 @@ export const verifyUser = async (cookie: string) => {
   }
   let user = await cacheable.get<{
     id: number
-    root: boolean | null
+    root: boolean
   }>(`user:${data.uid}`)
   if (!user) {
     user = await db.query.users.findFirst({

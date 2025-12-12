@@ -7,7 +7,6 @@ import {
   uuid,
   text,
   jsonb,
-  bigint,
   boolean,
   timestamp,
   index,
@@ -53,7 +52,10 @@ export const assistantTools = pgTable(
       .notNull()
       .references(() => tools.id)
   },
-  (table) => [unique().on(table.assistantId, table.toolId)]
+  (table) => [
+    primaryKey({ columns: [table.assistantId, table.toolId] }),
+    index().on(table.assistantId)
+  ]
 )
 
 export const assistantUsages = pgTable(
@@ -92,6 +94,21 @@ export const assistants = pgTable('assistants', {
     .notNull()
 })
 
+export const roleAssistants = pgTable(
+  'role_assistants',
+  {
+    assistantId: integer('assistant_id')
+      .notNull()
+      .references(() => assistants.id),
+    roleId: integer('role_id')
+      .notNull()
+      .references(() => roles.id)
+  },
+  (table) => [
+    primaryKey({ columns: [table.assistantId, table.roleId] }),
+    index().on(table.roleId)
+  ]
+)
 export const authProviders = pgTable('auth_providers', {
   id: integer().primaryKey().generatedAlwaysAsIdentity(),
   name: varchar().notNull(),
@@ -204,7 +221,6 @@ export const oauthAccounts = pgTable(
 export const roles = pgTable('roles', {
   id: serial().primaryKey(),
   name: varchar().notNull(),
-  assistants: jsonb().notNull().$type<number[]>(),
   allAssistants: boolean('all_assistants').notNull(),
   remark: text()
 })
@@ -251,8 +267,8 @@ export const users = pgTable(
     email: varchar(),
     avatar: varchar(),
     password: varchar(),
-    deleted: boolean().default(false),
-    root: boolean().default(false),
+    deleted: boolean().notNull().default(false),
+    root: boolean().notNull().default(false),
     updatedAt: timestamp('updated_at'),
     createdAt: timestamp('created_at')
       .default(sql`now()`)

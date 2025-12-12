@@ -6,6 +6,7 @@ import {
   assistants,
   assistantUsages,
   models,
+  roleAssistants,
   tools
 } from 'server/db/drizzle/schema'
 import { eq, gte, sum } from 'drizzle-orm'
@@ -140,6 +141,9 @@ export const assistantRouter = {
         await trx
           .delete(assistantTools)
           .where(eq(assistantTools.assistantId, input.assistantId))
+        await trx
+          .delete(roleAssistants)
+          .where(eq(roleAssistants.assistantId, input.assistantId))
         await trx.delete(assistants).where(eq(assistants.id, input.assistantId))
       })
       return { success: true }

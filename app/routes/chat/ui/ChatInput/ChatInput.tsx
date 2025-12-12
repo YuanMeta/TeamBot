@@ -6,7 +6,6 @@ import { useStore } from '../../store/store'
 import { useLocalState } from '~/hooks/localState'
 import { InputTools } from './InputTools'
 import { Button } from '~/components/ui/button'
-import { Badge } from '~/components/ui/badge'
 import { toast } from 'sonner'
 import { mediaType } from '~/lib/utils'
 export const ChatInput = observer(() => {
@@ -171,26 +170,6 @@ export const ChatInput = observer(() => {
               >
                 <Globe size={20} className={'size-3.5'} />
                 网络搜索
-              </div>
-            )}
-            {store.state.useTools.length > 0 && (
-              <div
-                className={
-                  'flex items-center gap-1.5 flex-1 w-0 flex-wrap pt-[3px]'
-                }
-              >
-                {store.state.useTools.map((t) => (
-                  <Badge
-                    removeable={true}
-                    variant={'outline'}
-                    key={t}
-                    onRemove={() => {
-                      store.removeTool(t)
-                    }}
-                  >
-                    {store.state.toolsMap.get(t)?.name || t}
-                  </Badge>
-                ))}
               </div>
             )}
           </div>

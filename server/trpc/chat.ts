@@ -10,8 +10,10 @@ import {
   assistantTools,
   chats,
   messages,
+  roleAssistants,
   roles,
-  userRoles
+  userRoles,
+  users
 } from 'server/db/drizzle/schema'
 import { and, desc, eq, ilike, inArray, or } from 'drizzle-orm'
 import { parseRecord } from 'server/db/query'
@@ -186,62 +188,56 @@ export const chatRouter = {
       })
     }),
   getAssistants: procedure.query(async ({ ctx }) => {
-    const query = ctx.db
-      .select({
-        id: assistants.id,
-        name: assistants.name,
-        mode: assistants.mode,
-        models: assistants.models
-      })
-      .from(assistants)
-    const [allAssistant] = await ctx.db
-      .select({ id: roles.id })
-      .from(userRoles)
-      .innerJoin(roles, eq(userRoles.roleId, roles.id))
-      .where(
-        and(eq(userRoles.userId, ctx.userId), eq(roles.allAssistants, true))
-      )
+    let allAssistant = ctx.root
+    let assistantIds: number[] = []
     if (!allAssistant) {
-      const assistantIds = await ctx.db
-        .select({
-          assistants: roles.assistants
-        })
+      const [record] = await ctx.db
+        .select({ id: roles.id })
         .from(userRoles)
         .innerJoin(roles, eq(userRoles.roleId, roles.id))
-        .where(eq(userRoles.userId, ctx.userId))
-      let ids: number[] = assistantIds.flatMap((r) => r.assistants)
-      if (!ids.length) {
-        return []
-      }
-      query.where(inArray(assistants.id, ids))
+        .where(
+          and(eq(userRoles.userId, ctx.userId), eq(roles.allAssistants, true))
+        )
+      allAssistant = !!record
     }
-    const assistantsData = await query
-    let toolsMap = new Map<number, string[]>()
-    if (assistantsData.length) {
-      const tools = await ctx.db
+    if (!allAssistant) {
+      const roleIds = await ctx.db
         .select({
-          tool_id: assistantTools.toolId,
-          assistant_id: assistantTools.assistantId
+          roleId: userRoles.roleId
         })
-        .from(assistantTools)
+        .from(users)
+        .innerJoin(userRoles, eq(users.id, userRoles.userId))
+        .where(eq(users.id, ctx.userId))
+      const ids = await ctx.db
+        .select({
+          assistantId: roleAssistants.assistantId
+        })
+        .from(roleAssistants)
         .where(
           inArray(
-            assistantTools.assistantId,
-            assistantsData.map((a) => a.id)
+            roleAssistants.roleId,
+            roleIds.map((r) => r.roleId)
           )
         )
-      for (let t of tools) {
-        if (!t.tool_id) continue
-        toolsMap.set(t.assistant_id, [
-          ...(toolsMap.get(t.assistant_id) || []),
-          t.tool_id
-        ])
+      if (!assistantIds.length) {
+        return []
       }
+      assistantIds = ids.map((r) => r.assistantId)
     }
-    return assistantsData.map((a) => ({
-      ...a,
-      tools: toolsMap.get(a.id) || []
-    }))
+    return ctx.db.query.assistants.findMany({
+      columns: {
+        id: true,
+        mode: true,
+        models: true,
+        name: true,
+        options: true
+      },
+      where: allAssistant
+        ? undefined
+        : {
+            id: { in: assistantIds }
+          }
+    })
   }),
   getTools: procedure.query(async ({ ctx }) => {
     return ctx.db.query.tools.findMany({
@@ -249,8 +245,7 @@ export const chatRouter = {
         id: true,
         name: true,
         description: true,
-        type: true,
-        auto: true
+        type: true
       }
     })
   }),

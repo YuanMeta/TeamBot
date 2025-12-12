@@ -125,12 +125,10 @@ const state = {
   toolsMap: new Map<string, ToolData>(),
   get enableWebSearch() {
     return (
-      (builtInSearchMode.has(this.assistant?.mode!) &&
-        this.assistant?.options.builtinSearch) ||
-      this.assistant?.tools.some(
-        (t) => this.toolsMap.get(t)?.type === 'web_search'
-      ) ||
-      false
+      this.assistant?.options.webSearchMode === 'builtin' ||
+      (this.assistant?.options.webSearchMode === 'custom' &&
+        this.assistant?.webSearchId &&
+        !this.assistant?.options.autoWebSerch)
     )
   },
   get openWebSearch() {
@@ -317,10 +315,7 @@ export class ChatStore extends StructStore<typeof state> {
       await this.client.complete({
         text: data.text,
         docs: data.docs,
-        images: data.images,
-        tools:
-          this.state.selectedTools[this.state.selectedChat?.id! || 'default'] ||
-          []
+        images: data.images
       })
     } catch (e) {
       console.log('err', e)

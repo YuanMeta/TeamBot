@@ -11,7 +11,6 @@ export class ChatClient {
   constructor(private readonly store: ChatStore) {}
   async complete(data: {
     text: string
-    tools: string[]
     docs: { name: string; content: string }[]
     images: File[]
     onFinish?: () => void
@@ -101,7 +100,6 @@ export class ChatClient {
     return this.completion(chat, {
       assistantId,
       model,
-      tools: data.tools,
       images,
       onFinish: () => {
         data.onFinish?.()
@@ -133,7 +131,6 @@ export class ChatClient {
     options: {
       assistantId: number
       model: string
-      tools: string[]
       images?: string[]
       onFinish?: () => void
       onGenerateTitle?: (userPrompt: string, aiResponse: string) => void
@@ -158,7 +155,6 @@ export class ChatClient {
         chatId: chat.id,
         assistantId: options.assistantId,
         model: options.model,
-        tools: options.tools,
         repoIds: undefined,
         regenerate: undefined,
         images: options.images,
@@ -402,8 +398,7 @@ export class ChatClient {
     const model = this.store.state.model!
     return this.completion(chat, {
       assistantId,
-      model,
-      tools: this.store.state.selectedTools[chat.id! || 'default'] || []
+      model
     })
   }
 }

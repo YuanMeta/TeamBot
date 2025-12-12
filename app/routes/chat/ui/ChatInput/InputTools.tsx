@@ -1,4 +1,4 @@
-import { FileText, GitBranchPlus, Image, Sparkle } from 'lucide-react'
+import { FileText, Image, Sparkle } from 'lucide-react'
 import { observer } from 'mobx-react-lite'
 import { Button } from '~/components/ui/button'
 import {
@@ -6,11 +6,9 @@ import {
   DropdownMenuContent,
   DropdownMenuGroup,
   DropdownMenuItem,
-  DropdownMenuSeparator,
   DropdownMenuTrigger
 } from '~/components/ui/dropdown-menu'
 import { useStore } from '../../store/store'
-import { useMemo } from 'react'
 import { chooseFile } from '~/lib/parser/chooseFile'
 import { fileOpen } from 'browser-fs-access'
 
@@ -20,14 +18,6 @@ export const InputTools = observer(
     onSelectImage: (image: File) => void
   }) => {
     const store = useStore()
-    const tools = useMemo(() => {
-      if (store.state.assistant) {
-        return store.state.assistant.tools
-          .map((t) => store.state.toolsMap.get(t)!)
-          .filter((t) => !t.auto)
-      }
-      return []
-    }, [store.state.tools, store.state.assistant])
     return (
       <DropdownMenu>
         <DropdownMenuTrigger asChild>
@@ -65,26 +55,6 @@ export const InputTools = observer(
               图片
             </DropdownMenuItem>
           </DropdownMenuGroup>
-          {!!tools.filter((t) => t.type === 'http').length && (
-            <>
-              <DropdownMenuSeparator />
-              <DropdownMenuGroup>
-                {tools
-                  .filter((t) => t.type === 'http')
-                  .map((t) => (
-                    <DropdownMenuItem
-                      key={t.id}
-                      onClick={() => {
-                        store.addTool(t.id)
-                      }}
-                    >
-                      <GitBranchPlus />
-                      {t.name}
-                    </DropdownMenuItem>
-                  ))}
-              </DropdownMenuGroup>
-            </>
-          )}
         </DropdownMenuContent>
       </DropdownMenu>
     )

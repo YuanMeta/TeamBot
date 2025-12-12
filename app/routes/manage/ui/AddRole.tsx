@@ -38,7 +38,7 @@ export const AddRole = observer(
                 name: res.name,
                 remark: res.remark,
                 allAssistant: res.allAssistants,
-                assistants: res.assistants || []
+                assistants: res.assistants.map((a) => a.id) || []
               })
               setState({ selectedAccess: res.accesses.map((a) => a.id) })
             }

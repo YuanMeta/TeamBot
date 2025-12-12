@@ -1,4 +1,4 @@
-import { type ReactNode } from 'react'
+import { useMemo, type ReactNode } from 'react'
 import { observer } from 'mobx-react-lite'
 import Markdown from '~/components/project/markdown/markdown'
 import BubblesLoading from './BubbleLoading'
@@ -38,15 +38,13 @@ const MessageContent = observer<{ msg: MessageData }>(({ msg }) => {
               </Markdown>
             )}
             {p.type === 'tool' &&
-              (!!store.state.toolsMap.get(p.toolName) ||
-                p.toolName === 'fetch_url_content') && (
+              !(p.state !== 'completed' && msg.terminated) && (
                 <div>
                   {p.toolName === 'fetch_url_content' && <UrlTool tool={p} />}
-                  {(store.state.toolsMap.get(p.toolName)?.type ===
-                    'web_search' ||
-                    p.toolName === 'web_search') && <WebSearchTool tool={p} />}
-                  {store.state.toolsMap.get(p.toolName)?.type === 'http' &&
-                    p.state !== 'completed' && <HttpTool tool={p} />}
+                  {p.toolName === 'web_search' && <WebSearchTool tool={p} />}
+                  {store.state.toolsMap.get(p.toolName)?.type === 'http' && (
+                    <HttpTool tool={p} />
+                  )}
                 </div>
               )}
 

@@ -3,6 +3,7 @@ import { adminProcedure } from '../core'
 import {
   accesses,
   accessRoles,
+  roleAssistants,
   authProviders,
   oauthAccounts,
   roles,
@@ -147,6 +148,9 @@ export const memberRouter = {
       with: {
         accesses: {
           columns: { id: true }
+        },
+        assistants: {
+          columns: { id: true }
         }
       }
     })
@@ -188,7 +192,6 @@ export const memberRouter = {
           .values({
             name: input.name,
             remark: input.remark,
-            assistants: input.assistants as any,
             allAssistants: input.allAssistants
           })
           .returning({ id: roles.id })
@@ -197,6 +200,14 @@ export const memberRouter = {
             input.access.map((access) => ({
               roleId: role.id,
               accessId: access
+            }))
+          )
+        }
+        if (input.assistants) {
+          await trx.insert(roleAssistants).values(
+            input.assistants.map((assistant) => ({
+              roleId: role.id,
+              assistantId: assistant
             }))
           )
         }
@@ -223,7 +234,6 @@ export const memberRouter = {
           .set({
             name: input.data.name,
             remark: input.data.remark,
-            assistants: input.data.assistants,
             allAssistants: input.data.allAssistants
           })
           .where(eq(roles.id, input.id))
@@ -233,6 +243,17 @@ export const memberRouter = {
             input.data.access.map((access) => ({
               roleId: input.id,
               accessId: access
+            }))
+          )
+        }
+        await trx
+          .delete(roleAssistants)
+          .where(eq(roleAssistants.roleId, input.id))
+        if (input.data.assistants.length) {
+          await trx.insert(roleAssistants).values(
+            input.data.assistants.map((assistant) => ({
+              roleId: input.id,
+              assistantId: assistant
             }))
           )
         }
