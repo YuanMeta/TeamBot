@@ -21,7 +21,6 @@ const InputSchema = z.object({
   chatId: z.string(),
   assistantId: z.number(),
   model: z.string(),
-  tools: z.string().array(),
   images: z.string().array().optional(),
   webSearch: z.boolean().optional()
 })
@@ -82,8 +81,8 @@ export const completions = async (
       })
       .where(eq(messages.id, userMsg.id))
   }
-  const tools = await composeTools(db, assistant, json.tools, {
-    builtinSearch: assistant.options.builtin_search && !!json.webSearch
+  const tools = await composeTools(db, assistant, {
+    search: !!json.webSearch
   })
   const controller = new AbortController()
   res.once('close', () => {
@@ -104,11 +103,10 @@ export const completions = async (
     messages: convertToModelMessages(uiMessages),
     stopWhen: stepCountIs(20),
     tools,
-    toolChoice: json.tools?.length ? 'required' : undefined,
     maxOutputTokens: Number(assistant.options.maxOutputTokens) || undefined,
     temperature: Number(assistant.options.temperature) || undefined,
-    topP: assistant.options.top_p.open
-      ? Number(assistant.options.top_p.value)
+    topP: assistant.options.topP.open
+      ? Number(assistant.options.topP.value)
       : undefined,
     frequencyPenalty: assistant.options.frequencyPenalty.open
       ? Number(assistant.options.frequencyPenalty.value)
@@ -119,16 +117,15 @@ export const completions = async (
     abortSignal: controller.signal,
     system: MessageManager.getSystemPromp({
       summary: summary,
-      tools: json.tools,
       images: json.images
     }),
     providerOptions: {
       qwen:
-        assistant.options.builtin_search && json.webSearch
+        assistant.options.webSearchMode === 'builtin' && json.webSearch
           ? { enable_search: true }
           : {},
       openrouter:
-        assistant.options.builtin_search && json.webSearch
+        assistant.options.webSearchMode === 'builtin' && json.webSearch
           ? { plugins: [{ id: 'web', max_results: 5 }] }
           : {}
     },

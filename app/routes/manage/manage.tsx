@@ -33,6 +33,10 @@ export default observer(() => {
           Button: {
             boxShadow: 'none',
             primaryShadow: 'none',
+            colorPrimaryActive:
+              themeMode === 'dark'
+                ? 'rgba(255,255,255, .7)'
+                : 'rgba(10, 10, 10, .7)',
             primaryColor:
               themeMode !== 'dark'
                 ? 'rgba(255,255,255,1)'

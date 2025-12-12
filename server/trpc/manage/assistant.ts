@@ -11,7 +11,6 @@ import {
 import { eq, gte, sum } from 'drizzle-orm'
 import { aesDecrypt, aesEncrypt } from 'server/lib/utils'
 import { assistantTools } from 'server/db/drizzle/schema'
-import { systemTools } from 'server/lib/tools'
 import dayjs from 'dayjs'
 
 export const assistantRouter = {
@@ -69,15 +68,14 @@ export const assistantRouter = {
       if (!record) return null
       const toolsList = await ctx.db
         .select({
-          toolId: assistantTools.toolId,
-          systemToolId: assistantTools.systemToolId
+          toolId: assistantTools.toolId
         })
         .from(assistantTools)
         .where(eq(assistantTools.assistantId, input))
       return {
         ...record,
         apiKey: record.apiKey ? await aesDecrypt(record.apiKey) : null,
-        tools: toolsList.map((t) => t.toolId || t.systemToolId)
+        tools: toolsList.map((t) => t.toolId)
       }
     }),
   updateAssistant: adminProcedure
@@ -117,18 +115,9 @@ export const assistantRouter = {
           if (input.tools.length) {
             await trx.insert(assistantTools).values(
               input.tools.map((tool) => {
-                if (systemTools.includes(tool)) {
-                  return {
-                    assistantId: input.id,
-                    systemToolId: tool,
-                    toolId: null
-                  }
-                } else {
-                  return {
-                    assistantId: input.id,
-                    toolId: tool,
-                    systemToolId: null
-                  }
+                return {
+                  assistantId: input.id,
+                  toolId: tool
                 }
               })
             )
@@ -184,18 +173,9 @@ export const assistantRouter = {
         if (input.tools.length) {
           await trx.insert(assistantTools).values(
             input.tools.map((tool) => {
-              if (systemTools.includes(tool)) {
-                return {
-                  assistantId: assistant.id,
-                  systemToolId: tool,
-                  toolId: null
-                }
-              } else {
-                return {
-                  assistantId: assistant.id,
-                  toolId: tool,
-                  systemToolId: null
-                }
+              return {
+                assistantId: assistant.id,
+                toolId: tool
               }
             })
           )
@@ -218,8 +198,7 @@ export const assistantRouter = {
         .select()
         .from(tools)
         .where(eq(tools.id, input.id))
-      const exist = systemTools.includes(input.id) || !!existingTool
-      if (exist) {
+      if (existingTool) {
         throw new TRPCError({
           code: 'BAD_REQUEST',
           message: '工具ID已存在'
@@ -267,7 +246,6 @@ export const assistantRouter = {
         columns: {
           id: true,
           name: true,
-          auto: true,
           type: true,
           createdAt: true,
           description: true
@@ -411,9 +389,6 @@ export const assistantRouter = {
 
       return result
     }),
-  getSystemTools: adminProcedure.query(() => {
-    return systemTools
-  }),
   getAssistantOptions: adminProcedure.query(async ({ ctx }) => {
     return ctx.db
       .select({ id: assistants.id, name: assistants.name })

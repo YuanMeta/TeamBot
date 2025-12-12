@@ -19,15 +19,6 @@ import type { AssistantOptions, WebSearchParams } from '../type'
 
 export const drizzle = pgSchema('drizzle')
 
-export const drizzleMigrationsInDrizzle = drizzle.table(
-  '__drizzle_migrations',
-  {
-    id: serial().primaryKey(),
-    hash: text().notNull(),
-    createdAt: bigint('created_at', { mode: 'number' })
-  }
-)
-
 export const accessRoles = pgTable(
   'access_roles',
   {
@@ -58,13 +49,11 @@ export const assistantTools = pgTable(
     assistantId: integer('assistant_id')
       .notNull()
       .references(() => assistants.id),
-    toolId: varchar('tool_id').references(() => tools.id),
-    systemToolId: varchar('system_tool_id')
+    toolId: varchar('tool_id')
+      .notNull()
+      .references(() => tools.id)
   },
-  (table) => [
-    unique().on(table.assistantId, table.systemToolId),
-    unique().on(table.assistantId, table.toolId)
-  ]
+  (table) => [unique().on(table.assistantId, table.toolId)]
 )
 
 export const assistantUsages = pgTable(
@@ -225,9 +214,8 @@ export const tools = pgTable('tools', {
   name: varchar().notNull(),
   description: text().notNull(),
   // http system
-  type: varchar().notNull(),
-  params: jsonb().notNull().$type<Record<string, any>>(),
-  auto: boolean().default(true).notNull(),
+  type: varchar().notNull().$type<'system' | 'http'>(),
+  params: jsonb().notNull().$type<Record<string, any>>().default({}),
   createdAt: timestamp('created_at')
     .default(sql`now()`)
     .notNull(),

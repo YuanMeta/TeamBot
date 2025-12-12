@@ -152,15 +152,16 @@ button:focus-visible {
   @apply border! dark:border-white/15! border-black/10!;
 }
 
-.ant-table-container {
-  border-radius: 8px !important;
+.ant-table-container,
+.ant-table {
+  border-radius: 10px !important;
 }
 
 .ant-table-tbody tr:last-child {
   td:first-child {
-    border-bottom-left-radius: 8px;
+    border-bottom-left-radius: 10px;
   }
   td:last-child {
-    border-bottom-right-radius: 8px;
+    border-bottom-right-radius: 10px;
   }
 }

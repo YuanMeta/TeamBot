@@ -1,11 +1,23 @@
 import { PasswordManager } from 'server/lib/password'
-import { accesses, accessRoles, roles, users } from './drizzle/schema'
+import { accesses, accessRoles, roles, tools, users } from './drizzle/schema'
 import type { NodePgDatabase } from 'drizzle-orm/node-postgres'
 
 export const initDbData = async (db: NodePgDatabase) => {
-  const accessCount = await db.$count(accesses)
-  if (!accessCount) {
-    await db.insert(accesses).values([
+  await db
+    .insert(tools)
+    .values([
+      {
+        id: 'fetch_url_content',
+        name: '获取URL内容',
+        description:
+          '以Markdown格式提取并返回所提供URL的可读文本内容。仅当需要验证或检索模型内部知识可能未涵盖的网页内容时才调用此工具——请勿用于获取基本已知信息。',
+        type: 'system'
+      }
+    ])
+    .onConflictDoNothing()
+  await db
+    .insert(accesses)
+    .values([
       {
         id: 'admin'
       },
@@ -63,7 +75,7 @@ export const initDbData = async (db: NodePgDatabase) => {
         ]
       }
     ])
-  }
+    .onConflictDoNothing()
   const rolesCount = await db.$count(roles)
   if (!rolesCount) {
     const res = await db
@@ -82,20 +94,24 @@ export const initDbData = async (db: NodePgDatabase) => {
           remark: '不可进入后台系统，仅使用助手对话功能'
         }
       ])
+      .onConflictDoNothing()
       .returning({ id: roles.id })
     const accesssData = await db
       .select({
         id: accesses.id
       })
       .from(accesses)
-    await db.insert(accessRoles).values(
-      accesssData.map((d) => {
-        return {
-          roleId: res[0].id,
-          accessId: d.id
-        }
-      })
-    )
+    await db
+      .insert(accessRoles)
+      .values(
+        accesssData.map((d) => {
+          return {
+            roleId: res[0].id,
+            accessId: d.id
+          }
+        })
+      )
+      .onConflictDoNothing()
   }
   const userCount = await db.$count(users)
   if (!userCount) {

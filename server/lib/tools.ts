@@ -6,15 +6,13 @@ import { createWebSearchTool } from './search'
 import { google } from '@ai-sdk/google'
 import { openai } from '@ai-sdk/openai'
 import { anthropic } from '@ai-sdk/anthropic'
-import { assistantTools, tools } from 'server/db/drizzle/schema'
-import { eq, inArray } from 'drizzle-orm'
-import type { AssistantData } from 'server/db/type'
+import type { AssistantData, ToolData } from 'server/db/type'
 import type { DbInstance } from 'server/db'
 
 export const systemTools = ['fetch_url_content']
 
 export const getUrlContent = tool({
-  description: `Fetch and return the main human-readable text content of the provided URL in Markdown. Only call this tool when you need to verify or retrieve webpage content that the model's internal knowledge may not cover—do NOT call for basic known facts.`,
+  description: `Fetch and return the main text content of the provided URL in Markdown. Only call this tool when you need to verify or retrieve webpage content that the model's internal knowledge may not cover—do NOT call for basic known facts.`,
   inputSchema: z.object({
     url: z.string().describe('The url to fetch the content from')
   }),
@@ -118,67 +116,34 @@ export const createHttpTool = (options: {
 
 export const composeTools = async (
   db: DbInstance,
-  assistant: AssistantData,
-  selectedTools: string[],
+  assistant: AssistantData & { tools: ToolData[] },
   options: {
-    builtinSearch: boolean
+    search: boolean
   }
 ) => {
-  const toolsIds = await db
-    .select({
-      tool_id: assistantTools.toolId,
-      system_tool_id: assistantTools.systemToolId
-    })
-    .from(assistantTools)
-    .where(eq(assistantTools.assistantId, assistant.id))
   const toolsRecord: Record<string, Tool> = {}
-
-  const sytemToolsRecord = toolsIds
-    .filter((t) => t.system_tool_id)
-    .map((t) => t.system_tool_id)
-  const customTools = toolsIds.filter((t) => t.tool_id).map((t) => t.tool_id!)
-  if (sytemToolsRecord.length) {
-    for (let t of sytemToolsRecord) {
-      if (t === 'fetch_url_content') {
-        toolsRecord[t] = getUrlContent
-      }
+  if (assistant.options.webSearchMode === 'builtin' && options.search) {
+    if (assistant.mode === 'gemini') {
+      toolsRecord.google_search = google.tools.googleSearch({})
+      toolsRecord.url_context = google.tools.urlContext({})
+    }
+    if (assistant.mode === 'openai') {
+      toolsRecord.web_search = openai.tools.webSearch({})
+    }
+    if (assistant.mode === 'anthropic') {
+      toolsRecord.web_search = anthropic.tools.webSearch_20250305({})
+    }
+    if (assistant.mode === 'z-ai') {
+      toolsRecord['web_search'] = createWebSearchTool({
+        mode: 'zhipu',
+        apiKey: assistant.apiKey!
+      })
     }
   }
-  if (customTools.length) {
-    let toolsData = await db
-      .select()
-      .from(tools)
-      .where(inArray(tools.id, customTools))
-    const hasCustomeWebSearch = toolsData.some((t) => t.type === 'web_search')
-    if (!hasCustomeWebSearch) {
-      if (assistant.mode === 'gemini' && options.builtinSearch) {
-        toolsRecord.google_search = google.tools.googleSearch({})
-        toolsRecord.url_context = google.tools.urlContext({})
-      }
-      if (assistant.mode === 'openai' && options.builtinSearch) {
-        toolsRecord.web_search = openai.tools.webSearch({})
-      }
-      if (assistant.mode === 'anthropic' && options.builtinSearch) {
-        toolsRecord.web_search = anthropic.tools.webSearch_20250305({})
-      }
-      if (assistant.mode === 'z-ai' && options.builtinSearch) {
-        toolsRecord['web_search'] = createWebSearchTool({
-          mode: 'zhipu',
-          apiKey: assistant.apiKey!
-        })
-      }
-    }
 
-    for (let t of toolsData) {
-      if (t.type === 'web_search' && (t.auto || selectedTools.includes(t.id))) {
-        toolsRecord[t.id] = createWebSearchTool({
-          mode: t.params.mode as any,
-          apiKey: t.params.apiKey,
-          cseId: t.params.cseId,
-          description: t.description
-        })
-      }
-      if (t.type === 'http' && (t.auto || selectedTools.includes(t.id))) {
+  if (assistant.tools.length) {
+    for (let t of assistant.tools) {
+      if (t.type === 'http') {
         try {
           const http = JSON.parse(t.params.http)
           toolsRecord[t.id] = createHttpTool({
@@ -189,6 +154,25 @@ export const composeTools = async (
           console.error(e)
         }
       }
+      if (t.type === 'system' && t.id === 'fetch_url_content') {
+        toolsRecord[t.id] = getUrlContent
+      }
+    }
+  }
+  if (
+    assistant.options.webSearchMode === 'custom' &&
+    assistant.webSearchId &&
+    (options.search || assistant.options.autoWebSerch)
+  ) {
+    const data = await db.query.webSearches.findFirst({
+      where: { id: assistant.webSearchId }
+    })
+    if (data) {
+      toolsRecord['web_search'] = createWebSearchTool({
+        mode: data.mode as 'zhipu' | 'google' | 'exa' | 'tavily' | 'bocha',
+        apiKey: data.params.apiKey,
+        cseId: data.params.cseId
+      })
     }
   }
   return toolsRecord

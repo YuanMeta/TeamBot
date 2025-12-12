@@ -31,13 +31,14 @@ export type WebSearchData = typeof webSearches.$inferSelect
 export type SettingsData = typeof settings.$inferSelect
 
 export type AssistantOptions = {
-  builtin_search: boolean
+  webSearchMode: 'none' | 'builtin' | 'custom'
+  autoWebSerch: boolean
   frequencyPenalty: { open: boolean; value: number }
   maxContextTokens: number
   maxOutputTokens: number
   presencePenalty: { open: boolean; value: number }
   temperature: { open: boolean; value: number }
-  top_p: { open: boolean; value: number }
+  topP: { open: boolean; value: number }
 }
 
 export type WebSearchParams = {

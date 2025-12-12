@@ -8,7 +8,7 @@ import type { NodePgDatabase } from 'drizzle-orm/node-postgres'
 import { assistants, chats, messages } from 'server/db/drizzle/schema'
 import { and, eq } from 'drizzle-orm'
 import type { MessageData } from 'server/db/type'
-import { increment } from 'server/db'
+import { increment, type DbInstance } from 'server/db'
 import { parseRecord } from 'server/db/query'
 
 function addDocsContext(
@@ -60,7 +60,7 @@ Output only the summarized version of the conversation.`,
   }
 
   static async getStreamMessage(
-    db: NodePgDatabase,
+    db: DbInstance,
     data: {
       chatId: string
       userId: number
@@ -80,10 +80,12 @@ Output only the summarized version of the conversation.`,
         message: 'Chat not found'
       })
     }
-    let [assistant] = await db
-      .select()
-      .from(assistants)
-      .where(eq(assistants.id, data.assistantId))
+    let assistant = await db.query.assistants.findFirst({
+      where: { id: data.assistantId },
+      with: {
+        tools: true
+      }
+    })
     if (!assistant) {
       throw new TRPCError({
         code: 'NOT_FOUND',
@@ -231,22 +233,13 @@ Output only the summarized version of the conversation.`,
     }
   }
 
-  static getSystemPromp(ctx: {
-    summary?: string | null
-    tools?: string[]
-    images?: string[]
-  }) {
+  static getSystemPromp(ctx: { summary?: string | null; images?: string[] }) {
     let prompt = ''
     if (ctx.images?.length) {
       prompt += `\nIf the user provides an image, please return detailed information such as a summary of the content, key objects, scene, colors, layout, and text content to facilitate use in subsequent conversations.`
     }
     if (ctx.summary) {
       prompt += `This is a summary of the previous conversation: ${ctx.summary}`
-    }
-    if (ctx.tools?.length) {
-      prompt += `\n\nThe user requires you to use the following tools to answer the questions: [${ctx.tools.join(
-        ','
-      )}]`
     }
 
     //     if (ctx.tools?.['webSearch']) {

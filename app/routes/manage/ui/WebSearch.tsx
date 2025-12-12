@@ -1,9 +1,4 @@
 import { observer } from 'mobx-react-lite'
-import googleIcon from '~/assets/google.png'
-import exaIcon from '~/assets/exa.png'
-import tavilyIcon from '~/assets/tavily.png'
-import bochaIcon from '~/assets/bocha.png'
-import zhipuIcon from '~/assets/zhipu.png'
 import { useAccess } from '~/lib/access'
 import { useLocalState } from '~/hooks/localState'
 import { useCallback, useEffect } from 'react'
@@ -16,33 +11,7 @@ import { PencilLine, Trash } from 'lucide-react'
 import { adminConfirmDialog$ } from '~/components/project/confirm-dialog'
 import { toast } from 'sonner'
 import type { WebSearchData } from 'server/db/type'
-const searchModes = [
-  {
-    value: 'zhipu',
-    label: '智谱搜索',
-    icon: zhipuIcon
-  },
-  {
-    value: 'bocha',
-    label: '博查搜索',
-    icon: bochaIcon
-  },
-  {
-    value: 'google',
-    label: 'Google',
-    icon: googleIcon
-  },
-  {
-    value: 'tavily',
-    label: 'Tavily',
-    icon: tavilyIcon
-  },
-  {
-    value: 'exa',
-    label: 'Exa',
-    icon: exaIcon
-  }
-]
+import { searchModes } from './data'
 
 const AddWebSearch = observer(
   (props: {
