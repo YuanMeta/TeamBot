@@ -5,10 +5,10 @@ import { useCallback } from 'react'
 import { trpc } from '~/.client/trpc'
 import type { ToolData } from 'server/db/type'
 import { useEffect } from 'react'
-import { Button, Table } from 'antd'
+import { Button, Table, Tooltip } from 'antd'
 import { IconButton } from '~/components/project/icon-button'
 import { adminConfirmDialog$ } from '~/components/project/confirm-dialog'
-import { PencilLine, Trash } from 'lucide-react'
+import { MonitorCog, PencilLine, Trash } from 'lucide-react'
 import { toast } from 'sonner'
 import { AddTool } from './AddTool'
 import { TableHeader } from './TableHeader'
@@ -71,7 +71,18 @@ export const ToolList = observer(() => {
           {
             title: 'ID',
             dataIndex: 'id',
-            key: 'id'
+            render: (value, record) => (
+              <div className={'flex items-center gap-2'}>
+                {value}
+                {record.type === 'system' && (
+                  <Tooltip title={'内置工具'}>
+                    <span className={'text-blue-500'}>
+                      <MonitorCog size={14} />
+                    </span>
+                  </Tooltip>
+                )}
+              </div>
+            )
           },
           {
             title: '名称',
@@ -86,6 +97,7 @@ export const ToolList = observer(() => {
           {
             key: 'actions',
             render: (_, record) => {
+              if (record.type === 'system') return null
               return (
                 <div className={'flex gap-2'}>
                   <IconButton

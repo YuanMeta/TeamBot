@@ -9,7 +9,7 @@ import {
   roleAssistants,
   tools
 } from 'server/db/drizzle/schema'
-import { eq, gte, sum } from 'drizzle-orm'
+import { and, eq, gte, ne, sum } from 'drizzle-orm'
 import { aesDecrypt, aesEncrypt } from 'server/lib/utils'
 import { assistantTools } from 'server/db/drizzle/schema'
 import dayjs from 'dayjs'
@@ -290,7 +290,9 @@ export const assistantRouter = {
           message: '工具已被助手使用，无法删除'
         })
       }
-      await ctx.db.delete(tools).where(eq(tools.id, input.toolId))
+      await ctx.db
+        .delete(tools)
+        .where(and(eq(tools.id, input.toolId), ne(tools.type, 'system')))
       return { success: true }
     }),
   getModels: adminProcedure
