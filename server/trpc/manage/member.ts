@@ -203,7 +203,7 @@ export const memberRouter = {
             }))
           )
         }
-        if (input.assistants) {
+        if (input.assistants.length) {
           await trx.insert(roleAssistants).values(
             input.assistants.map((assistant) => ({
               roleId: role.id,

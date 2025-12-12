@@ -23,6 +23,7 @@ export const AddRole = observer(
     const [state, setState] = useLocalState({
       access: [] as string[],
       allAssistant: true,
+      submitting: false,
       selectedAccess: [] as string[],
       assistants: [] as { id: number; name: string }[]
     })
@@ -31,6 +32,7 @@ export const AddRole = observer(
     useEffect(() => {
       if (props.open) {
         form.resetFields()
+        setState({ selectedAccess: [] })
         if (props.id) {
           trpc.manage.getRole.query(props.id).then((res) => {
             if (res) {
@@ -57,6 +59,38 @@ export const AddRole = observer(
         open={props.open}
         title={props.id ? '编辑角色' : '添加角色'}
         width={460}
+        confirmLoading={state.submitting}
+        onOk={() => {
+          form.validateFields().then(async (v) => {
+            setState({ submitting: true })
+            try {
+              if (props.id) {
+                trpc.manage.updateRole.mutate({
+                  id: props.id,
+                  data: {
+                    name: v.name,
+                    remark: v.remark,
+                    allAssistants: v.allAssistant,
+                    assistants: v.assistants || [],
+                    access: state.selectedAccess
+                  }
+                })
+              } else {
+                trpc.manage.createRole.mutate({
+                  name: v.name,
+                  remark: v.remark,
+                  allAssistants: v.allAssistant,
+                  assistants: v.assistants || [],
+                  access: state.selectedAccess
+                })
+              }
+              props.onClose()
+              props.onUpdate()
+            } finally {
+              setState({ submitting: false })
+            }
+          })
+        }}
         onCancel={() => {
           props.onClose()
         }}
@@ -85,7 +119,7 @@ export const AddRole = observer(
             </Form.Item>
             {!allAssistant && (
               <div className={'mt-3'}>
-                <Form.Item noStyle={true} name={'assistants'}>
+                <Form.Item noStyle={true} name={'assistants'} initialValue={[]}>
                   <Select
                     mode='multiple'
                     allowClear
@@ -126,6 +160,11 @@ export const AddRole = observer(
                     mode='multiple'
                     allowClear
                     value={state.selectedAccess.filter((a) => a !== 'admin')}
+                    onChange={(v) => {
+                      setState({
+                        selectedAccess: [...v, 'admin']
+                      })
+                    }}
                     options={state.access
                       .filter((a) => a !== 'admin')
                       .map((a) => ({
