@@ -18,7 +18,8 @@ export default observer(() => {
     openUsage: false,
     page: 1,
     pageSize: 10,
-    total: 0
+    total: 0,
+    tabKey: 'assistant'
   })
   const getAssistantsList = useCallback(() => {
     trpc.manage.getAssistants
@@ -39,7 +40,10 @@ export default observer(() => {
   return (
     <div className='w-full'>
       <Tabs
-        defaultActiveKey='assistant'
+        activeKey={state.tabKey}
+        onTabClick={(key) => {
+          setState({ tabKey: key })
+        }}
         items={[
           {
             key: 'assistant',
@@ -49,7 +53,11 @@ export default observer(() => {
                 助手
               </div>
             ),
-            children: <AssistantList />
+            children: (
+              <AssistantList
+                key={state.tabKey !== 'assistant' ? 'active' : 'inactive'}
+              />
+            )
           },
           {
             key: 'tool',

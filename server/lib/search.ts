@@ -65,7 +65,8 @@ export const runWebSearch = async (
       method: 'POST',
       body: JSON.stringify({
         query: query,
-        summary: true
+        summary: true,
+        count: 5
       }),
       headers: {
         'Content-Type': 'application/json',

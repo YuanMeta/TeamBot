@@ -136,7 +136,7 @@ export const chatRouter = {
               })
               .optional()
           })
-          .optional(),
+          .nullish(),
         userPrompt: z.string()
       })
     )
@@ -379,7 +379,7 @@ export const chatRouter = {
               })
               .optional()
           })
-          .optional()
+          .nullish()
       })
     )
     .mutation(async ({ input, ctx }) => {

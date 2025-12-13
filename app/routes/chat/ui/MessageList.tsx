@@ -5,6 +5,7 @@ import { useStore } from '../store/store'
 import { useLocalState, useSubject } from '~/hooks/localState'
 import { UserMessage } from './ChatItem/UserMessage'
 import { AiMessage } from './ChatItem/AiMessage'
+import ChatItem from './ChatItem'
 
 export const AiMessageList = observer(() => {
   const store = useStore()
@@ -122,19 +123,7 @@ export const AiMessageList = observer(() => {
           }`}
         >
           {store.state.messages.map((m, i) => (
-            <Fragment key={m.id}>
-              {m.role === 'user' && (
-                <UserMessage msg={m} preview={false} index={i} />
-              )}
-              {m.role === 'assistant' && (
-                <AiMessage
-                  msg={m}
-                  preview={false}
-                  index={i}
-                  context={store.state.messages[i - 1]?.context}
-                />
-              )}
-            </Fragment>
+            <ChatItem key={m.id} msg={m} preview={false} index={i} />
           ))}
         </div>
       </div>

@@ -33,7 +33,7 @@ export type SettingsData = typeof settings.$inferSelect
 
 export type AssistantOptions = {
   webSearchMode: 'none' | 'builtin' | 'custom'
-  autoWebSerch: boolean
+  autoWebSearch: boolean
   frequencyPenalty: { open: boolean; value: number }
   maxContextTokens: number
   maxOutputTokens: number

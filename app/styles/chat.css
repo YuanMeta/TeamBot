@@ -8,6 +8,11 @@
     @apply bg-sidebar-accent dark:text-white text-black;
   }
 }
+.message-markdown {
+  hr {
+    margin: 1em 0;
+  }
+}
 
 .chat-input-mask {
   height: 26px;
@@ -50,8 +55,9 @@
 .chat-list .ai-message .last {
   display: none;
 }
+
 .chat-list .ai-message:last-child {
-  min-height: calc(100vh - 280px);
+  min-height: calc(100vh - 290px);
   .last {
     display: flex;
   }

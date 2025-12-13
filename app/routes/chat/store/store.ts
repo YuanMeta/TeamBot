@@ -22,7 +22,7 @@ export interface MessageData {
   chatId: string
   role: 'user' | 'assistant' | 'system'
   model?: string
-  context?: MessageContext
+  context?: MessageContext | null
   files?: (string | File)[]
   terminated?: boolean
   parts?: MessagePart[] | null

@@ -22,7 +22,7 @@ export const loader = (args: Route.LoaderArgs) => {
 }
 export default observer(() => {
   const [state, setState] = useLocalState({
-    moveY: 0
+    duration: false
   })
   let params = useParams()
   const store = useMemo(() => new ChatStore(), [])
@@ -31,9 +31,6 @@ export default observer(() => {
     if (store.state.ready) {
       store.selectChat(params.id as string)
     }
-    setState({
-      moveY: 0
-    })
   }, [params.id, store.state.ready])
   useSubject(
     store.navigate$,
@@ -43,11 +40,16 @@ export default observer(() => {
     [navigate]
   )
   useSubject(store.moveChatInput$, () => {
-    if (store.state.selectedChat) return
     setState({
-      moveY: window.innerHeight / 2
+      duration: true
     })
+    setTimeout(() => {
+      setState({ duration: false })
+    }, 200)
   })
+  const inputMoveButton = useMemo(() => {
+    return store.state.messages.length || !!params.id
+  }, [store.state.messages.length, params.id])
   if (!store.state.ready) return null
   return (
     <StoreContext value={store}>
@@ -59,25 +61,21 @@ export default observer(() => {
             <AiMessageList />
           </div>
           <div
-            className={`${
-              params.id
-                ? ''
-                : `absolute top-1/2 -mt-[128px] w-full ${
-                    state.moveY !== 0 ? 'duration-150' : ''
-                  }`
-            }`}
+            className={`${state.duration ? 'duration-150' : ''}`}
             style={{
-              transform: `translateY(${state.moveY}px)`
+              transform: inputMoveButton
+                ? 'translateY(0px)'
+                : `translateY(calc((-100vh + 52px) / 2))`
             }}
           >
-            {!params.id && !store.state.messages.length && (
+            {!inputMoveButton && (
               <div className={'text-center text-xl font-medium mb-6'}>
                 今天有什么可以帮到你？
               </div>
             )}
 
             <ChatInput />
-            {(!!store.state.messages.length || !!params.id) && (
+            {inputMoveButton && (
               <div
                 className={
                   'h-8 flex items-center justify-center text-xs text-primary/50'

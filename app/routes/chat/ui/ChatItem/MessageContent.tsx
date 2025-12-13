@@ -19,7 +19,18 @@ const MessageContent = observer<{
   context?: MessageContext | null
 }>(({ msg, context }) => {
   const store = useStore()
-  if (!msg.parts?.length && !msg.terminated) return <BubblesLoading />
+  if (!msg.parts?.length && !msg.terminated) {
+    return (
+      <div className={`relative max-w-full`}>
+        <div className={'flex flex-col gap-2.5'}>
+          {!!context?.searchResult && (
+            <WebSearchInfo result={context?.searchResult} />
+          )}
+          <BubblesLoading />
+        </div>
+      </div>
+    )
+  }
   return (
     <div className={`relative max-w-full`}>
       <div className={'flex flex-col gap-2.5'}>

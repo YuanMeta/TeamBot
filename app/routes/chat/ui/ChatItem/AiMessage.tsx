@@ -19,9 +19,9 @@ export const AiMessage = observer<{
   msg: MessageData
   preview?: boolean
   index: number
-  context?: MessageContext | null
-}>(({ msg, preview = false, index, context }) => {
+}>(({ msg, preview = false, index }) => {
   const store = useStore()
+  const userMsg = store.state.messages[index - 1]!
   const ref = useRef<HTMLDivElement>(null)
   const [state, setState] = useLocalState({
     copied: false,
@@ -62,7 +62,7 @@ export const AiMessage = observer<{
               </AlertDescription>
             </Alert>
           ) : (
-            <MessageContent msg={msg} context={context} />
+            <MessageContent msg={msg} context={userMsg.context} />
           )}
           {!!msg.terminated && (
             <div

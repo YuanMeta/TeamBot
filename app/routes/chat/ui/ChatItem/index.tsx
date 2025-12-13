@@ -9,7 +9,7 @@ const ChatItem = observer<{
   preview?: boolean
   index: number
   context?: MessageContext
-}>(({ msg, preview = false, index }) => {
+}>(({ msg, preview = false, index, context }) => {
   if (msg.role === 'user') {
     return <UserMessage msg={msg} preview={preview} index={index} />
   }
