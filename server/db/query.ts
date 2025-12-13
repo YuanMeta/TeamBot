@@ -2,11 +2,15 @@ import type { NodePgDatabase } from 'drizzle-orm/node-postgres'
 import {
   accesses,
   accessRoles,
+  assistantUsages,
+  roleAssistants,
   roles,
   userRoles
 } from 'server/db/drizzle/schema'
 import { and, arrayContains, count, eq, or } from 'drizzle-orm'
-import type { DbInstance } from '.'
+import { increment, type DbInstance } from '.'
+import type { Usage } from 'types'
+import dayjs from 'dayjs'
 
 export const isAdmin = async (db: DbInstance, userId: number) => {
   const result = await db
@@ -34,12 +38,13 @@ export const checkAllowUseAssistant = async (
     })
     .from(userRoles)
     .innerJoin(roles, eq(userRoles.roleId, roles.id))
+    .leftJoin(roleAssistants, eq(roleAssistants.roleId, roles.id))
     .where(
       and(
         eq(userRoles.userId, userId),
         or(
           eq(roles.allAssistants, true),
-          arrayContains(roles.assistants, [assistantId])
+          eq(roleAssistants.assistantId, assistantId)
         )
       )
     )
@@ -70,4 +75,55 @@ export const parseRecord = <T extends Record<string, any>>(
     }
     return acc
   }, {} as any)
+}
+
+export const addTokens = async (
+  db: DbInstance,
+  {
+    usage,
+    assistantId
+  }: {
+    assistantId: number
+    usage: Usage
+  }
+) => {
+  const today = dayjs().startOf('day')
+  const record = await db.query.assistantUsages.findFirst({
+    columns: { id: true },
+    where: {
+      assistantId,
+      createdAt: { eq: today.toDate() }
+    }
+  })
+  if (record) {
+    await db
+      .update(assistantUsages)
+      .set({
+        inputTokens: increment(assistantUsages.inputTokens, usage.inputTokens),
+        outputTokens: increment(
+          assistantUsages.outputTokens,
+          usage.outputTokens
+        ),
+        totalTokens: increment(assistantUsages.totalTokens, usage.totalTokens),
+        reasoningTokens: increment(
+          assistantUsages.reasoningTokens,
+          usage.reasoningTokens
+        ),
+        cachedInputTokens: increment(
+          assistantUsages.cachedInputTokens,
+          usage.cachedInputTokens
+        )
+      })
+      .where(eq(assistantUsages.id, record.id))
+  } else {
+    await db.insert(assistantUsages).values({
+      assistantId: assistantId,
+      inputTokens: usage.inputTokens,
+      outputTokens: usage.outputTokens,
+      totalTokens: usage.totalTokens,
+      reasoningTokens: usage.reasoningTokens,
+      cachedInputTokens: usage.cachedInputTokens,
+      createdAt: today.toDate()
+    })
+  }
 }

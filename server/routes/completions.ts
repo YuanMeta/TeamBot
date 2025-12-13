@@ -13,7 +13,7 @@ import { getUser } from '../session'
 import type { Request, Response } from 'express'
 import { saveFileByBase64 } from '../lib/utils'
 import dayjs from 'dayjs'
-import { checkAllowUseAssistant } from 'server/db/query'
+import { addTokens, checkAllowUseAssistant } from 'server/db/query'
 import { assistantUsages, chats, messages } from 'server/db/drizzle/schema'
 import { and, eq } from 'drizzle-orm'
 import { increment, type DbInstance } from 'server/db'
@@ -227,53 +227,10 @@ export const completions = async (
           })
           .where(eq(messages.id, assistantMessage.id))
       }
-      const today = dayjs().startOf('day')
-      const [record] = await db
-        .select()
-        .from(assistantUsages)
-        .where(
-          and(
-            eq(assistantUsages.assistantId, assistant.id),
-            eq(assistantUsages.createdAt, today.toDate())
-          )
-        )
-      if (record) {
-        await db
-          .update(assistantUsages)
-          .set({
-            inputTokens: increment(
-              assistantUsages.inputTokens,
-              usage.inputTokens
-            ),
-            outputTokens: increment(
-              assistantUsages.outputTokens,
-              usage.outputTokens
-            ),
-            totalTokens: increment(
-              assistantUsages.totalTokens,
-              usage.totalTokens
-            ),
-            reasoningTokens: increment(
-              assistantUsages.reasoningTokens,
-              usage.reasoningTokens
-            ),
-            cachedInputTokens: increment(
-              assistantUsages.cachedInputTokens,
-              usage.cachedInputTokens
-            )
-          })
-          .where(eq(assistantUsages.id, record.id))
-      } else {
-        await db.insert(assistantUsages).values({
-          assistantId: assistant.id,
-          inputTokens: usage.inputTokens,
-          outputTokens: usage.outputTokens,
-          totalTokens: usage.totalTokens,
-          reasoningTokens: usage.reasoningTokens,
-          cachedInputTokens: usage.cachedInputTokens,
-          createdAt: today.toDate()
-        })
-      }
+      await addTokens(db, {
+        assistantId: assistant.id,
+        usage: usage
+      })
     },
     onError: async (error: any) => {
       let err = error.error as APICallError

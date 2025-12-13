@@ -4,6 +4,7 @@ import { useCallback, useEffect, useMemo } from 'react'
 import { trpc } from '~/.client/trpc'
 import { useLocalState } from '~/hooks/localState'
 import { ModelIcon } from '~/lib/ModelIcon'
+import { HelpText } from './HelpText'
 
 // 格式化tokens显示
 const formatTokens = (tokens: number): string => {
@@ -45,11 +46,16 @@ export const Usage = observer(
       <Modal
         open={props.open}
         onCancel={props.onClose}
-        title={'用量查询'}
+        title={
+          <div className={'text-sm flex items-center gap-2'}>
+            用量查询
+            <HelpText text='用量统计不仅包含对话中的Tokens, 还包括生成对话标题，压缩对话记录，规划查询等常规任务消耗的Token' />
+          </div>
+        }
         footer={null}
         width={700}
       >
-        <div className={'max-h-[500px] overflow-y-auto'}>
+        <div className={'max-h-[500px] overflow-y-auto pt-1'}>
           <div className={'mb-2'}>
             <Select
               value={state.date}
@@ -106,7 +112,7 @@ export const Usage = observer(
               }
             ]}
             pagination={false}
-            rowKey={'id'}
+            rowKey={'assistantId'}
             size={'small'}
           />
         </div>

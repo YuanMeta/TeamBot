@@ -23,6 +23,7 @@ import {
 } from 'server/db/drizzle/schema'
 import { and, eq, or } from 'drizzle-orm'
 import type { DbInstance } from 'server/db'
+import { addTokens } from 'server/db/query'
 // 防暴力破解：登录尝试记录
 const loginAttempts = new Map<string, { count: number; lockedUntil: number }>()
 const MAX_ATTEMPTS = 5
@@ -262,6 +263,12 @@ The historical dialogue is as follows: \n${messages
                 .update(chats)
                 .set({ title: text })
                 .where(eq(chats.id, json.chatId))
+            }
+            if (data.usage) {
+              await addTokens(db, {
+                assistantId: assistant.id,
+                usage: data.usage
+              })
             }
           }
         },

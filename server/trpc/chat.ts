@@ -6,8 +6,6 @@ import { tid } from 'server/lib/utils'
 import { unlink } from 'fs/promises'
 import { join } from 'path'
 import {
-  assistants,
-  assistantTools,
   chats,
   messages,
   roleAssistants,
@@ -16,8 +14,69 @@ import {
   users
 } from 'server/db/drizzle/schema'
 import { and, desc, eq, ilike, inArray, or } from 'drizzle-orm'
-import { parseRecord } from 'server/db/query'
+import { addTokens, checkAllowUseAssistant, parseRecord } from 'server/db/query'
+import {
+  extractOrDetermineSearch,
+  extractSearchQueries
+} from 'server/lib/webSearch'
+import type { Usage } from 'types'
 export const chatRouter = {
+  getSearchInfoByQuestion: procedure
+    .input(
+      z.object({
+        assistantId: z.number(),
+        model: z.string(),
+        question: z.string(),
+        required: z.boolean()
+      })
+    )
+    .query(async ({ input, ctx }) => {
+      const allow = await checkAllowUseAssistant(
+        ctx.db,
+        ctx.userId,
+        input.assistantId
+      )
+      if (!allow) {
+        throw new TRPCError({
+          code: 'FORBIDDEN',
+          message: 'permission denied'
+        })
+      }
+      const assistant = await ctx.db.query.assistants.findFirst({
+        where: { id: input.assistantId }
+      })
+      if (!assistant) {
+        throw new TRPCError({
+          code: 'NOT_FOUND',
+          message: 'Assistant not found'
+        })
+      }
+      let res: { query: string; usage: Usage }
+      if (input.required) {
+        res = await extractSearchQueries(
+          assistant,
+          assistant.models.includes(input.model)
+            ? input.model
+            : assistant.models[0],
+          input.question
+        )
+      } else {
+        res = await extractOrDetermineSearch(
+          assistant,
+          assistant.models.includes(input.model)
+            ? input.model
+            : assistant.models[0],
+          input.question
+        )
+      }
+      if (res.usage) {
+        await addTokens(ctx.db, {
+          assistantId: assistant.id,
+          usage: res.usage
+        })
+      }
+      return { query: res.query }
+    }),
   createChat: procedure
     .input(
       z.object({

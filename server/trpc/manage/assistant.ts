@@ -139,6 +139,9 @@ export const assistantRouter = {
     .mutation(async ({ input, ctx }) => {
       await ctx.db.transaction(async (trx) => {
         await trx
+          .delete(assistantUsages)
+          .where(eq(assistantUsages.assistantId, input.assistantId))
+        await trx
           .delete(assistantTools)
           .where(eq(assistantTools.assistantId, input.assistantId))
         await trx
