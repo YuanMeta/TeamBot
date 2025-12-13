@@ -84,13 +84,24 @@ export const chatRouter = {
         assistantMessageId: z.string().min(1),
         assistantId: z.number(),
         model: z.string().optional(),
-        docs: z
-          .array(
-            z.object({
-              name: z.string(),
-              content: z.string()
-            })
-          )
+        context: z
+          .object({
+            docs: z
+              .array(
+                z.object({
+                  name: z.string(),
+                  content: z.string()
+                })
+              )
+              .optional(),
+            searchResult: z
+              .object({
+                query: z.array(z.string()),
+                results: z.array(z.any()).optional(),
+                error: z.string().optional()
+              })
+              .optional()
+          })
           .optional(),
         userPrompt: z.string()
       })
@@ -122,7 +133,7 @@ export const chatRouter = {
             chatId: chat.id,
             role: 'user',
             text: input.userPrompt,
-            docs: input.docs ? JSON.stringify(input.docs) : null,
+            context: input.context,
             userId: ctx.userId,
             createdAt: date
           })
@@ -289,7 +300,8 @@ export const chatRouter = {
         mode: true,
         models: true,
         name: true,
-        options: true
+        options: true,
+        webSearchId: true
       },
       where: allAssistant
         ? undefined
@@ -315,13 +327,24 @@ export const chatRouter = {
         userPrompt: z.string().optional(),
         userMessageId: z.string().min(1),
         assistantMessageId: z.string().min(1),
-        docs: z
-          .array(
-            z.object({
-              name: z.string(),
-              content: z.string()
-            })
-          )
+        context: z
+          .object({
+            docs: z
+              .array(
+                z.object({
+                  name: z.string(),
+                  content: z.string()
+                })
+              )
+              .optional(),
+            searchResult: z
+              .object({
+                query: z.array(z.string()),
+                results: z.array(z.any()).optional(),
+                error: z.string().optional()
+              })
+              .optional()
+          })
           .optional()
       })
     )
@@ -354,7 +377,7 @@ export const chatRouter = {
             userId: ctx.userId,
             createdAt: date,
             text: input.userPrompt,
-            docs: input.docs ? JSON.stringify(input.docs) : null
+            context: input.context
           })
           .returning()
 

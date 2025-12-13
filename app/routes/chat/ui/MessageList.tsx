@@ -1,9 +1,10 @@
-import { useCallback, useEffect, useLayoutEffect, useRef } from 'react'
+import { Fragment, useCallback, useLayoutEffect, useRef } from 'react'
 import { ChevronDown } from 'lucide-react'
 import { observer } from 'mobx-react-lite'
-import ChatItem from './ChatItem'
 import { useStore } from '../store/store'
 import { useLocalState, useSubject } from '~/hooks/localState'
+import { UserMessage } from './ChatItem/UserMessage'
+import { AiMessage } from './ChatItem/AiMessage'
 
 export const AiMessageList = observer(() => {
   const store = useStore()
@@ -112,10 +113,28 @@ export const AiMessageList = observer(() => {
       >
         <div
           ref={listRef}
-          className={`chat-list ${state.visible ? 'animate-show' : 'opacity-0'} ${store.state.chatPending[store.state.selectedChat?.id!]?.pending ? 'pending' : ''}`}
+          className={`chat-list ${
+            state.visible ? 'animate-show' : 'opacity-0'
+          } ${
+            store.state.chatPending[store.state.selectedChat?.id!]?.pending
+              ? 'pending'
+              : ''
+          }`}
         >
           {store.state.messages.map((m, i) => (
-            <ChatItem key={m.id} msg={m} index={i} />
+            <Fragment key={m.id}>
+              {m.role === 'user' && (
+                <UserMessage msg={m} preview={false} index={i} />
+              )}
+              {m.role === 'assistant' && (
+                <AiMessage
+                  msg={m}
+                  preview={false}
+                  index={i}
+                  context={store.state.messages[i - 1]?.context}
+                />
+              )}
+            </Fragment>
           ))}
         </div>
       </div>
@@ -124,7 +143,11 @@ export const AiMessageList = observer(() => {
           onClick={() => {
             scrollToBottom('smooth')
           }}
-          className={`absolute left-1/2 -translate-x-1/2 p-0.5 bg-background z-10 bottom-4 rounded-full border opacity-0 dark:border-white/10 border-black/20 ${state.showScrollToBottom ? 'animate-show cursor-pointer' : 'pointer-events-none'}`}
+          className={`absolute left-1/2 -translate-x-1/2 p-0.5 bg-background z-10 bottom-4 rounded-full border opacity-0 dark:border-white/10 border-black/20 ${
+            state.showScrollToBottom
+              ? 'animate-show cursor-pointer'
+              : 'pointer-events-none'
+          }`}
         >
           <ChevronDown
             size={16}

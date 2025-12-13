@@ -192,14 +192,9 @@ export const AddAssistant = observer(
     useEffect(() => {
       init()
     }, [props.id])
-    useEffect(() => {
-      form.setFieldValue(['options', 'webSearchMode'], 'none')
-    }, [mode])
 
     const submit = useCallback(() => {
       form.validateFields().then(async (v) => {
-        console.log('v', v)
-
         setState({ submitting: true })
         try {
           await trpc.manage.checkConnect.mutate({
@@ -216,6 +211,7 @@ export const AddAssistant = observer(
                 name: v.name,
                 mode: v.mode,
                 models: v.models,
+                webSearchId: v.webSearchId || null,
                 api_key: v.apiKey || null,
                 base_url: v.baseUrl || null,
                 prompt: v.prompt || null,
@@ -229,6 +225,7 @@ export const AddAssistant = observer(
                 name: v.name,
                 mode: v.mode,
                 models: v.models,
+                webSearchId: v.webSearchId || null,
                 api_key: v.apiKey || null,
                 base_url: v.baseUrl || null,
                 prompt: v.prompt || null,
@@ -274,7 +271,13 @@ export const AddAssistant = observer(
                     initialValue={'qwen'}
                     rules={[{ required: true, message: '请选择提供方' }]}
                   >
-                    <Select placeholder={'请选择提供方'} options={modeData} />
+                    <Select
+                      placeholder={'请选择提供方'}
+                      options={modeData}
+                      onChange={() => {
+                        form.setFieldValue(['options', 'webSearchMode'], 'none')
+                      }}
+                    />
                   </Form.Item>
                   <Form.Item
                     name={'models'}
@@ -370,7 +373,7 @@ export const AddAssistant = observer(
                               { value: 'custom', label: '自定义网络搜索' }
                             ]
                       }
-                    ></Radio.Group>
+                    />
                   </Form.Item>
                   {webSearchMode === 'custom' && (
                     <div>

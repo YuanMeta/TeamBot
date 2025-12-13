@@ -64,7 +64,9 @@ export class ChatClient {
         assistantId: this.store.state.assistant!.id,
         model: this.store.state.model!,
         userPrompt: data.text,
-        docs: data.docs
+        context: {
+          docs: data.docs
+        }
       })
       const openSearch = this.store.state.openWebSearch
       this.store.setState((state) => {

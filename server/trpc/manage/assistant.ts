@@ -91,6 +91,7 @@ export const assistantRouter = {
           models: z.array(z.string()).min(1),
           api_key: z.string().nullable(),
           base_url: z.string().nullable(),
+          webSearchId: z.number().nullable(),
           prompt: z.string().nullable(),
           options: z.record(z.string(), z.any()) as unknown as AssistantOptions
         })
@@ -103,8 +104,9 @@ export const assistantRouter = {
           .set({
             name: input.data.name,
             mode: input.data.mode,
-            models: input.data.models as any,
+            models: input.data.models,
             prompt: input.data.prompt,
+            webSearchId: input.data.webSearchId,
             apiKey: input.data.api_key
               ? await aesEncrypt(input.data.api_key)
               : null,
@@ -162,6 +164,7 @@ export const assistantRouter = {
           prompt: z.string().nullable(),
           api_key: z.string().nullable(),
           base_url: z.string().nullable(),
+          webSearchId: z.number().nullable(),
           options: z.record(z.string(), z.any()) as unknown as AssistantOptions
         })
       })
@@ -175,6 +178,7 @@ export const assistantRouter = {
             mode: input.data.mode,
             models: input.data.models,
             prompt: input.data.prompt,
+            webSearchId: input.data.webSearchId,
             apiKey: input.data.api_key
               ? await aesEncrypt(input.data.api_key)
               : null,

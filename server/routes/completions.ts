@@ -12,11 +12,10 @@ import { MessageManager } from '../lib/message'
 import { getUser } from '../session'
 import type { Request, Response } from 'express'
 import { saveFileByBase64 } from '../lib/utils'
-import dayjs from 'dayjs'
 import { addTokens, checkAllowUseAssistant } from 'server/db/query'
-import { assistantUsages, chats, messages } from 'server/db/drizzle/schema'
-import { and, eq } from 'drizzle-orm'
-import { increment, type DbInstance } from 'server/db'
+import { chats, messages } from 'server/db/drizzle/schema'
+import { eq } from 'drizzle-orm'
+import { type DbInstance } from 'server/db'
 const InputSchema = z.object({
   chatId: z.string(),
   assistantId: z.number(),

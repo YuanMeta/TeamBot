@@ -14,7 +14,7 @@ import {
   unique
 } from 'drizzle-orm/pg-core'
 import { sql } from 'drizzle-orm'
-import type { AssistantOptions, WebSearchParams } from '../type'
+import type { AssistantOptions, MessageContext, WebSearchParams } from '../type'
 
 export const drizzle = pgSchema('drizzle')
 
@@ -167,9 +167,9 @@ export const messages = pgTable(
     chatId: varchar('chat_id')
       .notNull()
       .references(() => chats.id),
-    docs: text(),
     error: text(),
     model: varchar(),
+    context: jsonb().$type<MessageContext>(),
     assistantId: integer('assistant_id').references(() => assistants.id),
     reasoningDuration: integer('reasoning_duration'),
     parts: text(),

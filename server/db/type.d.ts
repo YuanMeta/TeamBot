@@ -1,3 +1,4 @@
+import type { SearchResult } from 'types'
 import type {
   assistants,
   users,
@@ -49,4 +50,16 @@ export type WebSearchParams = {
     method: 'GET' | 'POST'
     headers?: Record<string, string>
   }
+}
+
+export type MessageContext = {
+  searchResult?: {
+    query?: string[]
+    results?: SearchResult[]
+    error?: string
+  }
+  docs?: {
+    name: string
+    content: string
+  }[]
 }

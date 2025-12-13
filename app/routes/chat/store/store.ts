@@ -127,8 +127,7 @@ const state = {
     return (
       this.assistant?.options.webSearchMode === 'builtin' ||
       (this.assistant?.options.webSearchMode === 'custom' &&
-        this.assistant?.webSearchId &&
-        !this.assistant?.options.autoWebSerch)
+        this.assistant?.webSearchId)
     )
   },
   get openWebSearch() {

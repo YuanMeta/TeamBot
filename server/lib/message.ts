@@ -4,21 +4,39 @@ import type { MessagePart } from 'types'
 import { createClient } from './checkConnect'
 import { findLast } from '~/lib/utils'
 import { aesDecrypt } from './utils'
-import type { NodePgDatabase } from 'drizzle-orm/node-postgres'
-import { assistants, chats, messages } from 'server/db/drizzle/schema'
+import { chats, messages } from 'server/db/drizzle/schema'
 import { and, eq } from 'drizzle-orm'
-import type { MessageData } from 'server/db/type'
+import type { MessageContext, MessageData } from 'server/db/type'
 import { increment, type DbInstance } from 'server/db'
-import { parseRecord } from 'server/db/query'
 
-function addDocsContext(
+function addMessageContext(
   text: string,
-  docs?: { name: string; content: string }[] | null
+  context?: MessageContext | null
 ): string {
-  if (docs?.length) {
-    text = `User Questions: ${text}\nThe following are relevant reference documents.\n\n${docs
-      .map((d) => `file: ${d.name}\n${d.content}`)
-      .join('\n\n')}`
+  if (!context) {
+    return text
+  }
+  let contextText = ''
+
+  try {
+    if (context.docs?.length) {
+      contextText = `The following are relevant reference documents.\n\n${context.docs
+        .map((d) => `file: ${d.name}\n${d.content}`)
+        .join('\n\n')}`
+    }
+
+    if (context.searchResult?.results?.length) {
+      contextText += `${
+        contextText ? '\n\n' : ''
+      }According to online search results, the following is the latest relevant information:\n${JSON.stringify(
+        context.searchResult.results
+      )}`
+    }
+  } catch (e) {
+    console.error(e)
+  }
+  if (contextText) {
+    text = `User Questions: ${text}\n\n${contextText}`
   }
   return text
 }
@@ -98,7 +116,6 @@ Output only the summarized version of the conversation.`,
       .where(and(eq(messages.chatId, chatId), eq(messages.userId, userId)))
       .offset(chat.messageOffset)
       .orderBy(messages.createdAt)
-    messagesData = messagesData.map((m) => parseRecord(m))
     if (!messagesData.length) {
       throw new TRPCError({
         code: 'BAD_REQUEST',
@@ -161,7 +178,7 @@ Output only the summarized version of the conversation.`,
         }
         if (m.role === 'user') {
           let text = m.text
-          text = addDocsContext(text!, m.docs as any)
+          text = addMessageContext(text!, m.context)
           msg.parts.push({
             type: 'text',
             text: text
@@ -209,7 +226,7 @@ Output only the summarized version of the conversation.`,
       parts: [
         {
           type: 'text',
-          text: addDocsContext(userMessage.text!, userMessage.docs as any)
+          text: addMessageContext(userMessage.text!, userMessage.context)
         }
       ]
     }

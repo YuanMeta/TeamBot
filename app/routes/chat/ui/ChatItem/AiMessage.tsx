@@ -13,13 +13,14 @@ import { markdownToPureHtml } from '~/lib/mdToHtml'
 import { useLocalState } from '~/hooks/localState'
 import type { MessagePart } from 'types'
 import { Button } from '~/components/ui/button'
+import type { MessageContext } from 'server/db/type'
 
 export const AiMessage = observer<{
   msg: MessageData
   preview?: boolean
   index: number
+  context?: MessageContext | null
 }>(({ msg, preview = false, index }) => {
-  const { t } = useTranslation()
   const store = useStore()
   const ref = useRef<HTMLDivElement>(null)
   const [state, setState] = useLocalState({
