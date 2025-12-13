@@ -285,7 +285,9 @@ export const webSearches = pgTable('web_searches', {
   id: integer().primaryKey().generatedAlwaysAsIdentity(),
   title: text().notNull(),
   description: text(),
-  mode: varchar().notNull(),
+  mode: varchar()
+    .notNull()
+    .$type<'zhipu' | 'google' | 'exa' | 'tavily' | 'bocha'>(),
   params: jsonb().notNull().$type<WebSearchParams>(),
   createdAt: timestamp('created_at')
     .default(sql`now()`)

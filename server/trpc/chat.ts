@@ -19,8 +19,39 @@ import {
   extractOrDetermineSearch,
   extractSearchQueries
 } from 'server/lib/webSearch'
-import type { Usage } from 'types'
+import type { SearchResult, Usage } from 'types'
+import { runWebSearch } from 'server/lib/search'
 export const chatRouter = {
+  searchWeb: procedure
+    .input(
+      z.object({
+        query: z.string().array(),
+        webSearchId: z.number()
+      })
+    )
+    .query(async ({ input, ctx }) => {
+      const data = await ctx.db.query.webSearches.findFirst({
+        where: { id: input.webSearchId }
+      })
+      if (!data) {
+        throw new TRPCError({
+          code: 'NOT_FOUND',
+          message: 'Web search tool not found'
+        })
+      }
+      let allResults: SearchResult[] = []
+      for (let q of input.query) {
+        const result = await runWebSearch(q, {
+          apiKey: data.params.apiKey,
+          cseId: data.params.cseId,
+          mode: data.mode
+        })
+        if (result) {
+          allResults.push(...result)
+        }
+      }
+      return { results: allResults }
+    }),
   getSearchInfoByQuestion: procedure
     .input(
       z.object({
@@ -51,7 +82,10 @@ export const chatRouter = {
           message: 'Assistant not found'
         })
       }
-      let res: { query: string; usage: Usage }
+      let res: {
+        query: string[] | null
+        usage: Usage
+      }
       if (input.required) {
         res = await extractSearchQueries(
           assistant,
@@ -75,7 +109,7 @@ export const chatRouter = {
           usage: res.usage
         })
       }
-      return { query: res.query }
+      return { query: res.query?.length ? res.query : null }
     }),
   createChat: procedure
     .input(

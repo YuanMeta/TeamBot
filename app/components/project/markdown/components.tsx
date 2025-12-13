@@ -99,7 +99,7 @@ export const useComponents = () => {
           <blockquote
             {...props}
             className={
-              'mt-5 pl-5 relative italic before:absolute before:w-1 before:h-full before:left-0 before:top-0 before:bg-black/20 dark:before::bg-white/20 before:rounded-xs'
+              'dark:text-neutral-300 text-neutral-700 mt-5 pl-5 relative italic before:absolute before:w-1 before:h-full before:left-0 before:top-0 before:bg-black/20 dark:before:bg-white/20 before:rounded-xs'
             }
           />
         ),
@@ -142,7 +142,7 @@ export const useComponents = () => {
         },
         pre: (props: any) => <CodeLite enableMermaid={true} {...props} />,
         section: (props: any) => <section {...props} />
-      }) as Components,
+      } as Components),
     []
   )
 }

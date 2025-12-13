@@ -40,7 +40,9 @@ export const SearchResult = observer(() => {
   if (!state.open) return null
   return (
     <div
-      className={`h-full ${state.show ? 'w-[400px]' : 'w-0'} max-w-full flex flex-col border-l duration-150 shrink-0 fixed z-10 right-0 md:static bg-background`}
+      className={`h-full ${
+        state.show ? 'w-[400px]' : 'w-0'
+      } max-w-full flex flex-col border-l duration-150 shrink-0 fixed z-10 right-0 md:static bg-background`}
     >
       <div className={'flex px-3 items-center h-13 border-b justify-between'}>
         <span>引用</span>
@@ -49,12 +51,19 @@ export const SearchResult = observer(() => {
         </Button>
       </div>
       <div
-        className={`flex-1 h-0 px-2 py-2 pb-5 overflow-y-auto duration-400 ${state.show ? 'opacity-100' : 'opacity-0'}`}
+        className={`flex-1 h-0 px-2 py-2 pb-5 overflow-y-auto duration-400 ${
+          state.show ? 'opacity-100' : 'opacity-0'
+        }`}
       >
         {store.state.selectSearchResult?.map((s, i) => (
           <a
             href={s.url}
             target={'_blank'}
+            onClick={(e) => {
+              if (!s.url) {
+                e.preventDefault()
+              }
+            }}
             key={i}
             className={
               'p-3 rounded-md space-y-1 hover:bg-accent cursor-default block'
@@ -64,8 +73,12 @@ export const SearchResult = observer(() => {
               {!!s.favicon && (
                 <img alt='' className={'size-4 rounded-full'} src={s.favicon} />
               )}
-              <span className={'text-sm'}>{getDomain(s.url)}</span>
-              <Separator orientation={'vertical'} className={'h-4'} />
+              {!!s.url && (
+                <>
+                  <span className={'text-sm'}>{getDomain(s.url)}</span>
+                  <Separator orientation={'vertical'} className={'h-4'} />
+                </>
+              )}
               {!!s.date && (
                 <div className={'text-xs text-muted-foreground'}>
                   {dayjs(s.date).format('YYYY/MM/DD')}
@@ -73,7 +86,10 @@ export const SearchResult = observer(() => {
               )}
             </div>
             <div className={'font-medium text-sm line-clamp-2'}>{s.title}</div>
-            <div className={'text-[13px] text-muted-foreground line-clamp-2'}>
+            <div
+              className={'text-[13px] text-muted-foreground line-clamp-2'}
+              title={s.summary}
+            >
               {s.summary}
             </div>
           </a>

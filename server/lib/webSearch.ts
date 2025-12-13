@@ -25,7 +25,12 @@ export const extractOrDetermineSearch = async (
 如果需要搜索，请提取简洁、精准、适合用于网络搜索的主题，如果提问中涵盖多个主题，请分别提取，每行一个，不要解释或附加文字。
 用户问题：「${query}」`
   })
-  return { query: res.text, usage: res.usage }
+  return {
+    query: res.text?.includes('no_need')
+      ? null
+      : res.text.split(/\n+/).filter(Boolean),
+    usage: res.usage
+  }
 }
 
 export async function extractSearchQueries(
@@ -49,5 +54,5 @@ export async function extractSearchQueries(
 输出格式：仅返回提取结果，每行一个，不要解释或附加文字。
 用户问题：「${query}」`
   })
-  return { query: res.text, usage: res.usage }
+  return { query: res.text.split(/\n+/).filter(Boolean), usage: res.usage }
 }

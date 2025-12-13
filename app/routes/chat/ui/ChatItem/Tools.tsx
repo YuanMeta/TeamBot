@@ -12,6 +12,7 @@ import { getDomain } from '~/lib/utils'
 import type { ToolPart } from 'types'
 import { useStore } from '../../store/store'
 import { TextHelp } from '~/components/project/text-help'
+import type { MessageContext } from 'server/db/type'
 
 export const UrlTool = observer(({ tool }: { tool: ToolPart }) => {
   if (tool.state === 'start') {
@@ -44,6 +45,62 @@ export const UrlTool = observer(({ tool }: { tool: ToolPart }) => {
   )
 })
 
+export const WebSearchInfo = observer(
+  ({ result }: { result: MessageContext['searchResult'] }) => {
+    const store = useStore()
+    return (
+      <div
+        className={
+          'cursor-pointer text flex items-center justify-between border rounded-md px-2 h-9 hover:bg-neutral-50 duration-150 dark:hover:bg-neutral-400/10'
+        }
+        onClick={() => {
+          if (result?.results?.length) {
+            store.setState((draft) => {
+              draft.selectSearchResult = result.results!
+            })
+          }
+        }}
+      >
+        <div
+          className={
+            'flex items-center gap-2 flex-1 text-sm text-secondary-foreground/80'
+          }
+        >
+          <Search className={'size-4 text-neutral-500 dark:text-neutral-400'} />
+          <span
+            className={`flex gap-2 flex-1 ${
+              result?.error ? 'text-red-600/80 dark:text-red-500/80' : ''
+            } ${!result?.error && !result?.results ? 'shine-text' : ''}`}
+          >
+            <span>
+              {result?.error
+                ? '搜索异常'
+                : result?.results?.length
+                ? '搜索'
+                : '正在搜索'}
+              :
+            </span>
+            <span className={'truncate flex-1 w-0'}>
+              {result?.error || result?.query.join(', ')}
+            </span>
+          </span>
+        </div>
+        <div
+          className={
+            'flex items-center gap-1 text-secondary-foreground/60 shrink-0 ml-10'
+          }
+        >
+          {!!result?.results?.length && (
+            <>
+              <span className={'text-sm'}>{result.results.length}个结果</span>
+              <ChevronRight className={'size-4'} />
+            </>
+          )}
+        </div>
+      </div>
+    )
+  }
+)
 export const WebSearchTool = observer(({ tool }: { tool: ToolPart }) => {
   const store = useStore()
   // web_search是模型内置工具 需要特殊处理

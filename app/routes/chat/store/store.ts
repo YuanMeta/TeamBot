@@ -12,6 +12,7 @@ import dayjs from 'dayjs'
 import relativeTime from 'dayjs/plugin/relativeTime'
 import type {
   AssistantData as AssistantDataType,
+  MessageContext,
   ToolData
 } from 'server/db/type'
 dayjs.extend(relativeTime)
@@ -21,13 +22,12 @@ export interface MessageData {
   chatId: string
   role: 'user' | 'assistant' | 'system'
   model?: string
-  docs?: { name: string; content: string }[]
+  context?: MessageContext
   files?: (string | File)[]
   terminated?: boolean
   parts?: MessagePart[] | null
   text?: string | null
   reasoningDuration?: number | null
-  context?: Record<string, any> | null
   error?: string | null
   updatedAt: Date
 }

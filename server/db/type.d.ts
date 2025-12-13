@@ -54,7 +54,7 @@ export type WebSearchParams = {
 
 export type MessageContext = {
   searchResult?: {
-    query?: string[]
+    query: string[]
     results?: SearchResult[]
     error?: string
   }

@@ -20,12 +20,13 @@ export class ChatClient {
     const abortController = new AbortController()
     const tChatId = cid()
     let chat = this.store.state.selectedChat
+
     const userMessage = observable<MessageData>({
       id: cid(),
       chatId: this.store.state.selectedChat?.id || tChatId,
       text: data.text,
       role: 'user',
-      docs: data.docs,
+      context: data.docs?.length ? { docs: data.docs } : undefined,
       model: this.store.state.model!,
       files: data.images,
       updatedAt: dayjs().toDate()
@@ -43,10 +44,32 @@ export class ChatClient {
     this.store.setState((state) => {
       state.messages.push(userMessage, aiMessage)
     })
+
+    const searchQuery = await this.getSearchQuery(data.text)
+    if (searchQuery.query?.length) {
+      userMessage.context = {
+        ...userMessage.context,
+        searchResult: {
+          query: searchQuery.query
+        }
+      }
+      try {
+        const res = await trpc.chat.searchWeb.query({
+          query: searchQuery.query,
+          webSearchId: searchQuery.webSearchId
+        })
+        userMessage.context!.searchResult!.results = res.results
+      } catch (e: any) {
+        console.error(e)
+        userMessage.context!.searchResult!.error = e.message
+      }
+    }
+
     if (chat) {
       await trpc.chat.createMessages.mutate({
         chatId: chat.id,
         userPrompt: data.text,
+        context: userMessage.context,
         userMessageId: userMessage.id!,
         assistantMessageId: aiMessage.id!
       })
@@ -64,11 +87,8 @@ export class ChatClient {
         assistantId: this.store.state.assistant!.id,
         model: this.store.state.model!,
         userPrompt: data.text,
-        context: {
-          docs: data.docs
-        }
+        context: userMessage.context
       })
-      const openSearch = this.store.state.openWebSearch
       this.store.setState((state) => {
         state.chats.unshift(addRecord.chat as any)
         state.selectedChat = state.chats[0]
@@ -80,6 +100,7 @@ export class ChatClient {
         this.store.navigate$.next(`/chat/${addRecord.chat.id}`)
       }, 200)
       chat = this.store.state.selectedChat!
+      const openSearch = this.store.state.openWebSearch
       if (openSearch) {
         this.store.toggleWebSearch(chat.id)
       }
@@ -127,6 +148,25 @@ export class ChatClient {
         }
       }
     })
+  }
+  private async getSearchQuery(text: string) {
+    const openSearch = this.store.state.openWebSearch
+    if (
+      this.store.state.assistant?.webSearchId &&
+      (openSearch || this.store.state.assistant?.options.autoWebSerch)
+    ) {
+      const res = await trpc.chat.getSearchInfoByQuestion.query({
+        assistantId: this.store.state.assistant!.id,
+        model: this.store.state.model!,
+        question: text,
+        required: openSearch
+      })
+      return {
+        query: res.query,
+        webSearchId: this.store.state.assistant!.webSearchId
+      }
+    }
+    return { query: null, webSearchId: this.store.state.assistant!.webSearchId }
   }
   private async completion(
     chat: ChatData,

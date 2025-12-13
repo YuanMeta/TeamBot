@@ -16,6 +16,7 @@ import { addTokens, checkAllowUseAssistant } from 'server/db/query'
 import { chats, messages } from 'server/db/drizzle/schema'
 import { eq } from 'drizzle-orm'
 import { type DbInstance } from 'server/db'
+
 const InputSchema = z.object({
   chatId: z.string(),
   assistantId: z.number(),

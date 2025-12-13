@@ -4,8 +4,9 @@ import Markdown from '~/components/project/markdown/markdown'
 import BubblesLoading from './BubbleLoading'
 import { useStore, type MessageData } from '../../store/store'
 import { Reasoning } from './Reasion'
-import { HttpTool, UrlTool, WebSearchTool } from './Tools'
+import { HttpTool, UrlTool, WebSearchInfo, WebSearchTool } from './Tools'
 import { formatStreamText } from '~/lib/chat'
+import type { MessageContext } from 'server/db/type'
 
 export interface MessageContentProps {
   fontSize?: number
@@ -13,12 +14,18 @@ export interface MessageContentProps {
   reasoning?: string
   duration?: number
 }
-const MessageContent = observer<{ msg: MessageData }>(({ msg }) => {
+const MessageContent = observer<{
+  msg: MessageData
+  context?: MessageContext | null
+}>(({ msg, context }) => {
   const store = useStore()
   if (!msg.parts?.length && !msg.terminated) return <BubblesLoading />
   return (
     <div className={`relative max-w-full`}>
       <div className={'flex flex-col gap-2.5'}>
+        {!!context?.searchResult && (
+          <WebSearchInfo result={context?.searchResult} />
+        )}
         {msg.parts?.map((p, index) => (
           <div
             key={index}
