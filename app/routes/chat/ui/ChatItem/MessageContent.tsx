@@ -32,8 +32,6 @@ const MessageContent = observer<{
       </div>
     )
   }
-  console.log('msg', msg)
-
   return (
     <div className={`relative max-w-full`}>
       <div className={'flex flex-col gap-2.5'}>

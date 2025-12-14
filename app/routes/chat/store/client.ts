@@ -272,11 +272,24 @@ export class ChatClient {
                   }
                   break
                 case 'tool-output-available':
-                  if (parts[value.value.toolCallId]) {
-                    ;(parts[value.value.toolCallId] as ToolPart).state =
-                      'completed' as const
-                    ;(parts[value.value.toolCallId] as ToolPart).output =
-                      value.value.output
+                  const tool = parts[value.value.toolCallId] as ToolPart
+                  if (tool) {
+                    tool.state = 'completed' as const
+                    tool.output = value.value.output
+                    if (
+                      tool.toolName === 'web_search' &&
+                      typeof tool.output === 'string'
+                    ) {
+                      if (aiMessage) {
+                        trpc.chat.getMsgContext
+                          .query(aiMessage.id!)
+                          .then((res) => {
+                            runInAction(() => {
+                              aiMessage.context = res.context
+                            })
+                          })
+                      }
+                    }
                   }
                   break
                 case 'text-start':

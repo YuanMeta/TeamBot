@@ -21,15 +21,13 @@ import {
 } from 'server/lib/prompt'
 import { runWebSearch } from 'server/lib/search'
 export const chatRouter = {
-  getMsgToolOriginData: procedure
-    .input(z.string())
-    .query(async ({ input, ctx }) => {
-      const msg = await ctx.db.query.messages.findFirst({
-        columns: { context: true },
-        where: { id: input, userId: ctx.userId }
-      })
-      return { context: msg?.context }
-    }),
+  getMsgContext: procedure.input(z.string()).query(async ({ input, ctx }) => {
+    const msg = await ctx.db.query.messages.findFirst({
+      columns: { context: true },
+      where: { id: input, userId: ctx.userId }
+    })
+    return { context: msg?.context }
+  }),
   searchWeb: procedure
     .input(
       z.object({
