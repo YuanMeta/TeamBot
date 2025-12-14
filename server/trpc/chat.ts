@@ -16,20 +16,31 @@ import {
 import { and, desc, eq, ilike, inArray, or } from 'drizzle-orm'
 import { addTokens, checkAllowUseAssistant, parseRecord } from 'server/db/query'
 import {
-  extractOrDetermineSearch,
-  extractSearchQueries
-} from 'server/lib/webSearch'
-import type { SearchResult, Usage } from 'types'
+  compressSearchResults,
+  extractOrDetermineSearch
+} from 'server/lib/prompt'
 import { runWebSearch } from 'server/lib/search'
 export const chatRouter = {
   searchWeb: procedure
     .input(
       z.object({
-        query: z.string().array(),
-        webSearchId: z.number()
+        keyword: z.string(),
+        query: z.string(),
+        webSearchId: z.number(),
+        assistantId: z.number(),
+        model: z.string()
       })
     )
     .query(async ({ input, ctx }) => {
+      const assistant = await ctx.db.query.assistants.findFirst({
+        where: { id: input.assistantId }
+      })
+      if (!assistant) {
+        throw new TRPCError({
+          code: 'NOT_FOUND',
+          message: 'Assistant not found'
+        })
+      }
       const data = await ctx.db.query.webSearches.findFirst({
         where: { id: input.webSearchId }
       })
@@ -39,26 +50,42 @@ export const chatRouter = {
           message: 'Web search tool not found'
         })
       }
-      let allResults: SearchResult[] = []
-      for (let q of input.query) {
-        const result = await runWebSearch(q, {
-          apiKey: data.params.apiKey,
-          cseId: data.params.cseId,
-          mode: data.mode
-        })
-        if (result) {
-          allResults.push(...result)
-        }
+      const searchResults = await runWebSearch(input.keyword, {
+        apiKey: data.params.apiKey,
+        cseId: data.params.cseId,
+        mode: data.mode
+      })
+      if (!searchResults) {
+        return { results: [], summary: null }
       }
-      return { results: allResults }
+      let summary: string | null = null
+      if (assistant.options.compressSearchResults) {
+        const res = await compressSearchResults({
+          assistant: {
+            apiKey: assistant.apiKey,
+            baseUrl: assistant.baseUrl,
+            mode: assistant.mode
+          },
+          model: input.model,
+          query: input.query,
+          searchResults: searchResults
+        })
+        summary = res.summary
+        await addTokens(ctx.db, {
+          assistantId: assistant.id,
+          usage: res.usage,
+          model: input.model
+        })
+      }
+
+      return { results: searchResults!, summary }
     }),
   getSearchInfoByQuestion: procedure
     .input(
       z.object({
         assistantId: z.number(),
         model: z.string(),
-        question: z.string(),
-        required: z.boolean()
+        question: z.string()
       })
     )
     .query(async ({ input, ctx }) => {
@@ -82,34 +109,25 @@ export const chatRouter = {
           message: 'Assistant not found'
         })
       }
-      let res: {
-        query: string[] | null
-        usage: Usage
-      }
-      if (input.required) {
-        res = await extractSearchQueries(
-          assistant,
-          assistant.models.includes(input.model)
-            ? input.model
-            : assistant.models[0],
-          input.question
-        )
-      } else {
-        res = await extractOrDetermineSearch(
-          assistant,
-          assistant.models.includes(input.model)
-            ? input.model
-            : assistant.models[0],
-          input.question
-        )
-      }
+
+      const res = await extractOrDetermineSearch({
+        assistant: {
+          mode: assistant.mode,
+          apiKey: assistant.apiKey,
+          baseUrl: assistant.baseUrl
+        },
+        model: input.model,
+        query: input.question,
+        historyQuery: []
+      })
       if (res.usage) {
         await addTokens(ctx.db, {
           assistantId: assistant.id,
-          usage: res.usage
+          usage: res.usage,
+          model: input.model
         })
       }
-      return { query: res.query?.length ? res.query : null }
+      return res.query
     }),
   createChat: procedure
     .input(
@@ -130,7 +148,7 @@ export const chatRouter = {
               .optional(),
             searchResult: z
               .object({
-                query: z.array(z.string()),
+                query: z.string(),
                 results: z.array(z.any()).optional(),
                 error: z.string().optional()
               })
@@ -373,7 +391,7 @@ export const chatRouter = {
               .optional(),
             searchResult: z
               .object({
-                query: z.array(z.string()),
+                query: z.string(),
                 results: z.array(z.any()).optional(),
                 error: z.string().optional()
               })

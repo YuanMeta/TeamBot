@@ -25,12 +25,16 @@ function addMessageContext(
         .join('\n\n')}`
     }
 
-    if (context.searchResult?.results?.length) {
+    if (
+      context.searchResult?.results?.length ||
+      context.searchResult?.summary
+    ) {
       contextText += `${
         contextText ? '\n\n' : ''
-      }According to online search results, the following is the latest relevant information:\n${JSON.stringify(
-        context.searchResult.results
-      )}`
+      }According to online search results, the following is the latest relevant information:\n${
+        context.searchResult?.summary ||
+        JSON.stringify(context.searchResult.results)
+      }`
     }
   } catch (e) {
     console.error(e)

@@ -26,7 +26,8 @@ const MessageContent = observer<{
           {!!context?.searchResult && (
             <WebSearchInfo result={context?.searchResult} />
           )}
-          <BubblesLoading />
+          {(!context?.searchResult ||
+            !!context.searchResult.results?.length) && <BubblesLoading />}
         </div>
       </div>
     )

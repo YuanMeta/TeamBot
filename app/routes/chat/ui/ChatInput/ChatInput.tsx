@@ -8,6 +8,7 @@ import { InputTools } from './InputTools'
 import { Button } from '~/components/ui/button'
 import { toast } from 'sonner'
 import { mediaType } from '~/lib/utils'
+import { trpc } from '~/.client/trpc'
 export const ChatInput = observer(() => {
   const store = useStore()
   const [state, setState] = useLocalState({

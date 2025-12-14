@@ -229,7 +229,8 @@ export const completions = async (
       }
       await addTokens(db, {
         assistantId: assistant.id,
-        usage: usage
+        usage: usage,
+        model: chat.model!
       })
     },
     onError: async (error: any) => {

@@ -81,7 +81,7 @@ export const WebSearchInfo = observer(
               :
             </span>
             <span className={'truncate flex-1 w-0'}>
-              {result?.error || result?.query.join(', ')}
+              {result?.error || result?.query}
             </span>
           </span>
         </div>

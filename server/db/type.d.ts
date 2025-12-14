@@ -33,7 +33,8 @@ export type SettingsData = typeof settings.$inferSelect
 
 export type AssistantOptions = {
   webSearchMode: 'none' | 'builtin' | 'custom'
-  autoWebSearch: boolean
+  agentWebSearch: boolean
+  compressSearchResults: boolean
   frequencyPenalty: { open: boolean; value: number }
   maxContextTokens: number
   maxOutputTokens: number
@@ -54,9 +55,10 @@ export type WebSearchParams = {
 
 export type MessageContext = {
   searchResult?: {
-    query: string[]
+    query: string
     results?: SearchResult[]
     error?: string
+    summary?: string
   }
   docs?: {
     name: string

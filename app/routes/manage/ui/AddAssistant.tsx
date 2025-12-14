@@ -356,6 +356,7 @@ export const AddAssistant = observer(
                   <Form.Item
                     label={'网络搜索'}
                     name={['options', 'webSearchMode']}
+                    initialValue={'none'}
                     tooltip={
                       '部分模型厂商提供了官方内置的搜索能力，可根据需要开启官方搜索或使用自定义网络搜索工具。'
                     }
@@ -377,7 +378,7 @@ export const AddAssistant = observer(
                   </Form.Item>
                   {webSearchMode === 'custom' && (
                     <div>
-                      <div className={'flex items-center w-full gap-6'}>
+                      <div className={'flex items-center w-full gap-5'}>
                         <Form.Item
                           label={'选择搜索工具'}
                           name={'webSearchId'}
@@ -414,13 +415,27 @@ export const AddAssistant = observer(
                           />
                         </Form.Item>
                         <Form.Item
-                          label={'是否自动调用'}
-                          className={'w-36'}
+                          label={'Agent模式'}
                           tooltip={
-                            '自动调用将搜索注册为模型工具，由模型根据提问自主决定是否进行搜索，不可手动关闭或开启，模型可能会根据需要进行多次网络搜索。'
+                            'Agent模式将搜索注册为模型工具，由模型根据提问自主决定是否进行搜索，不可手动关闭或开启，模型可能会根据需要进行多次网络搜索，较依赖模型能力。'
                           }
-                          name={['options', 'autoWebSearch']}
+                          name={['options', 'agentWebSearch']}
                           initialValue={false}
+                        >
+                          <Radio.Group
+                            options={[
+                              { label: '是', value: true },
+                              { label: '否', value: false }
+                            ]}
+                          />
+                        </Form.Item>
+                        <Form.Item
+                          label={'是否压缩搜索结果'}
+                          tooltip={
+                            '保留搜索关键信息，去除冗余信息，可提升模型注意力，减少上下文占用。'
+                          }
+                          name={['options', 'compressSearchResults']}
+                          initialValue={true}
                         >
                           <Radio.Group
                             options={[
@@ -436,7 +451,7 @@ export const AddAssistant = observer(
                     <Form.Item
                       label={'最大上下文Token'}
                       name={['options', 'maxContextTokens']}
-                      initialValue={'30000'}
+                      initialValue={30000}
                       tooltip={
                         '上下文越长模型记住的内容越多，但消耗的缓存输入token也越多。建议设置为20000-100000之间。当上下文超出该值，TeamBot将自动压缩之前的对话内容，保留关键信息。'
                       }
@@ -472,7 +487,7 @@ export const AddAssistant = observer(
                     <Form.Item
                       label={'最大输出Token'}
                       name={['options', 'maxOutputTokens']}
-                      initialValue={'0'}
+                      initialValue={0}
                       tooltip={'限制每轮对话输出的最大Token数，0表示不限制'}
                       rules={[
                         {

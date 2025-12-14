@@ -160,18 +160,18 @@ export const composeTools = async (
     }
   }
   if (
-    assistant.options.webSearchMode === 'custom' &&
     assistant.webSearchId &&
-    (options.search || assistant.options.autoWebSerch)
+    assistant.options.webSearchMode === 'custom' &&
+    assistant.options.agentWebSearch
   ) {
-    const data = await db.query.webSearches.findFirst({
+    const searchData = await db.query.webSearches.findFirst({
       where: { id: assistant.webSearchId }
     })
-    if (data) {
+    if (searchData) {
       toolsRecord['web_search'] = createWebSearchTool({
-        mode: data.mode as 'zhipu' | 'google' | 'exa' | 'tavily' | 'bocha',
-        apiKey: data.params.apiKey,
-        cseId: data.params.cseId
+        mode: searchData.mode,
+        apiKey: searchData.params.apiKey,
+        cseId: searchData.params.cseId
       })
     }
   }

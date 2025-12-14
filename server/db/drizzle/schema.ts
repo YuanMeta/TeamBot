@@ -65,6 +65,7 @@ export const assistantUsages = pgTable(
     assistantId: integer('assistant_id')
       .notNull()
       .references(() => assistants.id),
+    model: varchar().notNull(),
     inputTokens: integer('input_tokens').default(0).notNull(),
     outputTokens: integer('output_tokens').default(0).notNull(),
     totalTokens: integer('total_tokens').default(0).notNull(),
@@ -74,7 +75,7 @@ export const assistantUsages = pgTable(
   },
   (table) => [
     index().on(table.createdAt),
-    unique().on(table.assistantId, table.createdAt)
+    unique().on(table.assistantId, table.createdAt, table.model)
   ]
 )
 

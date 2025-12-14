@@ -81,9 +81,11 @@ export const addTokens = async (
   db: DbInstance,
   {
     usage,
+    model,
     assistantId
   }: {
     assistantId: number
+    model: string
     usage: Usage
   }
 ) => {
@@ -118,6 +120,7 @@ export const addTokens = async (
   } else {
     await db.insert(assistantUsages).values({
       assistantId: assistantId,
+      model: model,
       inputTokens: usage.inputTokens,
       outputTokens: usage.outputTokens,
       totalTokens: usage.totalTokens,
