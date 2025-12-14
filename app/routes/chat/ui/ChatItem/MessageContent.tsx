@@ -32,6 +32,8 @@ const MessageContent = observer<{
       </div>
     )
   }
+  console.log('msg', msg)
+
   return (
     <div className={`relative max-w-full`}>
       <div className={'flex flex-col gap-2.5'}>
@@ -60,7 +62,12 @@ const MessageContent = observer<{
               !(p.state !== 'completed' && msg.terminated) && (
                 <div>
                   {p.toolName === 'fetch_url_content' && <UrlTool tool={p} />}
-                  {p.toolName === 'web_search' && <WebSearchTool tool={p} />}
+                  {p.toolName === 'web_search' && (
+                    <WebSearchTool
+                      tool={p}
+                      originData={msg.context?.toolCallOriginData || {}}
+                    />
+                  )}
                   {store.state.toolsMap.get(p.toolName)?.type === 'http' && (
                     <HttpTool tool={p} />
                   )}

@@ -1,9 +1,14 @@
 import { tavily } from '@tavily/core'
 import { tool } from 'ai'
 import Exa from 'exa-js'
-import type { SearchOptions, SearchResult } from 'types'
+import type { AiContext, SearchOptions, SearchResult } from 'types'
 import { google } from 'googleapis'
 import z from 'zod'
+import { compressSearchResults } from './prompt'
+import { addTokens } from 'server/db/query'
+import { messages } from 'server/db/drizzle/schema'
+import { aesDecrypt } from './utils'
+import { eq } from 'drizzle-orm'
 
 export const runWebSearch = async (
   query: string,
@@ -124,13 +129,51 @@ export const createWebSearchTool = (
 ) => {
   return tool({
     description:
-      options.description || 'Search the web for up-to-date information',
+      options.description ||
+      'Retrieve external, up-to-date factual evidence via web search.\nUse ONLY when the answer requires external verification or recent information not guaranteed by model knowledge.',
     inputSchema: z.object({
       query: z.string().min(1).max(100).describe('The search query')
     }),
-    execute: async ({ query }) => {
+    execute: async ({ query }, { toolCallId, experimental_context }) => {
+      const ctx = experimental_context as AiContext
       const results = await runWebSearch(query, options)
-      if (results) {
+
+      if (ctx.assistant.options.compressSearchResults && results) {
+        const res = await compressSearchResults({
+          assistant: {
+            mode: ctx.assistant.mode,
+            apiKey: ctx.assistant.apiKey,
+            baseUrl: ctx.assistant.baseUrl
+          },
+          model: ctx.model,
+          query: query,
+          searchResults: results
+        })
+        await addTokens(ctx.db, {
+          assistantId: ctx.assistant.id,
+          model: ctx.model,
+          usage: res.usage
+        })
+        const msg = await ctx.db.query.messages.findFirst({
+          columns: { context: true },
+          where: { id: ctx.aiMessageId }
+        })
+        if (msg) {
+          await ctx.db
+            .update(messages)
+            .set({
+              context: {
+                ...msg.context,
+                toolCallOriginData: {
+                  ...msg.context?.toolCallOriginData,
+                  [toolCallId]: results
+                }
+              }
+            })
+            .where(eq(messages.id, ctx.aiMessageId))
+        }
+        return res.summary
+      } else if (results) {
         return results
       }
       return 'No search tool available'

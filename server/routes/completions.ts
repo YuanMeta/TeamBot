@@ -6,7 +6,7 @@ import {
 } from 'ai'
 import z from 'zod'
 import { TRPCError } from '@trpc/server'
-import type { MessagePart, Usage } from 'types'
+import type { AiContext, MessagePart, Usage } from 'types'
 import { composeTools } from '../lib/tools'
 import { MessageManager } from '../lib/message'
 import { getUser } from '../session'
@@ -97,12 +97,17 @@ export const completions = async (
       assistantId: assistant.id
     })
     .where(eq(chats.id, chat.id))
-
   const result = streamText({
-    model: client(chat.model!),
+    model: client(json.model),
     messages: convertToModelMessages(uiMessages),
     stopWhen: stepCountIs(20),
     tools,
+    experimental_context: {
+      db,
+      aiMessageId: assistantMessage.id,
+      assistant,
+      model: json.model
+    } satisfies AiContext,
     maxOutputTokens: Number(assistant.options.maxOutputTokens) || undefined,
     temperature: assistant.options.temperature.open
       ? Number(assistant.options.temperature)
@@ -223,14 +228,14 @@ export const completions = async (
             text: text,
             reasoningTokens: usage.reasoningTokens,
             cachedInputTokens: usage.cachedInputTokens,
-            model: chat.model
+            model: json.model
           })
           .where(eq(messages.id, assistantMessage.id))
       }
       await addTokens(db, {
         assistantId: assistant.id,
         usage: usage,
-        model: chat.model!
+        model: json.model
       })
     },
     onError: async (error: any) => {

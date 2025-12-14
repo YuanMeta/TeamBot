@@ -2,7 +2,7 @@ import { TRPCError, type TRPCRouterRecord } from '@trpc/server'
 import { procedure } from './core'
 import z from 'zod'
 import dayjs from 'dayjs'
-import { tid } from 'server/lib/utils'
+import { aesDecrypt, tid } from 'server/lib/utils'
 import { unlink } from 'fs/promises'
 import { join } from 'path'
 import {
@@ -21,6 +21,15 @@ import {
 } from 'server/lib/prompt'
 import { runWebSearch } from 'server/lib/search'
 export const chatRouter = {
+  getMsgToolOriginData: procedure
+    .input(z.string())
+    .query(async ({ input, ctx }) => {
+      const msg = await ctx.db.query.messages.findFirst({
+        columns: { context: true },
+        where: { id: input, userId: ctx.userId }
+      })
+      return { context: msg?.context }
+    }),
   searchWeb: procedure
     .input(
       z.object({
@@ -62,7 +71,9 @@ export const chatRouter = {
       if (assistant.options.compressSearchResults) {
         const res = await compressSearchResults({
           assistant: {
-            apiKey: assistant.apiKey,
+            apiKey: assistant.apiKey
+              ? await aesDecrypt(assistant.apiKey)
+              : null,
             baseUrl: assistant.baseUrl,
             mode: assistant.mode
           },
@@ -539,10 +550,20 @@ export const chatRouter = {
             )
         }
         if (input.userMessage) {
+          const oldUserMsg = await t.query.messages.findFirst({
+            columns: { context: true },
+            where: {
+              id: input.userMessage.msgId
+            }
+          })
           await t
             .update(messages)
             .set({
-              text: input.userMessage.prompt
+              text: input.userMessage.prompt,
+              context: {
+                ...oldUserMsg?.context,
+                toolCallOriginData: {}
+              }
             })
             .where(
               and(

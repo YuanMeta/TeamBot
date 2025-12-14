@@ -8,6 +8,8 @@ import { chats, messages } from 'server/db/drizzle/schema'
 import { and, eq } from 'drizzle-orm'
 import type { MessageContext, MessageData } from 'server/db/type'
 import { increment, type DbInstance } from 'server/db'
+import dayjs from 'dayjs'
+import { parseRecord } from 'server/db/query'
 
 function addMessageContext(
   text: string,
@@ -120,6 +122,7 @@ Output only the summarized version of the conversation.`,
       .where(and(eq(messages.chatId, chatId), eq(messages.userId, userId)))
       .offset(chat.messageOffset)
       .orderBy(messages.createdAt)
+    messagesData = messagesData.map((d) => parseRecord(d))
     if (!messagesData.length) {
       throw new TRPCError({
         code: 'BAD_REQUEST',
@@ -255,7 +258,7 @@ Output only the summarized version of the conversation.`,
   }
 
   static getSystemPromp(ctx: { summary?: string | null; images?: string[] }) {
-    let prompt = ''
+    let prompt = `The current time is ${dayjs().format('YYYY-MM-DD HH:mm:ss')}`
     if (ctx.images?.length) {
       prompt += `\nIf the user provides an image, please return detailed information such as a summary of the content, key objects, scene, colors, layout, and text content to facilitate use in subsequent conversations.`
     }

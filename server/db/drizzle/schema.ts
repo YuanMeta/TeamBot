@@ -11,7 +11,8 @@ import {
   timestamp,
   index,
   primaryKey,
-  unique
+  unique,
+  json
 } from 'drizzle-orm/pg-core'
 import { sql } from 'drizzle-orm'
 import type { AssistantOptions, MessageContext, WebSearchParams } from '../type'
@@ -170,7 +171,7 @@ export const messages = pgTable(
       .references(() => chats.id),
     error: text(),
     model: varchar(),
-    context: jsonb().$type<MessageContext>(),
+    context: json().$type<MessageContext>(),
     assistantId: integer('assistant_id').references(() => assistants.id),
     reasoningDuration: integer('reasoning_duration'),
     parts: text(),
@@ -300,5 +301,5 @@ export const webSearches = pgTable('web_searches', {
 
 export const settings = pgTable('settings', {
   id: varchar().primaryKey(),
-  value: jsonb().notNull().$type<any>()
+  value: json().notNull().$type<any>()
 })

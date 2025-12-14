@@ -11,7 +11,6 @@ import { Badge } from '~/components/ui/badge'
 import { getDomain } from '~/lib/utils'
 import type { ToolPart } from 'types'
 import { useStore } from '../../store/store'
-import { TextHelp } from '~/components/project/text-help'
 import type { MessageContext } from 'server/db/type'
 
 export const UrlTool = observer(({ tool }: { tool: ToolPart }) => {
@@ -74,13 +73,16 @@ export const WebSearchInfo = observer(
           >
             <span>
               {result?.error
-                ? '搜索异常'
+                ? `搜索异常`
                 : result?.results?.length
                 ? '搜索'
                 : '正在搜索'}
               :
             </span>
-            <span className={'truncate flex-1 w-0'}>
+            <span
+              className={'truncate flex-1 w-0'}
+              title={result?.error || result?.query}
+            >
               {result?.error || result?.query}
             </span>
           </span>
@@ -101,66 +103,83 @@ export const WebSearchInfo = observer(
     )
   }
 )
-export const WebSearchTool = observer(({ tool }: { tool: ToolPart }) => {
-  const store = useStore()
-  // web_search是模型内置工具 需要特殊处理
-  if (!tool.input?.query && tool.toolName !== 'web_search') return null
-  if (tool.state === 'start') {
+export const WebSearchTool = observer(
+  ({
+    tool,
+    originData
+  }: {
+    tool: ToolPart
+    originData: Record<string, any>
+  }) => {
+    const store = useStore()
+    if (!tool.input?.query) return null
+    const output = originData[tool.toolCallId] || tool.output
     return (
-      <div className='flex items-center gap-1'>
-        <Search className={'size-4 text-neutral-500 dark:text-neutral-400'} />
-        <span className={'shine-text'}>
-          {tool.input?.query || '正在搜索相关内容'}...
-        </span>
-      </div>
-    )
-  }
-  if (tool.errorText) {
-    return (
-      <TextHelp text={tool.input?.query} delay={1000}>
-        <Badge variant={'destructive'} className={'text-sm'}>
-          <Search />
-          {tool.errorText || '未知错误'}
-        </Badge>
-      </TextHelp>
-    )
-  }
-  return (
-    <div
-      className={
-        'cursor-pointer text flex items-center justify-between border rounded-md px-2 h-9 hover:bg-neutral-50 duration-150 dark:hover:bg-neutral-400/10'
-      }
-      onClick={() => {
-        if (tool.output instanceof Array) {
-          store.setState((draft) => {
-            draft.selectSearchResult = tool.output
-          })
-        }
-      }}
-    >
-      <div className={'flex items-center gap-2 flex-1'}>
-        <Search className={'size-4 text-neutral-500 dark:text-neutral-400'} />
-        <span
-          className={'text-sm text-secondary-foreground/80 truncate flex-1 w-0'}
-        >
-          {tool.input?.query || tool.output?.action?.query || '已搜索相关内容'}
-        </span>
-      </div>
       <div
         className={
-          'flex items-center gap-1 text-secondary-foreground/60 shrink-0 ml-10'
+          'cursor-pointer text flex items-center justify-between border rounded-md px-2 h-9 hover:bg-neutral-50 duration-150 dark:hover:bg-neutral-400/10'
         }
+        onClick={() => {
+          if (output instanceof Array) {
+            store.setState((draft) => {
+              draft.selectSearchResult = output
+            })
+          }
+        }}
       >
-        {tool.output instanceof Array && (
-          <>
-            <span className={'text-sm'}>{tool.output?.length}个结果</span>
-            <ChevronRight className={'size-4'} />
-          </>
-        )}
+        <div
+          className={
+            'flex items-center gap-2 flex-1 text-sm text-secondary-foreground/80'
+          }
+        >
+          <Search className={'size-4 text-neutral-500 dark:text-neutral-400'} />
+          <span
+            className={`flex gap-2 flex-1 ${
+              tool.errorText ? 'text-red-600/80 dark:text-red-500/80' : ''
+            } ${
+              !tool.errorText && tool.state !== 'completed' ? 'shine-text' : ''
+            }`}
+          >
+            <span>
+              {tool.errorText
+                ? '搜索异常'
+                : tool.state === 'completed'
+                ? '搜索'
+                : '正在搜索'}
+              :
+            </span>
+            <span
+              className={'truncate flex-1 w-0'}
+              title={
+                tool?.errorText ||
+                tool.input?.query ||
+                tool.output?.action?.query ||
+                '已搜索相关内容'
+              }
+            >
+              {tool?.errorText ||
+                tool.input?.query ||
+                tool.output?.action?.query ||
+                '已搜索相关内容'}
+            </span>
+          </span>
+        </div>
+        <div
+          className={
+            'flex items-center gap-1 text-secondary-foreground/60 shrink-0 ml-10'
+          }
+        >
+          {output instanceof Array && (
+            <>
+              <span className={'text-sm'}>{output?.length}个结果</span>
+              <ChevronRight className={'size-4'} />
+            </>
+          )}
+        </div>
       </div>
-    </div>
-  )
-})
+    )
+  }
+)
 
 export const HttpTool = observer(({ tool }: { tool: ToolPart }) => {
   const store = useStore()

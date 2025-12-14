@@ -1,3 +1,6 @@
+import type { DbInstance } from 'server/db'
+import type { AssistantData } from 'server/db/type'
+
 export type AiMode =
   | 'qwen'
   | 'deepseek'
@@ -75,4 +78,11 @@ export interface SearchResult {
   score?: number
   date?: string
   favicon?: string
+}
+
+export interface AiContext {
+  db: DbInstance
+  aiMessageId: string
+  model: string
+  assistant: AssistantData
 }

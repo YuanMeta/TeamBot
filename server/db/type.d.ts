@@ -64,4 +64,5 @@ export type MessageContext = {
     name: string
     content: string
   }[]
+  toolCallOriginData?: Record<string, any>
 }
