@@ -123,6 +123,7 @@ export const completions = async (
       : undefined,
     abortSignal: controller.signal,
     system: MessageManager.getSystemPromp({
+      prompt: assistant.prompt,
       summary: summary,
       images: json.images
     }),

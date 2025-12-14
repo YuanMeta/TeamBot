@@ -257,8 +257,14 @@ Output only the summarized version of the conversation.`,
     }
   }
 
-  static getSystemPromp(ctx: { summary?: string | null; images?: string[] }) {
-    let prompt = `The current time is ${dayjs().format('YYYY-MM-DD HH:mm:ss')}`
+  static getSystemPromp(ctx: {
+    prompt: string | null
+    summary?: string | null
+    images?: string[]
+  }) {
+    let prompt = `${
+      ctx.prompt ? `${ctx.prompt}\n\n` : ''
+    }The current time is ${dayjs().format('YYYY-MM-DD HH:mm:ss')}`
     if (ctx.images?.length) {
       prompt += `\nIf the user provides an image, please return detailed information such as a summary of the content, key objects, scene, colors, layout, and text content to facilitate use in subsequent conversations.`
     }
