@@ -4,7 +4,7 @@ import { useLocalState } from '~/hooks/localState'
 import { useCallback, useEffect } from 'react'
 import { trpc } from '~/.client/trpc'
 import { TableHeader } from './TableHeader'
-import { Button, Form, Input, Modal, Select, Table } from 'antd'
+import { Button, Form, Input, Modal, Select, Slider, Table } from 'antd'
 import { PlusOutlined } from '@ant-design/icons'
 import { IconButton } from '~/components/project/icon-button'
 import { PencilLine, Trash } from 'lucide-react'
@@ -33,7 +33,8 @@ const AddWebSearch = observer(
             form.setFieldsValue({
               ...res,
               apiKey: res?.params?.apiKey,
-              cseId: res?.params?.cseId
+              modeParams: res?.params?.modeParams,
+              count: res?.params?.count
             })
           })
         }
@@ -52,8 +53,7 @@ const AddWebSearch = observer(
             try {
               await trpc.manage.connectSearch.mutate({
                 mode: v.mode,
-                apiKey: v.apiKey,
-                cseId: v.cseId
+                params: v.params
               })
               if (props.id) {
                 await trpc.manage.updateWebSearch.mutate({
@@ -62,10 +62,7 @@ const AddWebSearch = observer(
                     title: v.title,
                     description: v.description,
                     mode: v.mode,
-                    params: {
-                      apiKey: v.apiKey,
-                      cseId: v.cseId
-                    }
+                    params: v.params
                   }
                 })
               } else {
@@ -73,10 +70,7 @@ const AddWebSearch = observer(
                   title: v.title,
                   description: v.description,
                   mode: v.mode,
-                  params: {
-                    apiKey: v.apiKey,
-                    cseId: v.cseId
-                  }
+                  params: v.params
                 })
               }
 
@@ -124,12 +118,10 @@ const AddWebSearch = observer(
           >
             <Input placeholder={'请输入名称'} />
           </Form.Item>
-          <Form.Item label={'备注'} name={'description'}>
-            <Input.TextArea placeholder={'请输入备注'} />
-          </Form.Item>
+
           <Form.Item
             label={'API Key'}
-            name={'apiKey'}
+            name={['params', 'apiKey']}
             rules={[{ required: true, message: '请输入API Key' }]}
           >
             <Input.Password placeholder={'请输入API Key'} />
@@ -137,12 +129,40 @@ const AddWebSearch = observer(
           {mode === 'google' && (
             <Form.Item
               label={'CSE ID'}
-              name={'cseId'}
+              name={['params', 'modeParams', 'google', 'cseId']}
               rules={[{ required: true, message: '请输入CSE ID' }]}
             >
               <Input placeholder={'请输入CSE ID'} />
             </Form.Item>
           )}
+          {mode === 'zhipu' && (
+            <Form.Item
+              label={'搜索引擎'}
+              initialValue={'search_std'}
+              rules={[{ required: true, message: '请选择搜索引擎' }]}
+              name={['params', 'modeParams', 'zhipu', 'search_engine']}
+            >
+              <Select
+                placeholder={'请选择搜索引擎'}
+                options={[
+                  { value: 'search_std', label: '标准搜索' },
+                  { value: 'search_pro', label: '专业搜索' },
+                  { value: 'search_pro_sogou', label: '搜狗专业搜索' },
+                  { value: 'search_pro_quark', label: '夸克专业搜索' }
+                ]}
+              />
+            </Form.Item>
+          )}
+          <Form.Item
+            label={'最大查询条数'}
+            name={['params', 'count']}
+            initialValue={5}
+          >
+            <Slider min={3} step={1} max={15} />
+          </Form.Item>
+          <Form.Item label={'备注'} name={'description'}>
+            <Input.TextArea placeholder={'请输入备注'} />
+          </Form.Item>
         </Form>
       </Modal>
     )

@@ -134,9 +134,14 @@ export const composeTools = async (
       toolsRecord.web_search = anthropic.tools.webSearch_20250305({})
     }
     if (assistant.mode === 'z-ai') {
-      toolsRecord['web_search'] = createWebSearchTool({
-        mode: 'zhipu',
-        apiKey: assistant.apiKey!
+      toolsRecord['web_search'] = createWebSearchTool('zhipu', {
+        apiKey: assistant.apiKey!,
+        count: 5,
+        modeParams: {
+          zhipu: {
+            search_engine: 'search_std'
+          }
+        }
       })
     }
   }
@@ -168,11 +173,10 @@ export const composeTools = async (
       where: { id: assistant.webSearchId }
     })
     if (searchData) {
-      toolsRecord['web_search'] = createWebSearchTool({
-        mode: searchData.mode,
-        apiKey: searchData.params.apiKey,
-        cseId: searchData.params.cseId
-      })
+      toolsRecord['web_search'] = createWebSearchTool(
+        searchData.mode,
+        searchData.params
+      )
     }
   }
   return toolsRecord

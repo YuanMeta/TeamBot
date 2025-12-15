@@ -45,7 +45,20 @@ export type AssistantOptions = {
 
 export type WebSearchParams = {
   apiKey?: string
-  cseId?: string
+  count?: number
+  modeParams?: {
+    google?: {
+      cseId?: string
+    }
+    zhipu?: {
+      search_engine:
+        | 'search_std'
+        | 'search_pro'
+        | 'search_pro_sogou'
+        | 'search_pro_quark'
+    }
+  }
+
   http?: {
     url: string
     method: 'GET' | 'POST'

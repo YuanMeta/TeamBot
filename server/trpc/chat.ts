@@ -57,11 +57,11 @@ export const chatRouter = {
           message: 'Web search tool not found'
         })
       }
-      const searchResults = await runWebSearch(input.keyword, {
-        apiKey: data.params.apiKey,
-        cseId: data.params.cseId,
-        mode: data.mode
-      })
+      const searchResults = await runWebSearch(
+        input.keyword,
+        data.mode,
+        data.params
+      )
       if (!searchResults) {
         return { results: [], summary: null }
       }

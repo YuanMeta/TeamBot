@@ -86,3 +86,5 @@ export interface AiContext {
   model: string
   assistant: AssistantData
 }
+
+export type WebSearchMode = 'google' | 'exa' | 'tavily' | 'bocha' | 'zhipu'

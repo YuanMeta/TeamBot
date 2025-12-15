@@ -5,19 +5,23 @@ import { webSearches } from 'server/db/drizzle/schema'
 import { eq } from 'drizzle-orm'
 import { runWebSearch } from 'server/lib/search'
 import type { WebSearchParams } from 'server/db/type'
+import type { WebSearchMode } from 'types'
 
 export const webSearchRouter = {
   connectSearch: adminProcedure
     .input(
       z.object({
         mode: z.enum(['tavily', 'exa', 'google', 'bocha', 'zhipu']),
-        apiKey: z.string(),
-        cseId: z.string().optional()
+        params: z.custom<WebSearchParams>()
       })
     )
     .mutation(async ({ input }) => {
       try {
-        return await runWebSearch('Latest news about iPhone', input)
+        return await runWebSearch(
+          'Latest news about iPhone',
+          input.mode,
+          input.params
+        )
       } catch (e: any) {
         throw new TRPCError({
           code: 'INTERNAL_SERVER_ERROR',
@@ -69,15 +73,20 @@ export const webSearchRouter = {
     .input(
       z.object({
         title: z.string(),
-        description: z.string().optional(),
+        description: z.string().nullish(),
         mode: z.string(),
-        params: z.record(z.string(), z.any()) as z.ZodType<WebSearchParams>
+        params: z.custom<WebSearchParams>()
       })
     )
     .mutation(async ({ input, ctx }) => {
       return ctx.db
         .insert(webSearches)
-        .values(input)
+        .values({
+          title: input.title,
+          description: input.description,
+          mode: input.mode as WebSearchMode,
+          params: input.params
+        })
         .returning({ id: webSearches.id })
     }),
   updateWebSearch: adminProcedure
@@ -86,16 +95,21 @@ export const webSearchRouter = {
         id: z.number(),
         data: z.object({
           title: z.string(),
-          description: z.string().optional(),
+          description: z.string().nullish(),
           mode: z.string(),
-          params: z.record(z.string(), z.any()) as z.ZodType<WebSearchParams>
+          params: z.custom<WebSearchParams>()
         })
       })
     )
     .mutation(async ({ input, ctx }) => {
       await ctx.db
         .update(webSearches)
-        .set(input.data)
+        .set({
+          title: input.data.title,
+          description: input.data.description,
+          mode: input.data.mode as WebSearchMode,
+          params: input.data.params
+        })
         .where(eq(webSearches.id, input.id))
       return { success: true }
     })

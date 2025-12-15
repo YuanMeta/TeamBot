@@ -273,6 +273,7 @@ export class ChatClient {
                   break
                 case 'tool-output-available':
                   const tool = parts[value.value.toolCallId] as ToolPart
+                  console.log('tool', tool)
                   if (tool) {
                     tool.state = 'completed' as const
                     tool.output = value.value.output

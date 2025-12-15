@@ -16,6 +16,7 @@ import {
 } from 'drizzle-orm/pg-core'
 import { sql } from 'drizzle-orm'
 import type { AssistantOptions, MessageContext, WebSearchParams } from '../type'
+import type { WebSearchMode } from 'types'
 
 export const drizzle = pgSchema('drizzle')
 
@@ -287,9 +288,7 @@ export const webSearches = pgTable('web_searches', {
   id: integer().primaryKey().generatedAlwaysAsIdentity(),
   title: text().notNull(),
   description: text(),
-  mode: varchar()
-    .notNull()
-    .$type<'zhipu' | 'google' | 'exa' | 'tavily' | 'bocha'>(),
+  mode: varchar().notNull().$type<WebSearchMode>(),
   params: jsonb().notNull().$type<WebSearchParams>(),
   createdAt: timestamp('created_at')
     .default(sql`now()`)

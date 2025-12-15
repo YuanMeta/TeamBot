@@ -9,6 +9,12 @@ import { Button } from '~/components/ui/button'
 import { toast } from 'sonner'
 import { mediaType } from '~/lib/utils'
 import { trpc } from '~/.client/trpc'
+import { HelpText } from '~/routes/manage/ui/HelpText'
+import {
+  Tooltip,
+  TooltipContent,
+  TooltipTrigger
+} from '~/components/ui/tooltip'
 export const ChatInput = observer(() => {
   const store = useStore()
   const [state, setState] = useLocalState({
@@ -157,21 +163,30 @@ export const ChatInput = observer(() => {
               }}
             />
             {store.state.enableWebSearch && (
-              <div
-                onClick={() => {
-                  store.toggleWebSearch(
-                    store.state.selectedChat?.id! || 'default'
-                  )
-                }}
-                className={`flex items-center px-2 h-7 text-sm rounded-md  border gap-1.5 cursor-pointer  duration-100 ${
-                  store.state.openWebSearch
-                    ? 'border-sky-500/80 dark:text-sky-500/80 text-sky-500'
-                    : 'dark:border-neutral-200/20 border-neutral-800/20 dark:hover:border-neutral-200/40 hover:border-neutral-800/40'
-                }`}
-              >
-                <Globe size={20} className={'size-3.5'} />
-                网络搜索
-              </div>
+              <Tooltip delayDuration={500}>
+                <TooltipTrigger asChild>
+                  <div
+                    onClick={() => {
+                      store.toggleWebSearch(
+                        store.state.selectedChat?.id! || 'default'
+                      )
+                    }}
+                    className={`flex items-center px-2 h-6.5 text-sm rounded-md  border gap-1.5 cursor-pointer  duration-100 ${
+                      store.state.openWebSearch
+                        ? 'border-sky-500/80 dark:text-sky-500/80 text-sky-500'
+                        : 'dark:border-neutral-200/20 border-neutral-800/20 dark:hover:border-neutral-200/40 hover:border-neutral-800/40'
+                    }`}
+                  >
+                    <Globe size={20} className={'size-3.5'} />
+                    网络搜索
+                  </div>
+                </TooltipTrigger>
+                {store.state.assistant?.options.agentWebSearch && (
+                  <TooltipContent>
+                    <p>管理员已开启Agent模式，无需手动开启</p>
+                  </TooltipContent>
+                )}
+              </Tooltip>
             )}
           </div>
           <div className={'flex items-center justify-between'}>
