@@ -35,6 +35,7 @@ export type AssistantOptions = {
   webSearchMode: 'none' | 'builtin' | 'custom'
   agentWebSearch: boolean
   compressSearchResults: boolean
+  stepCount: number
   frequencyPenalty: { open: boolean; value: number }
   maxContextTokens: number
   maxOutputTokens: number

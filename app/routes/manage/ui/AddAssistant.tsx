@@ -345,6 +345,16 @@ export const AddAssistant = observer(
                     />
                   </Form.Item>
                   <Form.Item
+                    label={'工具最大调用次数'}
+                    initialValue={5}
+                    name={['options', 'stepCount']}
+                    tooltip={
+                      '如果超出该调用次数，对话自动终止，防止意外循环调用。'
+                    }
+                  >
+                    <Slider min={3} max={50} step={1} />
+                  </Form.Item>
+                  <Form.Item
                     label={'系统提示词'}
                     name={'prompt'}
                     tooltip={'系统提示词可定义助手的性格、行为等。'}
@@ -417,7 +427,7 @@ export const AddAssistant = observer(
                         <Form.Item
                           label={'Agent模式'}
                           tooltip={
-                            'Agent模式将搜索注册为模型工具，由模型根据提问自主决定是否进行搜索，不可手动关闭或开启，模型可能会根据需要进行多次网络搜索，较依赖模型能力。'
+                            'Agent模式将搜索注册为模型工具，由模型根据提问自主决定是否进行搜索，不可手动关闭或开启，模型可能会根据需要进行多次网络搜索，适合能力较强的现代模型。'
                           }
                           name={['options', 'agentWebSearch']}
                           initialValue={false}
@@ -432,7 +442,7 @@ export const AddAssistant = observer(
                         <Form.Item
                           label={'是否压缩搜索结果'}
                           tooltip={
-                            '保留搜索关键信息，去除冗余信息，可提升模型注意力，减少上下文占用。'
+                            '保留搜索关键信息，去除冗余信息，可提升模型注意力，减少上下文占用。需要消耗少量Token用于压缩。'
                           }
                           name={['options', 'compressSearchResults']}
                           initialValue={true}

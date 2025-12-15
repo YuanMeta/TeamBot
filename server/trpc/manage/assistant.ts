@@ -9,7 +9,7 @@ import {
   roleAssistants,
   tools
 } from 'server/db/drizzle/schema'
-import { and, eq, gte, isNotNull, ne, not, sum } from 'drizzle-orm'
+import { and, eq, gte, isNotNull, ne, sum } from 'drizzle-orm'
 import { aesDecrypt, aesEncrypt } from 'server/lib/utils'
 import { assistantTools } from 'server/db/drizzle/schema'
 import dayjs from 'dayjs'
