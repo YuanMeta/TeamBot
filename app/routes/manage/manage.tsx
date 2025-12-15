@@ -8,6 +8,10 @@ import { theme, ConfigProvider } from 'antd'
 import { useTheme } from 'remix-themes'
 import zhCN from 'antd/locale/zh_CN'
 import 'dayjs/locale/zh-cn'
+import {
+  ErrorBoundary,
+  ErrorFallback
+} from '~/components/project/ErrorBoundary'
 export const loader = async ({ context }: Route.LoaderArgs) => {
   if (context.root) {
     return null
@@ -58,9 +62,11 @@ export default observer(() => {
       <AccessProvider>
         <ManageSideBar>
           <div className={'overflow-y-auto h-0 flex-1 p-5'}>
-            <div className={'max-w-[1400px] mx-auto'}>
-              <Outlet />
-            </div>
+            <ErrorBoundary fallback={(e) => <ErrorFallback error={e} />}>
+              <div className={'max-w-[1400px] mx-auto'}>
+                <Outlet />
+              </div>
+            </ErrorBoundary>
           </div>
         </ManageSideBar>
       </AccessProvider>

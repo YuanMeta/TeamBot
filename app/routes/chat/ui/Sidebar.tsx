@@ -59,6 +59,7 @@ const Item = observer(
         } ${active ? 'active' : ''}`}
         key={item.id}
         onClick={onClick}
+        title={item.title}
         onMouseEnter={() => {
           setState({ hovered: true })
         }}
