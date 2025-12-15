@@ -111,7 +111,15 @@ export const AssistantList = observer(() => {
             {
               title: (
                 <div className={'flex items-center gap-2'}>
-                  <span>常规任务模型</span>
+                  <Button
+                    size={'small'}
+                    onClick={() => {
+                      setState({ openTaskModel: true })
+                    }}
+                  >
+                    <PencilLine size={12} />
+                    <span>常规任务模型</span>
+                  </Button>
                   <TextHelp
                     size={15}
                     text='用于执行高频任务，如生成对话标题，压缩内容，规划查询等。建议使用响应速度快，价格便宜的模型，全局唯一，配置该参数，可加速任务执行，降低成本。'
@@ -120,14 +128,7 @@ export const AssistantList = observer(() => {
               ),
               dataIndex: 'taskModel',
               render: (v) => (
-                <div
-                  className={
-                    'inline-flex flex-wrap items-center cursor-pointer'
-                  }
-                  onClick={() => {
-                    setState({ openTaskModel: true })
-                  }}
-                >
+                <div className={'inline-flex flex-wrap items-center'}>
                   {v ? (
                     <Tag color={'blue'} variant={'outlined'}>
                       {v}

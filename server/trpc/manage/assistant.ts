@@ -377,6 +377,93 @@ export const assistantRouter = {
         .from(models)
         .where(whereCondition)
     }),
+  getAssistantUsageInfo: adminProcedure
+    .input(
+      z.object({
+        assistantId: z.number(),
+        date: z.string()
+      })
+    )
+    .query(async ({ input, ctx }) => {
+      let date = dayjs().startOf('day')
+      switch (input.date) {
+        case 'last3Days':
+          date = date.subtract(3, 'day')
+          break
+        case 'lastWeek':
+          date = date.subtract(7, 'day')
+          break
+        case 'lastMonth':
+          date = date.subtract(30, 'day')
+          break
+        case 'last3Months':
+          date = date.subtract(90, 'day')
+          break
+      }
+      const assistant = await ctx.db.query.assistants.findFirst({
+        columns: {
+          models: true
+        },
+        where: { id: input.assistantId }
+      })
+      if (!assistant) {
+        throw new TRPCError({
+          code: 'BAD_REQUEST',
+          message: '助手不存在'
+        })
+      }
+
+      const usage = await ctx.db
+        .select({
+          model: assistantUsages.model,
+          input_tokens: sum(assistantUsages.inputTokens),
+          output_tokens: sum(assistantUsages.outputTokens),
+          total_tokens: sum(assistantUsages.totalTokens),
+          reasoning_tokens: sum(assistantUsages.reasoningTokens),
+          cached_input_tokens: sum(assistantUsages.cachedInputTokens)
+        })
+        .from(assistantUsages)
+        .where(
+          and(
+            eq(assistantUsages.assistantId, input.assistantId),
+            gte(assistantUsages.createdAt, date.toDate())
+          )
+        )
+        .groupBy(assistantUsages.model)
+      const modelMap = new Map<
+        string,
+        {
+          inputTokens: number
+          outputTokens: number
+          totalTokens: number
+          reasoningTokens: number
+          cachedInputTokens: number
+        }
+      >()
+      usage.map((r) =>
+        modelMap.set(r.model, {
+          inputTokens: Number(r.input_tokens) || 0,
+          outputTokens: Number(r.output_tokens) || 0,
+          totalTokens: Number(r.total_tokens) || 0,
+          reasoningTokens: Number(r.reasoning_tokens) || 0,
+          cachedInputTokens: Number(r.cached_input_tokens) || 0
+        })
+      )
+
+      return assistant.models
+        .map((model) => {
+          const data = modelMap.get(model)
+          return {
+            model,
+            inputTokens: data?.inputTokens || 0,
+            outputTokens: data?.outputTokens || 0,
+            totalTokens: data?.totalTokens || 0,
+            reasoningTokens: data?.reasoningTokens || 0,
+            cachedInputTokens: data?.cachedInputTokens || 0
+          }
+        })
+        .sort((a, b) => b.totalTokens - a.totalTokens)
+    }),
   getUsageInfo: adminProcedure
     .input(
       z.object({

@@ -32,7 +32,7 @@ export const privateAccess = [
   },
   {
     id: 'viewAssistantUsage',
-    trpcAccess: ['manage.getUsageInfo']
+    trpcAccess: ['manage.getUsageInfo', 'manage.getAssistantUsageInfo']
   },
   {
     id: 'manageMemberAndRole',

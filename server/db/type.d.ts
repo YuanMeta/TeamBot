@@ -8,12 +8,15 @@ import type {
   chats,
   messages,
   webSearches,
-  settings
+  settings,
+  assistantUsages
 } from './drizzle/schema'
 
 export type UserData = typeof users.$inferSelect
 
 export type AssistantData = typeof assistants.$inferSelect
+
+export type AssistantUsageData = typeof assistantUsages.$inferSelect
 
 export type RoleData = typeof roles.$inferSelect
 

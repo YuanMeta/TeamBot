@@ -94,6 +94,7 @@ export const addTokens = async (
     columns: { id: true },
     where: {
       assistantId,
+      model: model,
       createdAt: { eq: today.toDate() }
     }
   })

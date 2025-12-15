@@ -42,7 +42,8 @@ export const createClient = (data: {
         apiKey: data.api_key ?? undefined,
         baseURL:
           data.base_url ?? 'https://dashscope.aliyuncs.com/compatible-mode/v1',
-        name: 'qwen'
+        name: 'qwen',
+        includeUsage: true
       })
     case 'z-ai':
       return createOpenAICompatible({
@@ -55,13 +56,15 @@ export const createClient = (data: {
       return createOpenAICompatible({
         apiKey: data.api_key ?? undefined,
         baseURL: data.base_url ?? 'https://api.moonshot.cn/v1',
-        name: 'moonshot'
+        name: 'moonshot',
+        includeUsage: true
       })
     case 'doubao':
       return createOpenAICompatible({
         apiKey: data.api_key ?? undefined,
         baseURL: data.base_url ?? 'https://ark.cn-beijing.volces.com/api/v3',
-        name: 'doubao'
+        name: 'doubao',
+        includeUsage: true
       })
   }
 }
