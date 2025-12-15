@@ -1,20 +1,16 @@
 import { tavily } from '@tavily/core'
 import { tool } from 'ai'
 import Exa from 'exa-js'
-import type {
-  AiContext,
-  SearchOptions,
-  SearchResult,
-  WebSearchMode
-} from 'types'
+import type { AiContext, SearchResult, WebSearchMode } from 'types'
 import { google } from 'googleapis'
 import z from 'zod'
 import { compressSearchResults } from './prompt'
 import { addTokens } from 'server/db/query'
 import { messages } from 'server/db/drizzle/schema'
-import { aesDecrypt } from './utils'
 import { eq } from 'drizzle-orm'
 import type { WebSearchParams } from 'server/db/type'
+import { cacheManage } from './cache'
+import { aesDecrypt } from './utils'
 
 export const runWebSearch = async (
   query: string,
@@ -150,40 +146,48 @@ export const createWebSearchTool = (
       const results = await runWebSearch(query, mode, options)
 
       if (ctx.assistant.options.compressSearchResults && results) {
-        const res = await compressSearchResults({
-          assistant: {
-            mode: ctx.assistant.mode,
-            apiKey: ctx.assistant.apiKey,
-            baseUrl: ctx.assistant.baseUrl
-          },
-          model: ctx.model,
-          query: query,
-          searchResults: results
-        })
-        await addTokens(ctx.db, {
+        const taskModel = await cacheManage.getTaskModel({
           assistantId: ctx.assistant.id,
-          model: ctx.model,
-          usage: res.usage
+          model: ctx.model
         })
-        const msg = await ctx.db.query.messages.findFirst({
-          columns: { context: true },
-          where: { id: ctx.aiMessageId }
-        })
-        if (msg) {
-          await ctx.db
-            .update(messages)
-            .set({
-              context: {
-                ...msg.context,
-                toolCallOriginData: {
-                  ...msg.context?.toolCallOriginData,
-                  [toolCallId]: results
+        if (taskModel) {
+          const res = await compressSearchResults({
+            assistant: {
+              mode: taskModel.mode,
+              apiKey: taskModel.apiKey
+                ? await aesDecrypt(taskModel.apiKey)
+                : null,
+              baseUrl: taskModel.baseUrl
+            },
+            model: taskModel.taskModel!,
+            query: query,
+            searchResults: results
+          })
+          await addTokens(ctx.db, {
+            assistantId: taskModel.id,
+            model: taskModel.taskModel!,
+            usage: res.usage
+          })
+          const msg = await ctx.db.query.messages.findFirst({
+            columns: { context: true },
+            where: { id: ctx.aiMessageId }
+          })
+          if (msg) {
+            await ctx.db
+              .update(messages)
+              .set({
+                context: {
+                  ...msg.context,
+                  toolCallOriginData: {
+                    ...msg.context?.toolCallOriginData,
+                    [toolCallId]: results
+                  }
                 }
-              }
-            })
-            .where(eq(messages.id, ctx.aiMessageId))
+              })
+              .where(eq(messages.id, ctx.aiMessageId))
+          }
+          return res.summary
         }
-        return res.summary
       } else if (results) {
         return results
       }

@@ -10,6 +10,7 @@ import type { MessageContext, MessageData } from 'server/db/type'
 import { increment, type DbInstance } from 'server/db'
 import dayjs from 'dayjs'
 import { parseRecord } from 'server/db/query'
+import { cacheManage } from './cache'
 
 function addMessageContext(
   text: string,
@@ -47,11 +48,27 @@ function addMessageContext(
   return text
 }
 export class MessageManager {
-  static async compreTokena(data: {
-    model: LanguageModel
+  static async compreToken(data: {
+    assistant: {
+      mode: string
+      apiKey?: string | null
+      baseUrl?: string | null
+    }
+    model: string
     messages: MessageData[]
     previousSummary?: string | null
   }) {
+    const client = createClient({
+      mode: data.assistant.mode,
+      api_key: data.assistant.apiKey,
+      base_url: data.assistant.baseUrl
+    })
+    if (!client) {
+      throw new TRPCError({
+        code: 'BAD_REQUEST',
+        message: 'Invalid assistant'
+      })
+    }
     const conversation = data.messages.map((m) => {
       const parts = m.parts as unknown as MessagePart[]
       return {
@@ -60,7 +77,7 @@ export class MessageManager {
       }
     })
     const res = await generateText({
-      model: data.model,
+      model: client(data.model),
       system: `You are an assistant helping to manage conversation context for a large language model. 
 The conversation history is becoming too long and may exceed the context window limit.
 
@@ -159,8 +176,19 @@ Output only the summarized version of the conversation.`,
           history = []
         }
         if (compreMessages.length) {
-          summary = await this.compreTokena({
-            model: client(chat.model!),
+          const taskModel = await cacheManage.getTaskModel({
+            assistantId: assistant.id,
+            model: data.model
+          })
+          summary = await this.compreToken({
+            assistant: {
+              mode: taskModel!.mode,
+              apiKey: taskModel!.apiKey
+                ? await aesDecrypt(taskModel!.apiKey)
+                : null,
+              baseUrl: taskModel!.baseUrl
+            },
+            model: taskModel!.taskModel!,
             messages: compreMessages,
             previousSummary: summary
           })
@@ -271,12 +299,6 @@ Output only the summarized version of the conversation.`,
     if (ctx.summary) {
       prompt += `This is a summary of the previous conversation: ${ctx.summary}`
     }
-
-    //     if (ctx.tools?.['webSearch']) {
-    //       prompt += `\n\nIf you need the latest information to answer user questions, you can choose to use "webSearch" tools. When you call the "webSearch" tool, please follow the following format to output the answer:
-    // When using a search result, mark the source address after the corresponding sentence, such as: [source](https://apple.com/mackbook)
-    // If a sentence is based on your own knowledge (not search results), do not add the source`
-    //     }
     return prompt || undefined
   }
 }

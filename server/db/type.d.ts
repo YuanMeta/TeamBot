@@ -79,3 +79,7 @@ export type MessageContext = {
   }[]
   toolCallOriginData?: Record<string, any>
 }
+
+export interface SettingsRecord {
+  disablePasswordLogin: boolean
+}

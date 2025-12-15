@@ -14,6 +14,8 @@ import { Usage } from './Usage'
 import { AddAssistant } from './AddAssistant'
 import { IconButton } from '~/components/project/icon-button'
 import { ModelIcon } from '~/lib/ModelIcon'
+import { TextHelp } from '~/components/project/text-help'
+import { TaskModel } from './TaskModel'
 
 export const AssistantList = observer(() => {
   const [state, setState] = useLocalState({
@@ -23,7 +25,8 @@ export const AssistantList = observer(() => {
     openUsage: false,
     page: 1,
     pageSize: 10,
-    total: 0
+    total: 0,
+    openTaskModel: false
   })
   const { hasAccess } = useAccess()
   const getAssistantsList = useCallback(() => {
@@ -106,6 +109,36 @@ export const AssistantList = observer(() => {
               )
             },
             {
+              title: (
+                <div className={'flex items-center gap-2'}>
+                  <span>常规任务模型</span>
+                  <TextHelp
+                    size={15}
+                    text='用于执行高频任务，如生成对话标题，压缩内容，规划查询等。建议使用响应速度快，价格便宜的模型，全局唯一，配置该参数，可降低成本。'
+                  />
+                </div>
+              ),
+              dataIndex: 'taskModel',
+              render: (v) => (
+                <div
+                  className={
+                    'inline-flex flex-wrap items-center cursor-pointer'
+                  }
+                  onClick={() => {
+                    setState({ openTaskModel: true })
+                  }}
+                >
+                  {v ? (
+                    <Tag color={'blue'} variant={'outlined'}>
+                      {v}
+                    </Tag>
+                  ) : (
+                    <Tag variant={'outlined'}>-</Tag>
+                  )}
+                </div>
+              )
+            },
+            {
               title: '操作',
               dataIndex: 'actions',
               key: 'actions',
@@ -164,6 +197,13 @@ export const AssistantList = observer(() => {
           onClose={() => setState({ openProviderForm: false })}
         />
       )}
+      <TaskModel
+        open={state.openTaskModel}
+        onClose={() => setState({ openTaskModel: false })}
+        onUpdate={() => {
+          getAssistantsList()
+        }}
+      />
     </div>
   )
 })

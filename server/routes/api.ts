@@ -24,6 +24,7 @@ import {
 import { and, eq, or } from 'drizzle-orm'
 import type { DbInstance } from 'server/db'
 import { addTokens } from 'server/db/query'
+import { cacheManage } from 'server/lib/cache'
 // 防暴力破解：登录尝试记录
 const loginAttempts = new Map<string, { count: number; lockedUntil: number }>()
 const MAX_ATTEMPTS = 5
@@ -224,20 +225,21 @@ export const registerRoutes = (app: Express, db: DbInstance) => {
           message: 'Chat not found'
         })
       }
-      const [assistant] = await db
-        .select()
-        .from(assistants)
-        .where(eq(assistants.id, json.assistantId))
-      if (!assistant) {
+      let taskModel = await cacheManage.getTaskModel({
+        assistantId: json.assistantId,
+        model: json.model
+      })
+
+      if (!taskModel) {
         throw new TRPCError({
           code: 'NOT_FOUND',
           message: 'Assistant not found'
         })
       }
       const client = createClient({
-        mode: assistant!.mode,
-        api_key: assistant?.apiKey ? await aesDecrypt(assistant.apiKey) : null,
-        base_url: assistant!.baseUrl
+        mode: taskModel.mode,
+        api_key: taskModel.apiKey ? await aesDecrypt(taskModel.apiKey) : null,
+        base_url: taskModel.baseUrl ?? null
       })!
       const messages = [
         {
@@ -250,7 +252,7 @@ export const registerRoutes = (app: Express, db: DbInstance) => {
         }
       ]
       const result = streamText({
-        model: client(json.model!),
+        model: client(taskModel.taskModel!),
         prompt: `You are a conversational assistant and you need to summarize the user's conversation into a title of 10 words or less., The summary needs to maintain the original language.
 The historical dialogue is as follows: \n${messages
           .map((m) => `${m.role}: ${m.text}`)
@@ -266,7 +268,8 @@ The historical dialogue is as follows: \n${messages
             }
             if (data.usage) {
               await addTokens(db, {
-                assistantId: assistant.id,
+                model: taskModel.taskModel!,
+                assistantId: taskModel.id,
                 usage: data.usage
               })
             }

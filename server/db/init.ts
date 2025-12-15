@@ -24,13 +24,11 @@ export const initDbData = async (db: NodePgDatabase) => {
       .values([
         {
           name: '管理员',
-          assistants: [],
           allAssistants: true,
           remark: '可进入后台系统，管理所有功能'
         },
         {
           name: '成员',
-          assistants: [],
           allAssistants: true,
           remark: '不可进入后台系统，仅使用助手对话功能'
         }

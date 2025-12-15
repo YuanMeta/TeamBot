@@ -20,6 +20,7 @@ import {
   extractOrDetermineSearch
 } from 'server/lib/prompt'
 import { runWebSearch } from 'server/lib/search'
+import { cacheManage } from 'server/lib/cache'
 export const chatRouter = {
   getMsgContext: procedure.input(z.string()).query(async ({ input, ctx }) => {
     const msg = await ctx.db.query.messages.findFirst({
@@ -67,24 +68,30 @@ export const chatRouter = {
       }
       let summary: string | null = null
       if (assistant.options.compressSearchResults) {
-        const res = await compressSearchResults({
-          assistant: {
-            apiKey: assistant.apiKey
-              ? await aesDecrypt(assistant.apiKey)
-              : null,
-            baseUrl: assistant.baseUrl,
-            mode: assistant.mode
-          },
-          model: input.model,
-          query: input.query,
-          searchResults: searchResults
-        })
-        summary = res.summary
-        await addTokens(ctx.db, {
+        const taskModel = await cacheManage.getTaskModel({
           assistantId: assistant.id,
-          usage: res.usage,
           model: input.model
         })
+        if (taskModel) {
+          const res = await compressSearchResults({
+            assistant: {
+              apiKey: taskModel.apiKey
+                ? await aesDecrypt(taskModel.apiKey)
+                : null,
+              baseUrl: taskModel.baseUrl,
+              mode: taskModel.mode
+            },
+            model: taskModel.taskModel!,
+            query: input.query,
+            searchResults: searchResults
+          })
+          summary = res.summary
+          await addTokens(ctx.db, {
+            assistantId: assistant.id,
+            usage: res.usage,
+            model: input.model
+          })
+        }
       }
 
       return { results: searchResults!, summary }
@@ -109,10 +116,11 @@ export const chatRouter = {
           message: 'permission denied'
         })
       }
-      const assistant = await ctx.db.query.assistants.findFirst({
-        where: { id: input.assistantId }
+      const taskModel = await cacheManage.getTaskModel({
+        assistantId: input.assistantId,
+        model: input.model
       })
-      if (!assistant) {
+      if (!taskModel) {
         throw new TRPCError({
           code: 'NOT_FOUND',
           message: 'Assistant not found'
@@ -121,19 +129,19 @@ export const chatRouter = {
 
       const res = await extractOrDetermineSearch({
         assistant: {
-          mode: assistant.mode,
-          apiKey: assistant.apiKey,
-          baseUrl: assistant.baseUrl
+          mode: taskModel.mode,
+          apiKey: taskModel.apiKey ? await aesDecrypt(taskModel.apiKey) : null,
+          baseUrl: taskModel.baseUrl
         },
-        model: input.model,
+        model: taskModel.taskModel!,
         query: input.question,
         historyQuery: []
       })
       if (res.usage) {
         await addTokens(ctx.db, {
-          assistantId: assistant.id,
+          assistantId: taskModel.id,
           usage: res.usage,
-          model: input.model
+          model: taskModel.taskModel!
         })
       }
       return res.query

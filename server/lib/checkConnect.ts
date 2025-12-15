@@ -9,8 +9,8 @@ import { createOpenAICompatible } from '@ai-sdk/openai-compatible'
 // import { createTeamAI } from './provider/openai-provider'
 export const createClient = (data: {
   mode: string
-  api_key: string | null
-  base_url: string | null
+  api_key?: string | null
+  base_url?: string | null
 }) => {
   switch (data.mode) {
     case 'openai':

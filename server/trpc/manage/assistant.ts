@@ -9,13 +9,60 @@ import {
   roleAssistants,
   tools
 } from 'server/db/drizzle/schema'
-import { and, eq, gte, ne, sum } from 'drizzle-orm'
+import { and, eq, gte, isNotNull, ne, not, sum } from 'drizzle-orm'
 import { aesDecrypt, aesEncrypt } from 'server/lib/utils'
 import { assistantTools } from 'server/db/drizzle/schema'
 import dayjs from 'dayjs'
 import type { AssistantOptions } from 'server/db/type'
+import { cacheManage } from 'server/lib/cache'
 
 export const assistantRouter = {
+  getTaskModel: adminProcedure.query(async ({ input, ctx }) => {
+    return await ctx.db.query.assistants.findFirst({
+      columns: { taskModel: true, id: true },
+      where: { taskModel: { isNotNull: true } }
+    })
+  }),
+  addTaskModel: adminProcedure
+    .input(
+      z.object({
+        assistantId: z.number(),
+        model: z.string().min(1)
+      })
+    )
+    .mutation(async ({ input, ctx }) => {
+      const assistantData = await ctx.db.query.assistants.findFirst({
+        columns: {
+          id: true,
+          mode: true,
+          apiKey: true,
+          baseUrl: true
+        },
+        where: { id: input.assistantId }
+      })
+      await checkLLmConnect({
+        api_key: assistantData?.apiKey
+          ? await aesDecrypt(assistantData.apiKey)
+          : null,
+        base_url: assistantData?.baseUrl ?? null,
+        mode: assistantData?.mode!,
+        models: [input.model]
+      })
+      await ctx.db.transaction(async (trx) => {
+        await trx
+          .update(assistants)
+          .set({
+            taskModel: null
+          })
+          .where(isNotNull(assistants.taskModel))
+        await trx
+          .update(assistants)
+          .set({ taskModel: input.model })
+          .where(eq(assistants.id, input.assistantId))
+      })
+      await cacheManage.deleteTaskModel()
+      return { success: true }
+    }),
   checkConnect: adminProcedure
     .input(
       z.object({
@@ -45,6 +92,7 @@ export const assistantRouter = {
           apiKey: true,
           baseUrl: true,
           options: true,
+          taskModel: true,
           createdAt: true,
           prompt: true
         },
@@ -130,6 +178,10 @@ export const assistantRouter = {
           }
         }
       })
+      const taskModel = await cacheManage.getTaskModel()
+      if (taskModel?.id === input.id) {
+        await cacheManage.deleteTaskModel()
+      }
       return { success: true }
     }),
   deleteAssistant: adminProcedure
@@ -151,6 +203,10 @@ export const assistantRouter = {
           .where(eq(roleAssistants.assistantId, input.assistantId))
         await trx.delete(assistants).where(eq(assistants.id, input.assistantId))
       })
+      const taskModel = await cacheManage.getTaskModel()
+      if (taskModel?.id === input.assistantId) {
+        await cacheManage.deleteTaskModel()
+      }
       return { success: true }
     }),
   createAssistant: adminProcedure

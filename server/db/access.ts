@@ -12,7 +12,8 @@ export const publicAccess = [
   'manage.getRoleMembers',
   'manage.searchMembers',
   'manage.getWebSearches',
-  'manage.getWebSearch'
+  'manage.getWebSearch',
+  'manage.getTaskModel'
 ]
 
 export const privateAccess = [
@@ -25,7 +26,8 @@ export const privateAccess = [
       'manage.createAssistant',
       'manage.updateAssistant',
       'manage.deleteAssistant',
-      'manage.getSystemTools'
+      'manage.getSystemTools',
+      'manage.addTaskModel'
     ]
   },
   {

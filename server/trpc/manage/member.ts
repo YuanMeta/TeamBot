@@ -12,8 +12,8 @@ import {
 } from 'server/db/drizzle/schema'
 import { and, count, desc, eq, like, or } from 'drizzle-orm'
 import { TRPCError, type TRPCRouterRecord } from '@trpc/server'
-import { deleteUserCache } from 'server/session'
 import { PasswordManager } from 'server/lib/password'
+import { cacheManage } from 'server/lib/cache'
 
 export const memberRouter = {
   getRoleMembers: adminProcedure
@@ -392,7 +392,7 @@ export const memberRouter = {
         .update(users)
         .set({ deleted: true })
         .where(eq(users.id, input.memberId))
-      await deleteUserCache(input.memberId)
+      await cacheManage.deleteUser(input.memberId)
       return { success: true }
     }),
   getMember: adminProcedure

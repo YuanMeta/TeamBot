@@ -1,6 +1,6 @@
 import { memo, type ReactNode } from 'react'
 import { CircleHelp } from 'lucide-react'
-import { Tooltip, TooltipContent, TooltipTrigger } from '../ui/tooltip'
+import { Tooltip } from 'antd'
 
 export const TextHelp = memo(
   (props: {
@@ -8,29 +8,13 @@ export const TextHelp = memo(
     delay?: number
     size?: number
     width?: number
-    children?: ReactNode
   }) => {
     return (
-      <Tooltip delayDuration={props.delay}>
-        <TooltipTrigger asChild>
-          {props.children ? (
-            props.children
-          ) : (
-            <CircleHelp
-              className={'dark:text-white/60 text-black/60 inline-block'}
-              size={props.size || 14}
-            />
-          )}
-        </TooltipTrigger>
-        <TooltipContent style={{ maxWidth: props.width }}>
-          <div
-            className={
-              'max-w-[calc(100vw_-_48px)] break-words w-fit whitespace-pre max-h-[300px] overflow-y-auto'
-            }
-          >
-            {props.text}
-          </div>
-        </TooltipContent>
+      <Tooltip title={props.text}>
+        <CircleHelp
+          className={'dark:text-white/60 text-black/60 inline-block'}
+          size={props.size || 14}
+        />
       </Tooltip>
     )
   }

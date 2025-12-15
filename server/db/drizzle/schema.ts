@@ -15,7 +15,12 @@ import {
   json
 } from 'drizzle-orm/pg-core'
 import { sql } from 'drizzle-orm'
-import type { AssistantOptions, MessageContext, WebSearchParams } from '../type'
+import type {
+  AssistantOptions,
+  MessageContext,
+  SettingsRecord,
+  WebSearchParams
+} from '../type'
 import type { WebSearchMode } from 'types'
 
 export const drizzle = pgSchema('drizzle')
@@ -89,6 +94,8 @@ export const assistants = pgTable('assistants', {
   baseUrl: text('base_url'),
   webSearchId: integer('web_search_id').references(() => webSearches.id),
   prompt: text(),
+  // 用于常规快捷任务
+  taskModel: varchar(),
   models: jsonb().notNull().$type<string[]>(),
   options: jsonb().notNull().$type<AssistantOptions>(),
   updatedAt: timestamp('updated_at'),
@@ -299,6 +306,6 @@ export const webSearches = pgTable('web_searches', {
 })
 
 export const settings = pgTable('settings', {
-  id: varchar().primaryKey(),
+  id: varchar().primaryKey().$type<keyof SettingsRecord>(),
   value: json().notNull().$type<any>()
 })

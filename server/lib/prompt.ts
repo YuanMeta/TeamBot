@@ -11,8 +11,8 @@ export const extractOrDetermineSearch = async ({
 }: {
   assistant: {
     mode: string
-    apiKey: string | null
-    baseUrl: string | null
+    apiKey?: string | null
+    baseUrl?: string | null
   }
   model: string
   query: string
@@ -100,8 +100,8 @@ export const compressSearchResults = async ({
 }: {
   assistant: {
     mode: string
-    apiKey: string | null
-    baseUrl: string | null
+    apiKey?: string | null
+    baseUrl?: string | null
   }
   model: string
   query: string
