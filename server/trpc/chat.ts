@@ -485,7 +485,8 @@ export const chatRouter = {
         .update(messages)
         .set({
           ...input.data,
-          parts: input.data.parts
+          parts: input.data.parts,
+          updatedAt: new Date()
         })
         .where(and(eq(messages.id, input.id), eq(messages.userId, ctx.userId)))
       return { success: true }
@@ -500,7 +501,8 @@ export const chatRouter = {
           title: z.string().optional(),
           public: z.boolean().optional(),
           messageOffset: z.number().optional(),
-          summary: z.string().optional()
+          summary: z.string().optional(),
+          updatedAt: new Date()
         })
       })
     )

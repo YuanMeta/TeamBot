@@ -164,9 +164,9 @@ export const UserMessage = observer<{
         </Dropdown>
       )} */}
 
-      {!!msg.docs?.length && (
+      {!!msg.context?.docs?.length && (
         <div className={'mt-1.5 space-x-2 flex justify-end flex-wrap'}>
-          {msg.docs.map((f, i) => {
+          {msg.context?.docs.map((f, i) => {
             return (
               <Badge
                 key={i}
