@@ -6,10 +6,174 @@ import { findLast } from '~/lib/utils'
 import { aesDecrypt } from './utils'
 import { messages } from 'server/db/drizzle/schema'
 import { eq } from 'drizzle-orm'
-import type { MessageContext, MessageData } from 'server/db/type'
+import type { AssistantData, MessageContext, MessageData } from 'server/db/type'
 import { type DbInstance } from 'server/db'
 import { cacheManage } from './cache'
 
+type MessageItem = Pick<
+  MessageData,
+  | 'id'
+  | 'text'
+  | 'createdAt'
+  | 'previousSummary'
+  | 'role'
+  | 'context'
+  | 'parts'
+  | 'files'
+  | 'totalTokens'
+>
+
+async function getMessagesByCompress(
+  db: DbInstance,
+  {
+    chatId,
+    userId,
+    assistant,
+    model
+  }: {
+    assistant: AssistantData
+    chatId: string
+    userId: number
+    model: string
+  }
+) {
+  const latestSummary = await db.query.messages.findFirst({
+    columns: { id: true, createdAt: true },
+    where: {
+      previousSummary: { isNotNull: true },
+      chatId,
+      userId,
+      role: 'user'
+    },
+    orderBy: { createdAt: 'desc' }
+  })
+  let messagesData = await db.query.messages.findMany({
+    columns: {
+      id: true,
+      text: true,
+      createdAt: true,
+      previousSummary: true,
+      role: true,
+      context: true,
+      parts: true,
+      files: true,
+      totalTokens: true
+    },
+    where: {
+      chatId,
+      userId,
+      createdAt: latestSummary ? { gte: latestSummary.createdAt } : undefined
+    },
+    orderBy: { createdAt: 'asc' }
+  })
+  const maxTokens = Number(assistant.options?.maxContextTokens) || 30000
+  const [userMessage, assistantMessage] = messagesData.slice(-2)
+  let messagesHistory = messagesData.slice(0, -2)
+  if (messagesHistory.length >= 2) {
+    const totalTokens =
+      findLast(messagesHistory, (m) => m.role === 'assistant')?.totalTokens || 0
+    if (totalTokens > maxTokens) {
+      let compreMessages = messagesHistory.slice()
+      let summaryMsg = userMessage
+      messagesHistory = []
+      if (messagesHistory.length >= 4) {
+        // 保留最后一轮
+        compreMessages = messagesHistory.slice(0, -2)
+        messagesHistory = messagesHistory.slice(-2)
+        summaryMsg = findLast(messagesHistory, (m) => m.role === 'user')!
+      }
+      const taskModel = await cacheManage.getTaskModel({
+        assistantId: assistant.id,
+        model: model
+      })
+      let previousSummary: string | null = null
+      if (latestSummary) {
+        const previousMsg = await db.query.messages.findFirst({
+          columns: { previousSummary: true },
+          where: {
+            previousSummary: { isNotNull: true },
+            chatId,
+            userId,
+            role: 'user',
+            id: { ne: latestSummary.id },
+            createdAt: { lt: latestSummary.createdAt }
+          },
+          orderBy: {
+            createdAt: 'desc'
+          }
+        })
+        if (previousMsg) {
+          previousSummary = previousMsg.previousSummary
+        }
+      }
+      const summary = await MessageManager.compreToken({
+        assistant: {
+          mode: taskModel!.mode,
+          apiKey: taskModel!.apiKey
+            ? await aesDecrypt(taskModel!.apiKey)
+            : null,
+          baseUrl: taskModel!.baseUrl
+        },
+        model: taskModel!.taskModel!,
+        messages: compreMessages,
+        previousSummary: previousSummary
+      })
+      await db
+        .update(messages)
+        .set({
+          previousSummary: summary
+        })
+        .where(eq(messages.id, summaryMsg.id))
+      summaryMsg.previousSummary = summary
+    }
+  }
+  return { messagesHistory, userMessage, assistantMessage }
+}
+
+async function getMessagesBySlice(
+  db: DbInstance,
+  {
+    chatId,
+    userId,
+    assistant,
+    model,
+    messageCount
+  }: {
+    assistant: AssistantData
+    chatId: string
+    userId: number
+    model: string
+    messageCount: number
+  }
+) {
+  let messagesData = await db.query.messages.findMany({
+    columns: {
+      id: true,
+      text: true,
+      createdAt: true,
+      previousSummary: true,
+      role: true,
+      context: true,
+      parts: true,
+      files: true,
+      totalTokens: true
+    },
+    where: {
+      chatId,
+      userId
+    },
+    orderBy: { createdAt: 'desc' },
+    limit: messageCount * 2
+  })
+  let messages = messagesData.reverse()
+  const [userMessage, assistantMessage] = messages.slice(-2)
+  let messagesHistory = messages.slice(0, -2)
+  return {
+    messagesHistory,
+    userMessage,
+    assistantMessage
+  }
+}
 function addMessageContext(
   text: string,
   data: {
@@ -143,42 +307,6 @@ Output only the summarized version of the conversation.`,
         message: 'Assistant not found'
       })
     }
-    const latestSummary = await db.query.messages.findFirst({
-      columns: { id: true, createdAt: true },
-      where: {
-        previousSummary: { isNotNull: true },
-        chatId,
-        userId,
-        role: 'user'
-      },
-      orderBy: { createdAt: 'desc' }
-    })
-    let messagesData = await db.query.messages.findMany({
-      columns: {
-        id: true,
-        text: true,
-        createdAt: true,
-        previousSummary: true,
-        role: true,
-        context: true,
-        parts: true,
-        files: true,
-        totalTokens: true
-      },
-      where: {
-        chatId,
-        userId,
-        createdAt: latestSummary ? { gte: latestSummary.createdAt } : undefined
-      },
-      orderBy: { createdAt: 'asc' }
-    })
-
-    if (!messagesData.length) {
-      throw new TRPCError({
-        code: 'BAD_REQUEST',
-        message: 'No messages found'
-      })
-    }
     assistant.apiKey = assistant.apiKey
       ? await aesDecrypt(assistant.apiKey)
       : null
@@ -187,65 +315,42 @@ Output only the summarized version of the conversation.`,
       api_key: assistant.apiKey,
       base_url: assistant.baseUrl
     })!
-    const maxTokens = Number(assistant.options?.maxContextTokens) || 30000
-    const [userMessage, assistantMessage] = messagesData.slice(-2)
-    const uiMessages: UIMessage[] = []
-    if (messagesData.length > 2) {
-      let history = messagesData.slice(0, -2)
-      const totalTokens =
-        findLast(history, (m) => m.role === 'assistant')?.totalTokens || 0
-      if (totalTokens > maxTokens) {
-        let compreMessages = history.slice()
-        let summaryMsg = userMessage
-        if (history.length >= 4) {
-          // 保留最后一轮
-          compreMessages = history.slice(0, -2)
-          summaryMsg = findLast(history, (m) => m.role === 'user')!
-        }
-        const taskModel = await cacheManage.getTaskModel({
-          assistantId: assistant.id,
+    let history: MessageItem[] = [],
+      userMsg: MessageItem | null = null,
+      aiMsg: MessageItem | null = null
+    console.log(
+      'mode',
+      assistant.options.summaryMode,
+      assistant.options.messageCount
+    )
+
+    if (assistant.options.summaryMode === 'slice') {
+      const { messagesHistory, userMessage, assistantMessage } =
+        await getMessagesBySlice(db, {
+          chatId,
+          userId,
+          assistant,
+          model: data.model,
+          messageCount: assistant.options.messageCount || 10
+        })
+      history = messagesHistory
+      userMsg = userMessage
+      aiMsg = assistantMessage
+    } else {
+      const { messagesHistory, userMessage, assistantMessage } =
+        await getMessagesByCompress(db, {
+          chatId,
+          userId,
+          assistant,
           model: data.model
         })
-        let previousSummary: string | null = null
-        if (latestSummary) {
-          const previousMsg = await db.query.messages.findFirst({
-            columns: { previousSummary: true },
-            where: {
-              previousSummary: { isNotNull: true },
-              chatId,
-              userId,
-              role: 'user',
-              id: { ne: latestSummary.id },
-              createdAt: { lt: latestSummary.createdAt }
-            },
-            orderBy: {
-              createdAt: 'desc'
-            }
-          })
-          if (previousMsg) {
-            previousSummary = previousMsg.previousSummary
-          }
-        }
-        const summary = await this.compreToken({
-          assistant: {
-            mode: taskModel!.mode,
-            apiKey: taskModel!.apiKey
-              ? await aesDecrypt(taskModel!.apiKey)
-              : null,
-            baseUrl: taskModel!.baseUrl
-          },
-          model: taskModel!.taskModel!,
-          messages: compreMessages,
-          previousSummary: previousSummary
-        })
-        await db
-          .update(messages)
-          .set({
-            previousSummary: summary
-          })
-          .where(eq(messages.id, summaryMsg.id))
-        summaryMsg.previousSummary = summary
-      }
+      history = messagesHistory
+      userMsg = userMessage
+      aiMsg = assistantMessage
+    }
+
+    const uiMessages: UIMessage[] = []
+    if (history.length >= 2) {
       history.map((m) => {
         const msg: UIMessage = {
           id: m.id,
@@ -299,35 +404,35 @@ Output only the summarized version of the conversation.`,
         uiMessages.push(msg)
       })
     }
-    const userMsg: UIMessage = {
-      id: userMessage.id,
+    const userMsgUI: UIMessage = {
+      id: userMsg.id,
       role: 'user',
       parts: [
         {
           type: 'text',
-          text: addMessageContext(userMessage.text!, {
-            context: userMessage.context,
-            summary: userMessage.previousSummary
+          text: addMessageContext(userMsg.text!, {
+            context: userMsg.context,
+            summary: userMsg.previousSummary
           })
         }
       ]
     }
     if (data.images?.length) {
-      const part = userMsg.parts.find((p) => p.type === 'text')!
+      const part = userMsgUI.parts.find((p) => p.type === 'text')!
       part.text = `Please provide detailed information about the provided images, such as a summary, key objects, scene, colors, layout, and text content, so that they can be used in subsequent conversations.\n ${part.text}`
-      userMsg.parts.push({
+      userMsgUI.parts.push({
         type: 'file',
         url: data.images[0],
         mediaType: 'image/png',
         filename: 'photo.png'
       })
     }
-    uiMessages.push(userMsg)
+    uiMessages.push(userMsgUI)
     return {
       uiMessages,
       chat,
       client,
-      assistantMessage,
+      aiMsg,
       assistant,
       userMsg
     }

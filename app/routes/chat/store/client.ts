@@ -159,8 +159,10 @@ export class ChatClient {
   private async getSearchQuery(text: string) {
     const openSearch = this.store.state.openWebSearch
     if (
+      this.store.state.assistant?.options.webSearchMode === 'custom' &&
       this.store.state.assistant?.webSearchId &&
-      (openSearch || !this.store.state.assistant?.options.agentWebSearch)
+      openSearch &&
+      !this.store.state.assistant?.options.agentWebSearch
     ) {
       const res = await trpc.chat.getSearchInfoByQuestion.query({
         assistantId: this.store.state.assistant!.id,

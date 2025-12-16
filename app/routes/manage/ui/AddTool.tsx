@@ -203,8 +203,7 @@ export const AddTool = observer(
             id: value.id,
             description: value.description,
             name: value.name,
-            params: value.params,
-            auto: value.auto
+            params: value.params
           })
         }
         const http = JSON.parse(value.params)
@@ -232,9 +231,7 @@ export const AddTool = observer(
                 name: res.name,
                 description: res.description,
                 params: res.params,
-                type: res.type,
-                id: res.id,
-                auto: res.auto
+                id: res.id
               })
             }
           })

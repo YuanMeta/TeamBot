@@ -138,6 +138,7 @@ export const AddAssistant = observer(
     })
     const [form] = Form.useForm<AssistantData & { tools: string[] }>()
     const mode = Form.useWatch('mode', form)
+    const summaryMode = Form.useWatch(['options', 'summaryMode'], form)
     const webSearchMode = Form.useWatch(['options', 'webSearchMode'], form)
     const openFrequencyPenalty = Form.useWatch(
       ['options', 'frequencyPenalty', 'open'],
@@ -355,8 +356,26 @@ export const AddAssistant = observer(
                   </Form.Item>
                   <Form.Item
                     label={'工具最大调用次数'}
-                    initialValue={5}
+                    initialValue={10}
                     name={['options', 'stepCount']}
+                    rules={[
+                      {
+                        required: true,
+                        validator: (_, value) => {
+                          if (!/^\d+$/.test(value)) {
+                            return Promise.reject(
+                              '请输入正确的工具最大调用次数'
+                            )
+                          }
+                          if (Number(value) < 3 || Number(value) > 50) {
+                            return Promise.reject(
+                              '工具最大调用次数应在3-50之间'
+                            )
+                          }
+                          return Promise.resolve()
+                        }
+                      }
+                    ]}
                     tooltip={
                       '如果超出该调用次数，对话自动终止，防止意外循环调用。'
                     }
@@ -466,48 +485,99 @@ export const AddAssistant = observer(
                       </div>
                     </div>
                   )}
-                  <div className={'flex items-center *:flex-1 gap-5'}>
+                  <div className={'flex items-center *:flex-1 gap-6'}>
                     <Form.Item
-                      label={'最大上下文Token'}
-                      name={['options', 'maxContextTokens']}
-                      initialValue={30000}
+                      label={'上下文压缩模式'}
+                      name={['options', 'summaryMode']}
                       tooltip={
-                        '上下文越长模型记住的内容越多，但消耗的缓存输入token也越多。建议设置为20000-100000之间。当上下文超出该值，TeamBot将自动压缩之前的对话内容，保留关键信息。'
+                        '压缩模式在超出最大上下文Token时，压缩之前的对话内容，保留关键信息。切割模式在上下文中仅保留最近的几轮对话。'
                       }
-                      rules={[
-                        {
-                          required: true,
-                          validator: (_, value) => {
-                            if (!/^\d+$/.test(value)) {
-                              return Promise.reject(
-                                '请输入正确的最大上下文Token数'
-                              )
-                            }
-                            if (
-                              Number(value) < 5000 ||
-                              Number(value) > 200000
-                            ) {
-                              return Promise.reject(
-                                '最大上下文Token数应在5000-200000之间'
-                              )
-                            }
-                            return Promise.resolve()
-                          }
-                        }
-                      ]}
+                      initialValue={'compress'}
                     >
-                      <InputNumber
-                        placeholder={'请输入最大上下文Token'}
-                        style={{ width: '100%' }}
-                        min={5000}
-                        max={100000}
+                      <Radio.Group
+                        options={[
+                          { label: '压缩', value: 'compress' },
+                          { label: '切割', value: 'slice' }
+                        ]}
                       />
                     </Form.Item>
+                    {summaryMode === 'compress' && (
+                      <Form.Item
+                        label={'最大上下文Token'}
+                        name={['options', 'maxContextTokens']}
+                        initialValue={30000}
+                        tooltip={
+                          '上下文越长模型记住的内容越多，但消耗的缓存输入token也越多。建议设置为20000-100000之间。当上下文超出该值，TeamBot将自动压缩之前的对话内容，保留关键信息。'
+                        }
+                        rules={[
+                          {
+                            required: true,
+                            validator: (_, value) => {
+                              if (!/^\d+$/.test(value)) {
+                                return Promise.reject(
+                                  '请输入正确的最大上下文Token数'
+                                )
+                              }
+                              if (
+                                Number(value) < 5000 ||
+                                Number(value) > 200000
+                              ) {
+                                return Promise.reject(
+                                  '最大上下文Token数应在5000-200000之间'
+                                )
+                              }
+                              return Promise.resolve()
+                            }
+                          }
+                        ]}
+                      >
+                        <InputNumber
+                          placeholder={'请输入最大上下文Token'}
+                          style={{ width: '100%' }}
+                          min={5000}
+                          max={200000}
+                        />
+                      </Form.Item>
+                    )}
+                    {summaryMode === 'slice' && (
+                      <Form.Item
+                        label={'保留对话轮数'}
+                        name={['options', 'messageCount']}
+                        initialValue={10}
+                        tooltip={
+                          '超出对话轮数的历史对话将被忽略，上下文仅保留最新的对话信息，5-30之间。'
+                        }
+                        rules={[
+                          {
+                            required: true,
+                            validator: (_, value) => {
+                              if (!/^\d+$/.test(value)) {
+                                return Promise.reject('请输入正确的对话轮数')
+                              }
+                              if (Number(value) < 5 || Number(value) > 30) {
+                                return Promise.reject('对话轮数应在5-30之间')
+                              }
+                              return Promise.resolve()
+                            }
+                          }
+                        ]}
+                      >
+                        <InputNumber
+                          placeholder={'请输入对话轮数'}
+                          style={{ width: '100%' }}
+                          min={5}
+                          max={30}
+                        />
+                      </Form.Item>
+                    )}
+                  </div>
+
+                  <div className={'flex items-center *:flex-1 gap-5'}>
                     <Form.Item
                       label={'最大输出Token'}
                       name={['options', 'maxOutputTokens']}
                       initialValue={0}
-                      tooltip={'限制每轮对话输出的最大Token数，0表示不限制'}
+                      tooltip={'限制每轮对话输出的最大Token数，0表示不限制。'}
                       rules={[
                         {
                           required: true,
@@ -528,7 +598,6 @@ export const AddAssistant = observer(
                       ]}
                     >
                       <InputNumber
-                        style={{ width: '100%' }}
                         placeholder={'请输入最大输出Token'}
                         max={100000}
                       />

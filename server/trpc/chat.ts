@@ -501,8 +501,7 @@ export const chatRouter = {
           title: z.string().optional(),
           public: z.boolean().optional(),
           messageOffset: z.number().optional(),
-          summary: z.string().optional(),
-          updatedAt: new Date()
+          summary: z.string().optional()
         })
       })
     )

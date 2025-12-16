@@ -79,8 +79,6 @@ export const extractOrDetermineSearch = async ({
   })
   try {
     const query = JSON.parse(res.text)
-    console.log('req', query, res.request.body)
-
     return { query, usage: res.usage }
   } catch (e) {
     return {

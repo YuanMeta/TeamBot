@@ -39,6 +39,8 @@ export type AssistantOptions = {
   agentWebSearch: boolean
   compressSearchResults: boolean
   stepCount: number
+  summaryMode: 'compress' | 'slice'
+  messageCount: number
   frequencyPenalty: { open: boolean; value: number }
   maxContextTokens: number
   maxOutputTokens: number

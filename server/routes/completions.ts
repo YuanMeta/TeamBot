@@ -45,7 +45,7 @@ export const completions = async (
       message: (e as Error).message
     })
   }
-  const { uiMessages, chat, client, assistantMessage, assistant, userMsg } =
+  const { uiMessages, chat, client, aiMsg, assistant, userMsg } =
     await MessageManager.getStreamMessage(db, {
       chatId: json.chatId,
       userId: uid,
@@ -90,6 +90,11 @@ export const completions = async (
       assistantId: assistant.id
     })
     .where(eq(chats.id, chat.id))
+  const toolChoose =
+    assistant.webSearchId &&
+    assistant.options.webSearchMode === 'custom' &&
+    assistant.options.agentWebSearch &&
+    json.webSearch
   const result = streamText({
     model: client(json.model),
     messages: convertToModelMessages(uiMessages),
@@ -97,11 +102,12 @@ export const completions = async (
     tools,
     experimental_context: {
       db,
-      aiMessageId: assistantMessage.id,
+      aiMessageId: aiMsg.id,
       assistant,
       model: json.model,
       abortController: controller
     } satisfies AiContext,
+    toolChoice: toolChoose ? 'required' : undefined,
     maxOutputTokens: Number(assistant.options.maxOutputTokens) || undefined,
     temperature: assistant.options.temperature.open
       ? Number(assistant.options.temperature)
@@ -133,7 +139,7 @@ export const completions = async (
         .set({
           terminated: true
         })
-        .where(eq(messages.id, assistantMessage.id))
+        .where(eq(messages.id, aiMsg.id))
     },
     onChunk: (data) => {
       if (data.chunk.type === 'text-delta' && data.chunk.text) {
@@ -221,7 +227,7 @@ export const completions = async (
             cachedInputTokens: usage.cachedInputTokens,
             model: json.model
           })
-          .where(eq(messages.id, assistantMessage.id))
+          .where(eq(messages.id, aiMsg.id))
       }
       await addTokens(db, {
         assistantId: assistant.id,
@@ -236,7 +242,7 @@ export const completions = async (
         .set({
           error: err.message
         })
-        .where(eq(messages.id, assistantMessage.id))
+        .where(eq(messages.id, aiMsg.id))
       console.log('err request', JSON.stringify(err.requestBodyValues))
     }
   })

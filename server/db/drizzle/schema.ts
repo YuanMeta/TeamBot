@@ -22,8 +22,6 @@ import type {
 } from '../type'
 import type { MessagePart, WebSearchMode } from 'types'
 
-export const drizzle = pgSchema('drizzle')
-
 export const accessRoles = pgTable(
   'access_roles',
   {
