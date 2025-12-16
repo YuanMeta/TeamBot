@@ -9,6 +9,7 @@ import { eq } from 'drizzle-orm'
 import type { AssistantData, MessageContext, MessageData } from 'server/db/type'
 import { type DbInstance } from 'server/db'
 import { cacheManage } from './cache'
+import { addTokens } from 'server/db/query'
 
 type MessageItem = Pick<
   MessageData,
@@ -38,7 +39,7 @@ async function getMessagesByCompress(
   }
 ) {
   const latestSummary = await db.query.messages.findFirst({
-    columns: { id: true, createdAt: true },
+    columns: { id: true, createdAt: true, previousSummary: true },
     where: {
       previousSummary: { isNotNull: true },
       chatId,
@@ -75,38 +76,19 @@ async function getMessagesByCompress(
     if (totalTokens > maxTokens) {
       let compreMessages = messagesHistory.slice()
       let summaryMsg = userMessage
-      messagesHistory = []
       if (messagesHistory.length >= 4) {
         // 保留最后一轮
         compreMessages = messagesHistory.slice(0, -2)
         messagesHistory = messagesHistory.slice(-2)
         summaryMsg = findLast(messagesHistory, (m) => m.role === 'user')!
+      } else {
+        messagesHistory = []
       }
       const taskModel = await cacheManage.getTaskModel({
         assistantId: assistant.id,
         model: model
       })
-      let previousSummary: string | null = null
-      if (latestSummary) {
-        const previousMsg = await db.query.messages.findFirst({
-          columns: { previousSummary: true },
-          where: {
-            previousSummary: { isNotNull: true },
-            chatId,
-            userId,
-            role: 'user',
-            id: { ne: latestSummary.id },
-            createdAt: { lt: latestSummary.createdAt }
-          },
-          orderBy: {
-            createdAt: 'desc'
-          }
-        })
-        if (previousMsg) {
-          previousSummary = previousMsg.previousSummary
-        }
-      }
-      const summary = await MessageManager.compreToken({
+      const summaryData = await MessageManager.compreToken({
         assistant: {
           mode: taskModel!.mode,
           apiKey: taskModel!.apiKey
@@ -116,15 +98,22 @@ async function getMessagesByCompress(
         },
         model: taskModel!.taskModel!,
         messages: compreMessages,
-        previousSummary: previousSummary
+        previousSummary: latestSummary?.previousSummary
       })
       await db
         .update(messages)
         .set({
-          previousSummary: summary
+          previousSummary: summaryData.text
         })
         .where(eq(messages.id, summaryMsg.id))
-      summaryMsg.previousSummary = summary
+      if (summaryData.usage) {
+        await addTokens(db, {
+          assistantId: taskModel!.id,
+          usage: summaryData.usage,
+          model: taskModel!.taskModel!
+        })
+      }
+      summaryMsg.previousSummary = summaryData.text
     }
   }
   return { messagesHistory, userMessage, assistantMessage }
@@ -135,8 +124,6 @@ async function getMessagesBySlice(
   {
     chatId,
     userId,
-    assistant,
-    model,
     messageCount
   }: {
     assistant: AssistantData
@@ -245,10 +232,9 @@ export class MessageManager {
       })
     }
     const conversation = data.messages.map((m) => {
-      const parts = m.parts as unknown as MessagePart[]
       return {
         role: m.role,
-        content: parts?.reverse().find((t) => t.type === 'text')?.text || ''
+        content: m.text || ''
       }
     })
     const res = await generateText({
@@ -272,7 +258,7 @@ Output only the summarized version of the conversation.`,
           : ''
       }Conversation:\n ${JSON.stringify(conversation)}`
     })
-    return res.text
+    return { text: res.text, usage: res.usage }
   }
 
   static async getStreamMessage(
@@ -318,12 +304,6 @@ Output only the summarized version of the conversation.`,
     let history: MessageItem[] = [],
       userMsg: MessageItem | null = null,
       aiMsg: MessageItem | null = null
-    console.log(
-      'mode',
-      assistant.options.summaryMode,
-      assistant.options.messageCount
-    )
-
     if (assistant.options.summaryMode === 'slice') {
       const { messagesHistory, userMessage, assistantMessage } =
         await getMessagesBySlice(db, {
@@ -344,6 +324,7 @@ Output only the summarized version of the conversation.`,
           assistant,
           model: data.model
         })
+
       history = messagesHistory
       userMsg = userMessage
       aiMsg = assistantMessage

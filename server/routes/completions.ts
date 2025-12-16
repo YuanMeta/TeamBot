@@ -77,6 +77,7 @@ export const completions = async (
   const tools = await composeTools(db, assistant, {
     search: !!json.webSearch
   })
+
   const controller = new AbortController()
   res.once('close', () => {
     controller.abort()
