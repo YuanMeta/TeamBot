@@ -36,14 +36,30 @@ jobs:
           username: ${{ github.actor }}
           password: ${{ secrets.GITHUB_TOKEN }}
 
+      - name: Check if postgres image exists
+        id: pg_exists
+        run: |
+          IMAGE=${{ env.REGISTRY }}/${{ env.OWNER }}/${{ env.PG_IMAGE }}:pg16-v0.1.0
+          if docker manifest inspect "$IMAGE" > /dev/null 2>&1; then
+            echo "exists=true" >> $GITHUB_OUTPUT
+          else
+            echo "exists=false" >> $GITHUB_OUTPUT
+          fi
+
       - name: Extract version
         id: version
         run: |
           TAG=${GITHUB_REF#refs/tags/}
           echo "tag=$TAG" >> $GITHUB_OUTPUT
+          if [[ "$TAG" == *'-'* ]]; then
+            echo "is_prerelease=true" >> $GITHUB_OUTPUT
+          else
+            echo "is_prerelease=false" >> $GITHUB_OUTPUT
+          fi
 
       # -------- PostgreSQL image --------
       - name: Build & push postgres image
+        if: steps.pg_exists.outputs.exists != 'true'
         uses: docker/build-push-action@v5
         with:
           context: .
@@ -51,8 +67,7 @@ jobs:
           push: true
           platforms: linux/amd64,linux/arm64
           tags: |
-            ${{ env.REGISTRY }}/${{ env.OWNER }}/${{ env.PG_IMAGE }}:${{ steps.version.outputs.tag }}
-            ${{ env.REGISTRY }}/${{ env.OWNER }}/${{ env.PG_IMAGE }}:latest
+            ${{ env.REGISTRY }}/${{ env.OWNER }}/${{ env.PG_IMAGE }}:pg16-v0.1.0
 
       # -------- App image --------
       - name: Build & push app image
@@ -64,9 +79,10 @@ jobs:
           platforms: linux/amd64,linux/arm64
           tags: |
             ${{ env.REGISTRY }}/${{ env.OWNER }}/${{ env.APP_IMAGE }}:${{ steps.version.outputs.tag }}
-            ${{ env.REGISTRY }}/${{ env.OWNER }}/${{ env.APP_IMAGE }}:latest
+            ${{ steps.version.outputs.is_prerelease == 'false' && format('{0}/{1}/{2}:latest', env.REGISTRY, env.OWNER, env.APP_IMAGE) || '' }}
 
       - name: Create GitHub Release
+        if: steps.version.outputs.is_prerelease == 'false'
         uses: softprops/action-gh-release@v2
         with:
           tag_name: ${{ steps.version.outputs.tag }}
