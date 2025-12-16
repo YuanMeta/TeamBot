@@ -84,6 +84,7 @@ export interface AiContext {
   db: DbInstance
   aiMessageId: string
   model: string
+  abortController: AbortController
   assistant: AssistantData
 }
 

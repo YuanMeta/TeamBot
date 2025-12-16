@@ -4,44 +4,47 @@ import type { MessagePart } from 'types'
 import { createClient } from './connect'
 import { findLast } from '~/lib/utils'
 import { aesDecrypt } from './utils'
-import { chats, messages } from 'server/db/drizzle/schema'
-import { and, eq } from 'drizzle-orm'
+import { messages } from 'server/db/drizzle/schema'
+import { eq } from 'drizzle-orm'
 import type { MessageContext, MessageData } from 'server/db/type'
-import { increment, type DbInstance } from 'server/db'
+import { type DbInstance } from 'server/db'
 import { cacheManage } from './cache'
 
 function addMessageContext(
   text: string,
-  context?: MessageContext | null
-): string {
-  if (!context) {
-    return text
+  data: {
+    context?: MessageContext | null
+    summary?: string | null
   }
+): string {
   let contextText = ''
 
   try {
-    if (context.docs?.length) {
-      contextText = `The following are relevant reference documents.\n\n${context.docs
+    if (data.summary) {
+      contextText = `This is a summary of the previous conversation:\n ${data.summary}\n`
+    }
+    if (data.context?.docs?.length) {
+      contextText = `The following are relevant reference documents.\n\n${data.context.docs
         .map((d) => `file: ${d.name}\n${d.content}`)
         .join('\n\n')}`
     }
 
     if (
-      context.searchResult?.results?.length ||
-      context.searchResult?.summary
+      data.context?.searchResult?.results?.length ||
+      data.context?.searchResult?.summary
     ) {
       contextText += `${
         contextText ? '\n\n' : ''
       }According to online search results, the following is the latest relevant information:\n${
-        context.searchResult?.summary ||
-        JSON.stringify(context.searchResult.results)
+        data.context.searchResult?.summary ||
+        JSON.stringify(data.context.searchResult?.results)
       }`
     }
   } catch (e) {
     console.error(e)
   }
   if (contextText) {
-    text = `User Questions: ${text}\n\n${contextText}`
+    text = `${contextText}\n\n User Questions: ${text}`
   }
   return text
 }
@@ -53,7 +56,17 @@ export class MessageManager {
       baseUrl?: string | null
     }
     model: string
-    messages: MessageData[]
+    messages: Pick<
+      MessageData,
+      | 'context'
+      | 'files'
+      | 'id'
+      | 'parts'
+      | 'role'
+      | 'text'
+      | 'previousSummary'
+      | 'createdAt'
+    >[]
     previousSummary?: string | null
   }) {
     const client = createClient({
@@ -109,10 +122,9 @@ Output only the summarized version of the conversation.`,
     }
   ) {
     const { chatId, userId } = data
-    const [chat] = await db
-      .select()
-      .from(chats)
-      .where(and(eq(chats.id, chatId), eq(chats.userId, userId)))
+    const chat = await db.query.chats.findFirst({
+      where: { id: chatId, userId }
+    })
     if (!chat) {
       throw new TRPCError({
         code: 'NOT_FOUND',
@@ -131,12 +143,36 @@ Output only the summarized version of the conversation.`,
         message: 'Assistant not found'
       })
     }
-    let messagesData = await db
-      .select()
-      .from(messages)
-      .where(and(eq(messages.chatId, chatId), eq(messages.userId, userId)))
-      .offset(chat.messageOffset)
-      .orderBy(messages.createdAt)
+    const latestSummary = await db.query.messages.findFirst({
+      columns: { id: true, createdAt: true },
+      where: {
+        previousSummary: { isNotNull: true },
+        chatId,
+        userId,
+        role: 'user'
+      },
+      orderBy: { createdAt: 'desc' }
+    })
+    let messagesData = await db.query.messages.findMany({
+      columns: {
+        id: true,
+        text: true,
+        createdAt: true,
+        previousSummary: true,
+        role: true,
+        context: true,
+        parts: true,
+        files: true,
+        totalTokens: true
+      },
+      where: {
+        chatId,
+        userId,
+        createdAt: latestSummary ? { gte: latestSummary.createdAt } : undefined
+      },
+      orderBy: { createdAt: 'asc' }
+    })
+
     if (!messagesData.length) {
       throw new TRPCError({
         code: 'BAD_REQUEST',
@@ -151,56 +187,64 @@ Output only the summarized version of the conversation.`,
       api_key: assistant.apiKey,
       base_url: assistant.baseUrl
     })!
-    let summary = chat.summary
-    const maxTokens = Number(assistant.options?.maxContextTokens) || 20000
+    const maxTokens = Number(assistant.options?.maxContextTokens) || 30000
     const [userMessage, assistantMessage] = messagesData.slice(-2)
     const uiMessages: UIMessage[] = []
     if (messagesData.length > 2) {
       let history = messagesData.slice(0, -2)
       const totalTokens =
         findLast(history, (m) => m.role === 'assistant')?.totalTokens || 0
-      if (totalTokens > maxTokens && history.length >= 2) {
+      if (totalTokens > maxTokens) {
         let compreMessages = history.slice()
-        if (
-          history.length >= 6 &&
-          (history.slice(-4).find((m) => m.role === 'assistant')?.totalTokens ||
-            0) < maxTokens
-        ) {
-          // 保留最后两轮对话
-          history = history.slice(-4)
-          compreMessages = compreMessages.slice(0, -4)
-        } else {
-          history = []
+        let summaryMsg = userMessage
+        if (history.length >= 4) {
+          // 保留最后一轮
+          compreMessages = history.slice(0, -2)
+          summaryMsg = findLast(history, (m) => m.role === 'user')!
         }
-        if (compreMessages.length) {
-          const taskModel = await cacheManage.getTaskModel({
-            assistantId: assistant.id,
-            model: data.model
-          })
-          summary = await this.compreToken({
-            assistant: {
-              mode: taskModel!.mode,
-              apiKey: taskModel!.apiKey
-                ? await aesDecrypt(taskModel!.apiKey)
-                : null,
-              baseUrl: taskModel!.baseUrl
+        const taskModel = await cacheManage.getTaskModel({
+          assistantId: assistant.id,
+          model: data.model
+        })
+        let previousSummary: string | null = null
+        if (latestSummary) {
+          const previousMsg = await db.query.messages.findFirst({
+            columns: { previousSummary: true },
+            where: {
+              previousSummary: { isNotNull: true },
+              chatId,
+              userId,
+              role: 'user',
+              id: { ne: latestSummary.id },
+              createdAt: { lt: latestSummary.createdAt }
             },
-            model: taskModel!.taskModel!,
-            messages: compreMessages,
+            orderBy: {
+              createdAt: 'desc'
+            }
+          })
+          if (previousMsg) {
+            previousSummary = previousMsg.previousSummary
+          }
+        }
+        const summary = await this.compreToken({
+          assistant: {
+            mode: taskModel!.mode,
+            apiKey: taskModel!.apiKey
+              ? await aesDecrypt(taskModel!.apiKey)
+              : null,
+            baseUrl: taskModel!.baseUrl
+          },
+          model: taskModel!.taskModel!,
+          messages: compreMessages,
+          previousSummary: previousSummary
+        })
+        await db
+          .update(messages)
+          .set({
             previousSummary: summary
           })
-          chat.summary = summary
-          await db
-            .update(chats)
-            .set({
-              summary,
-              messageOffset: increment(
-                chats.messageOffset,
-                compreMessages.length
-              )
-            })
-            .where(eq(chats.id, chat.id))
-        }
+          .where(eq(messages.id, summaryMsg.id))
+        summaryMsg.previousSummary = summary
       }
       history.map((m) => {
         const msg: UIMessage = {
@@ -210,7 +254,10 @@ Output only the summarized version of the conversation.`,
         }
         if (m.role === 'user') {
           let text = m.text
-          text = addMessageContext(text!, m.context)
+          text = addMessageContext(text!, {
+            context: m.context,
+            summary: m.previousSummary
+          })
           msg.parts.push({
             type: 'text',
             text: text
@@ -258,11 +305,16 @@ Output only the summarized version of the conversation.`,
       parts: [
         {
           type: 'text',
-          text: addMessageContext(userMessage.text!, userMessage.context)
+          text: addMessageContext(userMessage.text!, {
+            context: userMessage.context,
+            summary: userMessage.previousSummary
+          })
         }
       ]
     }
     if (data.images?.length) {
+      const part = userMsg.parts.find((p) => p.type === 'text')!
+      part.text = `Please provide detailed information about the provided images, such as a summary, key objects, scene, colors, layout, and text content, so that they can be used in subsequent conversations.\n ${part.text}`
       userMsg.parts.push({
         type: 'file',
         url: data.images[0],
@@ -273,27 +325,11 @@ Output only the summarized version of the conversation.`,
     uiMessages.push(userMsg)
     return {
       uiMessages,
-      summary,
       chat,
       client,
       assistantMessage,
       assistant,
       userMsg
     }
-  }
-
-  static getSystemPromp(ctx: {
-    prompt: string | null
-    summary?: string | null
-    images?: string[]
-  }) {
-    let prompt = ctx.prompt || ''
-    if (ctx.images?.length) {
-      prompt += `\nIf the user provides an image, please return detailed information such as a summary of the content, key objects, scene, colors, layout, and text content to facilitate use in subsequent conversations.`
-    }
-    if (ctx.summary) {
-      prompt += `This is a summary of the previous conversation: ${ctx.summary}`
-    }
-    return prompt || undefined
   }
 }

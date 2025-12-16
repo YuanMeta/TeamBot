@@ -14,7 +14,6 @@ import {
   unique,
   json
 } from 'drizzle-orm/pg-core'
-import { sql } from 'drizzle-orm'
 import type {
   AssistantOptions,
   MessageContext,
@@ -99,9 +98,7 @@ export const assistants = pgTable('assistants', {
   models: jsonb().notNull().$type<string[]>(),
   options: jsonb().notNull().$type<AssistantOptions>(),
   updatedAt: timestamp('updated_at'),
-  createdAt: timestamp('created_at')
-    .default(sql`now()`)
-    .notNull()
+  createdAt: timestamp('created_at').defaultNow().notNull()
 })
 
 export const roleAssistants = pgTable(
@@ -132,12 +129,8 @@ export const authProviders = pgTable('auth_providers', {
   clientSecret: text('client_secret'),
   scopes: varchar(),
   usePkce: boolean('use_pkce').default(false).notNull(),
-  createdAt: timestamp('created_at')
-    .default(sql`now()`)
-    .notNull(),
-  updatedAt: timestamp('updated_at')
-    .default(sql`now()`)
-    .notNull()
+  createdAt: timestamp('created_at').defaultNow().notNull(),
+  updatedAt: timestamp('updated_at').defaultNow().notNull()
 })
 
 export const chats = pgTable(
@@ -153,15 +146,8 @@ export const chats = pgTable(
     }),
     public: boolean().default(false),
     model: varchar(),
-    deleted: boolean().default(false),
-    summary: text(),
-    messageOffset: integer('message_offset').default(0).notNull(),
-    createdAt: timestamp('created_at')
-      .default(sql`now()`)
-      .notNull(),
-    lastChatTime: timestamp('last_chat_time')
-      .default(sql`now()`)
-      .notNull()
+    createdAt: timestamp('created_at').defaultNow().notNull(),
+    lastChatTime: timestamp('last_chat_time').defaultNow().notNull()
   },
   (table) => [index().on(table.userId)]
 )
@@ -170,7 +156,7 @@ export const messages = pgTable(
   'messages',
   {
     id: varchar().primaryKey(),
-    role: varchar().notNull().$type<'user' | 'assistant' | 'summary'>(),
+    role: varchar().notNull().$type<'user' | 'assistant'>(),
     userId: integer('user_id')
       .notNull()
       .references(() => users.id),
@@ -185,6 +171,7 @@ export const messages = pgTable(
     parts: json().$type<MessagePart[]>(),
     files: jsonb().$type<string[]>(),
     text: text(),
+    previousSummary: text('previous_summary'),
     inputTokens: integer('input_tokens').default(0).notNull(),
     outputTokens: integer('output_tokens').default(0).notNull(),
     totalTokens: integer('total_tokens').default(0).notNull(),
@@ -192,12 +179,8 @@ export const messages = pgTable(
     cachedInputTokens: integer('cached_input_tokens').default(0).notNull(),
     steps: json().$type<any[]>(),
     terminated: boolean().default(false),
-    createdAt: timestamp('created_at')
-      .default(sql`now()`)
-      .notNull(),
-    updatedAt: timestamp('updated_at')
-      .default(sql`now()`)
-      .notNull()
+    createdAt: timestamp('created_at').defaultNow().notNull(),
+    updatedAt: timestamp('updated_at').defaultNow().notNull()
   },
   (table) => [index().on(table.userId, table.chatId)]
 )
@@ -242,12 +225,8 @@ export const tools = pgTable('tools', {
   // http system
   type: varchar().notNull().$type<'system' | 'http'>(),
   params: jsonb().notNull().$type<Record<string, any>>().default({}),
-  createdAt: timestamp('created_at')
-    .default(sql`now()`)
-    .notNull(),
-  updatedAt: timestamp('updated_at')
-    .default(sql`now()`)
-    .notNull()
+  createdAt: timestamp('created_at').defaultNow().notNull(),
+  updatedAt: timestamp('updated_at').defaultNow().notNull()
 })
 
 export const userRoles = pgTable(
@@ -280,9 +259,7 @@ export const users = pgTable(
     deleted: boolean().notNull().default(false),
     root: boolean().notNull().default(false),
     updatedAt: timestamp('updated_at'),
-    createdAt: timestamp('created_at')
-      .default(sql`now()`)
-      .notNull()
+    createdAt: timestamp('created_at').defaultNow().notNull()
   },
   (table) => [
     unique().on(table.email),
@@ -297,12 +274,8 @@ export const webSearches = pgTable('web_searches', {
   description: text(),
   mode: varchar().notNull().$type<WebSearchMode>(),
   params: jsonb().notNull().$type<WebSearchParams>(),
-  createdAt: timestamp('created_at')
-    .default(sql`now()`)
-    .notNull(),
-  updatedAt: timestamp('updated_at')
-    .default(sql`now()`)
-    .notNull()
+  createdAt: timestamp('created_at').defaultNow().notNull(),
+  updatedAt: timestamp('updated_at').defaultNow().notNull()
 })
 
 export const settings = pgTable('settings', {

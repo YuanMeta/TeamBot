@@ -528,22 +528,17 @@ export const chatRouter = {
     )
     .mutation(async ({ input, ctx }) => {
       return ctx.db.transaction(async (t) => {
-        const [chat] = await t
-          .select()
-          .from(chats)
-          .where(and(eq(chats.id, input.chatId), eq(chats.userId, ctx.userId)))
+        const chat = await t.query.chats.findFirst({
+          where: {
+            id: input.chatId,
+            userId: ctx.userId
+          }
+        })
         if (!chat) {
           throw new TRPCError({
             code: 'NOT_FOUND',
             message: 'Chat not found'
           })
-        }
-        if (chat.messageOffset >= input.offset) {
-          const offset = input.offset > 2 ? input.offset - 2 : 0
-          await t
-            .update(chats)
-            .set({ messageOffset: offset })
-            .where(eq(chats.id, input.chatId))
         }
         if (input.removeMessages.length) {
           await t

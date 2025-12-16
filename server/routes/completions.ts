@@ -45,21 +45,14 @@ export const completions = async (
       message: (e as Error).message
     })
   }
-  const {
-    uiMessages,
-    summary,
-    chat,
-    client,
-    assistantMessage,
-    assistant,
-    userMsg
-  } = await MessageManager.getStreamMessage(db, {
-    chatId: json.chatId,
-    userId: uid,
-    assistantId: json.assistantId,
-    model: json.model,
-    images: json.images
-  })
+  const { uiMessages, chat, client, assistantMessage, assistant, userMsg } =
+    await MessageManager.getStreamMessage(db, {
+      chatId: json.chatId,
+      userId: uid,
+      assistantId: json.assistantId,
+      model: json.model,
+      images: json.images
+    })
   if (!user.root) {
     const allow = await checkAllowUseAssistant(db, uid, assistant.id)
     if (!allow) {
@@ -106,7 +99,8 @@ export const completions = async (
       db,
       aiMessageId: assistantMessage.id,
       assistant,
-      model: json.model
+      model: json.model,
+      abortController: controller
     } satisfies AiContext,
     maxOutputTokens: Number(assistant.options.maxOutputTokens) || undefined,
     temperature: assistant.options.temperature.open
@@ -122,11 +116,7 @@ export const completions = async (
       ? Number(assistant.options.presencePenalty.value)
       : undefined,
     abortSignal: controller.signal,
-    system: MessageManager.getSystemPromp({
-      prompt: assistant.prompt,
-      summary: summary,
-      images: json.images
-    }),
+    system: assistant.prompt || undefined,
     providerOptions: {
       qwen:
         assistant.options.webSearchMode === 'builtin' && json.webSearch
