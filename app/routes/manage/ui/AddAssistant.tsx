@@ -442,10 +442,10 @@ export const AddAssistant = observer(
                         <Form.Item
                           label={'是否压缩搜索结果'}
                           tooltip={
-                            '保留搜索关键信息，去除冗余信息，可提升模型注意力，减少上下文占用。需要消耗少量Token用于压缩。'
+                            '保留搜索关键信息，去除冗余信息，可提升模型注意力，减少上下文占用, 可能会降低搜索执行时间，需要消耗少量Token用于压缩。'
                           }
                           name={['options', 'compressSearchResults']}
-                          initialValue={true}
+                          initialValue={false}
                         >
                           <Radio.Group
                             options={[

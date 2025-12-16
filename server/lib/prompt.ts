@@ -26,7 +26,7 @@ export const extractOrDetermineSearch = async ({
 }> => {
   const client = createClient({
     mode: assistant.mode,
-    api_key: assistant.apiKey ? await aesDecrypt(assistant.apiKey) : null,
+    api_key: assistant.apiKey,
     base_url: assistant.baseUrl
   })!
   if (historyQuery?.length) {
