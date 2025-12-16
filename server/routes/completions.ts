@@ -221,8 +221,8 @@ export const completions = async (
         await db
           .update(messages)
           .set({
-            parts: JSON.stringify(parts),
-            steps: JSON.stringify(steps),
+            parts: parts,
+            steps: steps,
             inputTokens: usage.inputTokens,
             outputTokens: usage.outputTokens,
             totalTokens: usage.totalTokens,

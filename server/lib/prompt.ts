@@ -1,5 +1,5 @@
 import { convertToModelMessages, generateText, type UIMessage } from 'ai'
-import { createClient } from './checkConnect'
+import { createClient } from './connect'
 import { aesDecrypt, tid } from './utils'
 import type { SearchResult, Usage } from 'types'
 

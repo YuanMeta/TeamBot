@@ -1,7 +1,7 @@
 import { TRPCError, type TRPCRouterRecord } from '@trpc/server'
 import { adminProcedure } from '../core'
 import z from 'zod'
-import { checkLLmConnect } from 'server/lib/checkConnect'
+import { checkLLmConnect } from 'server/lib/connect'
 import {
   assistants,
   assistantUsages,

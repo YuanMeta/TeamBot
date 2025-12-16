@@ -1,15 +1,13 @@
-import { generateText, type LanguageModel, type UIMessage } from 'ai'
+import { generateText, type UIMessage } from 'ai'
 import { TRPCError } from '@trpc/server'
 import type { MessagePart } from 'types'
-import { createClient } from './checkConnect'
+import { createClient } from './connect'
 import { findLast } from '~/lib/utils'
 import { aesDecrypt } from './utils'
 import { chats, messages } from 'server/db/drizzle/schema'
 import { and, eq } from 'drizzle-orm'
 import type { MessageContext, MessageData } from 'server/db/type'
 import { increment, type DbInstance } from 'server/db'
-import dayjs from 'dayjs'
-import { parseRecord } from 'server/db/query'
 import { cacheManage } from './cache'
 
 function addMessageContext(
@@ -139,7 +137,6 @@ Output only the summarized version of the conversation.`,
       .where(and(eq(messages.chatId, chatId), eq(messages.userId, userId)))
       .offset(chat.messageOffset)
       .orderBy(messages.createdAt)
-    messagesData = messagesData.map((d) => parseRecord(d))
     if (!messagesData.length) {
       throw new TRPCError({
         code: 'BAD_REQUEST',

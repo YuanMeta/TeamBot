@@ -21,7 +21,7 @@ import type {
   SettingsRecord,
   WebSearchParams
 } from '../type'
-import type { WebSearchMode } from 'types'
+import type { MessagePart, WebSearchMode } from 'types'
 
 export const drizzle = pgSchema('drizzle')
 
@@ -170,7 +170,7 @@ export const messages = pgTable(
   'messages',
   {
     id: varchar().primaryKey(),
-    role: varchar().notNull(),
+    role: varchar().notNull().$type<'user' | 'assistant' | 'summary'>(),
     userId: integer('user_id')
       .notNull()
       .references(() => users.id),
@@ -182,7 +182,7 @@ export const messages = pgTable(
     context: json().$type<MessageContext>(),
     assistantId: integer('assistant_id').references(() => assistants.id),
     reasoningDuration: integer('reasoning_duration'),
-    parts: text(),
+    parts: json().$type<MessagePart[]>(),
     files: jsonb().$type<string[]>(),
     text: text(),
     inputTokens: integer('input_tokens').default(0).notNull(),
@@ -190,7 +190,7 @@ export const messages = pgTable(
     totalTokens: integer('total_tokens').default(0).notNull(),
     reasoningTokens: integer('reasoning_tokens').default(0).notNull(),
     cachedInputTokens: integer('cached_input_tokens').default(0).notNull(),
-    steps: text(),
+    steps: json().$type<any[]>(),
     terminated: boolean().default(false),
     createdAt: timestamp('created_at')
       .default(sql`now()`)

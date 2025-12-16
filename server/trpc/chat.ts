@@ -14,13 +14,14 @@ import {
   users
 } from 'server/db/drizzle/schema'
 import { and, desc, eq, ilike, inArray, or } from 'drizzle-orm'
-import { addTokens, checkAllowUseAssistant, parseRecord } from 'server/db/query'
+import { addTokens, checkAllowUseAssistant } from 'server/db/query'
 import {
   compressSearchResults,
   extractOrDetermineSearch
 } from 'server/lib/prompt'
 import { runWebSearch } from 'server/lib/search'
 import { cacheManage } from 'server/lib/cache'
+import type { MessagePart } from 'types'
 export const chatRouter = {
   getMsgContext: procedure.input(z.string()).query(async ({ input, ctx }) => {
     const msg = await ctx.db.query.messages.findFirst({
@@ -288,7 +289,7 @@ export const chatRouter = {
         limit: 10
       })
       return {
-        messages: messages.map((m) => parseRecord(m)),
+        messages: messages,
         loadMore: messages.length === 10
       }
     }),
@@ -475,7 +476,7 @@ export const chatRouter = {
           model: z.string().optional(),
           context: z.record(z.string(), z.any()).optional(),
           userPrompt: z.string().optional(),
-          parts: z.array(z.record(z.string(), z.any())).optional()
+          parts: z.custom<MessagePart[]>().nullish()
         })
       })
     )
@@ -484,7 +485,7 @@ export const chatRouter = {
         .update(messages)
         .set({
           ...input.data,
-          parts: input.data.parts ? JSON.stringify(input.data.parts) : null
+          parts: input.data.parts
         })
         .where(and(eq(messages.id, input.id), eq(messages.userId, ctx.userId)))
       return { success: true }

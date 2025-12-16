@@ -16,12 +16,12 @@ import type { MessageContext } from 'server/db/type'
 export const UrlTool = observer(({ tool }: { tool: ToolPart }) => {
   if (tool.state === 'start') {
     return (
-      <div className='flex items-center gap-1'>
+      <Badge className='flex items-center gap-1 text-sm' variant={'secondary'}>
         <FileSearch2
           className={'size-4 text-neutral-500 dark:text-neutral-400'}
         />
         <span className={'shine-text'}>正在获取链接内容...</span>
-      </div>
+      </Badge>
     )
   }
   return (

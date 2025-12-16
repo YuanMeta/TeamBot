@@ -14,7 +14,6 @@ import ChatItem from './ui/ChatItem'
 import { useMemo } from 'react'
 import { ChatStore, StoreContext } from './store/store'
 import { SearchResult } from './ui/SearchResult'
-import { parseRecord } from 'server/db/query'
 
 export const loader = async ({
   context: { db, userId },
@@ -45,7 +44,7 @@ export const loader = async ({
       createdAt: 'asc'
     }
   })
-  return { chat, messages: messages.map((m) => parseRecord(m)) }
+  return { chat, messages }
 }
 
 export default function () {
