@@ -2,10 +2,7 @@ name: teambot
 
 services:
   postgres:
-    build:
-      context: .
-      dockerfile: Dockerfile.postgres
-    image: teambot-postgres:pg16
+    image: ghcr.io/YuanMeta/teambot-postgres:v0.1.0
     container_name: teambot-postgres
     restart: unless-stopped
     environment:
@@ -26,9 +23,7 @@ services:
       - teambot-network
 
   app:
-    build:
-      context: .
-      dockerfile: Dockerfile
+    image: ghcr.io/YuanMeta/teambot-app:${APP_VERSION:-latest}
     container_name: teambot-app
     restart: unless-stopped
     environment:
@@ -39,6 +34,7 @@ services:
       COOKIE_SECRET: ${COOKIE_SECRET}
     volumes:
       - app_files:/app/files
+      - app_env:/app/.env
     ports:
       - '${PORT:-3000}:3000'
     depends_on:
@@ -51,6 +47,8 @@ volumes:
   postgres_data:
     driver: local
   app_files:
+    driver: local
+  app_env:
     driver: local
 
 networks:

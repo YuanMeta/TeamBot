@@ -21,3 +21,4 @@ production-build.tar.gz
 .temp-build
 files/
 .VSCodeCounter
+docker-compose-dev.yml
