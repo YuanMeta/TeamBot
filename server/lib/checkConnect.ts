@@ -66,6 +66,13 @@ export const createClient = (data: {
         name: 'doubao',
         includeUsage: true
       })
+    case 'openai-compatible':
+      return createOpenAICompatible({
+        apiKey: data.api_key ?? undefined,
+        baseURL: data.base_url!,
+        name: 'openai-compatible',
+        includeUsage: true
+      })
   }
 }
 export const checkLLmConnect = async (provider: {

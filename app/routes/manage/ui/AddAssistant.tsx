@@ -43,7 +43,16 @@ const modeData = [
     label: (
       <div className={'flex items-center gap-2'}>
         <ModelIcon mode='openai' size={18} />
-        OpenAI
+        OpenAI 官方
+      </div>
+    )
+  },
+  {
+    value: 'openai-compatible',
+    label: (
+      <div className={'flex items-center gap-2'}>
+        <ModelIcon mode='openai' size={18} />
+        OpenAI 兼容
       </div>
     )
   },
@@ -301,7 +310,7 @@ export const AddAssistant = observer(
                     label={'Base URL'}
                     rules={[
                       {
-                        required: false,
+                        required: mode === 'openai-compatible',
                         message: '请输入正确Base URL',
                         type: 'url'
                       }
