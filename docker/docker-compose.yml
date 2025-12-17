@@ -30,7 +30,7 @@ services:
       NODE_ENV: ${NODE_ENV:-production}
       PORT: ${PORT:-3000}
       DATABASE_URL: ${DATABASE_URL:-postgresql://${POSTGRES_USER:-postgres}:${POSTGRES_PASSWORD:-postgres}@postgres:5432/${POSTGRES_DB:-teambot}}
-      JWT_SECRET: ${JWT_SECRET}
+      APP_SECRET: ${APP_SECRET}
       COOKIE_SECRET: ${COOKIE_SECRET}
     volumes:
       - app_files:/app/files

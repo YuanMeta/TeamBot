@@ -35,7 +35,7 @@ if (DEVELOPMENT) {
 } else {
   console.log('Starting production server')
   console.log('env', {
-    jwt_secret: process.env.JWT_SECRET
+    app_secret: process.env.APP_SECRET
   })
   app.use(
     '/assets',
