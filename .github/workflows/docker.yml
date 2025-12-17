@@ -75,6 +75,21 @@ jobs:
           tags: |
             ${{ env.REGISTRY }}/${{ env.OWNER_LOWER }}/${{ env.PG_IMAGE }}:pg16-v0.1.0
 
+      - name: Setup Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: 22
+          cache: 'pnpm'
+
+      - name: Install pnpm
+        run: npm install -g pnpm@10.24.0
+
+      - name: Install dependencies
+        run: pnpm install --frozen-lockfile
+
+      - name: Build app
+        run: pnpm run build
+
       # -------- App image --------
       - name: Build & push app image
         uses: docker/build-push-action@v5
