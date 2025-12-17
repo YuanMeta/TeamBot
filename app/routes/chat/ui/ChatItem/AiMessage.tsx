@@ -72,12 +72,12 @@ export const AiMessage = observer<{
             </div>
           )}
           <div
-            className={`flex items-center dark:text-white/60 text-neutral-500 text-[13px] ai-msg-actions h-8 pb-1 mt-2 gap-2`}
+            className={`flex items-center dark:text-white/60 text-neutral-500 text-[13px] ai-msg-actions h-8 pb-1 mt-2 -translate-x-1.5`}
           >
             <div className={'flex space-x-0.5 *:cursor-pointer'}>
               {!preview && (
                 <Button
-                  size={'icon-sm'}
+                  size={'icon'}
                   variant={'ghost'}
                   disabled={store.state.pending}
                   onClick={() => {
@@ -87,11 +87,11 @@ export const AiMessage = observer<{
                   <RotateCcw />
                 </Button>
               )}
-              <Button size={'icon-sm'} variant={'ghost'} onClick={copy}>
+              <Button size={'icon'} variant={'ghost'} onClick={copy}>
                 {state.copied ? <Check /> : <Clipboard />}
               </Button>
             </div>
-            <div>
+            <div className={'ml-2'}>
               {msg.model}{' '}
               <span className={'ml-2'}>{dayjs(msg.updatedAt).fromNow()}</span>
             </div>

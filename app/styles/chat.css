@@ -57,7 +57,7 @@
 }
 
 .chat-list .ai-message:last-child {
-  min-height: calc(100vh - 290px);
+  min-height: calc(100vh - 270px);
   .last {
     display: flex;
   }
@@ -73,19 +73,12 @@
 }
 
 .ai-msg-actions {
-  opacity: 0;
-  transition: opacity 0.3s ease-in-out;
-  pointer-events: none;
   word-break: break-all;
-}
-
-.ai-message-content:hover .ai-msg-actions {
-  opacity: 1;
-  pointer-events: auto;
 }
 
 .pending .ai-message:last-child .ai-msg-actions {
   pointer-events: none;
+  opacity: 0;
 }
 .switch-model-menu {
   .ant-dropdown-menu-item {

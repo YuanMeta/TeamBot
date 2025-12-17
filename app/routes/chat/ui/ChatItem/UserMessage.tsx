@@ -99,7 +99,6 @@ export const UserMessage = observer<{
           <div className={'flex justify-end mt-2 space-x-2'}>
             <Button
               variant={'outline'}
-              size={'sm'}
               onClick={() => {
                 setState({
                   isEditing: false,
@@ -109,9 +108,7 @@ export const UserMessage = observer<{
             >
               取消
             </Button>
-            <Button onClick={update} size={'sm'}>
-              更新
-            </Button>
+            <Button onClick={update}>更新</Button>
           </div>
         </div>
       )}
@@ -122,11 +119,11 @@ export const UserMessage = observer<{
               'flex mr-2 pt-1 gap-1 *:cursor-pointer duration-150 opacity-0 group-hover:opacity-100 dark:text-white/60 text-neutral-500'
             }
           >
-            <Button size={'icon-sm'} variant={'ghost'} onClick={copy}>
+            <Button size={'icon'} variant={'ghost'} onClick={copy}>
               {state.copied ? <Check /> : <Clipboard />}
             </Button>
             {!preview && (
-              <Button size={'icon-sm'} variant={'ghost'} onClick={startEditing}>
+              <Button size={'icon'} variant={'ghost'} onClick={startEditing}>
                 <Pencil />
               </Button>
             )}

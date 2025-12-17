@@ -26,6 +26,7 @@ export const Header = observer(() => {
             <Button
               variant={'ghost'}
               autoFocus={false}
+              size={'lg'}
               disabled={!store.state.assistants.length}
             >
               <ModelIcon
@@ -80,6 +81,7 @@ export const Header = observer(() => {
       <div className={'flex gap-1'}>
         <Button
           variant={'ghost'}
+          size={'lg'}
           disabled={!store.state.selectedChat?.id}
           onClick={async () => {
             copyToClipboard({
