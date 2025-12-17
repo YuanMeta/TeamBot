@@ -2,7 +2,7 @@ name: teambot
 
 services:
   postgres:
-    image: ghcr.io/YuanMeta/teambot-postgres:pg16-v0.1.0
+    image: ghcr.io/yuanmeta/teambot-postgres:pg16-v0.1.0
     container_name: teambot-postgres
     restart: unless-stopped
     environment:
@@ -23,7 +23,7 @@ services:
       - teambot-network
 
   app:
-    image: ghcr.io/YuanMeta/teambot-app:${APP_VERSION:-latest}
+    image: ghcr.io/yuanmeta/teambot-app:${APP_VERSION:-latest}
     container_name: teambot-app
     restart: unless-stopped
     environment:

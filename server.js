@@ -34,9 +34,6 @@ if (DEVELOPMENT) {
   })
 } else {
   console.log('Starting production server')
-  console.log('env', {
-    app_secret: process.env.APP_SECRET
-  })
   app.use(
     '/assets',
     express.static('build/client/assets', { immutable: true, maxAge: '1y' })

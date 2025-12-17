@@ -65,7 +65,7 @@ export const AddRole = observer(
             setState({ submitting: true })
             try {
               if (props.id) {
-                trpc.manage.updateRole.mutate({
+                await trpc.manage.updateRole.mutate({
                   id: props.id,
                   data: {
                     name: v.name,
@@ -76,7 +76,7 @@ export const AddRole = observer(
                   }
                 })
               } else {
-                trpc.manage.createRole.mutate({
+                await trpc.manage.createRole.mutate({
                   name: v.name,
                   remark: v.remark,
                   allAssistants: v.allAssistant,
