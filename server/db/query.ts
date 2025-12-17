@@ -6,8 +6,8 @@ import {
   roleAssistants,
   roles,
   userRoles
-} from 'server/db/drizzle/schema'
-import { and, arrayContains, count, eq, or } from 'drizzle-orm'
+} from 'drizzle/schema'
+import { and, eq, or } from 'drizzle-orm'
 import { increment, type DbInstance } from '.'
 import type { Usage } from 'types'
 import dayjs from 'dayjs'

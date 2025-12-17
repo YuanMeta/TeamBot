@@ -5,7 +5,7 @@ import morgan from 'morgan'
 // Short-circuit the type-checking of the built output.
 const BUILD_PATH = './build/server/index.js'
 const DEVELOPMENT = process.env.NODE_ENV === 'development'
-const PORT = Number.parseInt(process.env.PORT || '3000')
+const PORT = DEVELOPMENT ? Number.parseInt(process.env.PORT) : 3000
 
 const app = express()
 
@@ -34,6 +34,9 @@ if (DEVELOPMENT) {
   })
 } else {
   console.log('Starting production server')
+  console.log('env', {
+    jwt_secret: process.env.JWT_SECRET
+  })
   app.use(
     '/assets',
     express.static('build/client/assets', { immutable: true, maxAge: '1y' })

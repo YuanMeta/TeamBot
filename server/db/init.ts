@@ -1,5 +1,11 @@
 import { PasswordManager } from 'server/lib/password'
-import { accesses, accessRoles, roles, tools, users } from './drizzle/schema'
+import {
+  accesses,
+  accessRoles,
+  roles,
+  tools,
+  users
+} from '../../drizzle/schema'
 import type { NodePgDatabase } from 'drizzle-orm/node-postgres'
 import { privateAccess } from './access'
 

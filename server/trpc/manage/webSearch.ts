@@ -1,7 +1,7 @@
 import { TRPCError, type TRPCRouterRecord } from '@trpc/server'
 import { adminProcedure } from '../core'
 import z from 'zod'
-import { webSearches } from 'server/db/drizzle/schema'
+import { webSearches } from 'drizzle/schema'
 import { eq } from 'drizzle-orm'
 import { runWebSearch } from 'server/lib/search'
 import type { WebSearchParams } from 'server/db/type'

@@ -83,7 +83,7 @@ export function saveFileByBase64(base64: string) {
  * @returns 加密后的字符串，格式: iv:authTag:encryptedData
  */
 export async function aesEncrypt(text: string): Promise<string> {
-  const encryptionKey = process.env.JWT_SECRET!
+  const encryptionKey = process.env.APP_SECRET!
 
   // 使用 scrypt 从密码派生密钥
   const key = (await scryptAsync(encryptionKey, 'salt', 32)) as Buffer
@@ -115,7 +115,7 @@ export async function aesDecrypt(
   encryptedText: string
 ): Promise<string | null> {
   try {
-    const encryptionKey = process.env.JWT_SECRET!
+    const encryptionKey = process.env.APP_SECRET!
 
     // 使用 scrypt 从密码派生密钥
     const key = (await scryptAsync(encryptionKey, 'salt', 32)) as Buffer

@@ -1,5 +1,5 @@
 import type { NodePgDatabase } from 'drizzle-orm/node-postgres'
-import { models } from 'server/db/drizzle/schema'
+import { models } from 'drizzle/schema'
 
 const providerMap = new Map([['google', 'gemini']])
 export const fetchOpenRouterModels = async (db: NodePgDatabase) => {

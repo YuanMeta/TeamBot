@@ -12,7 +12,7 @@ import {
   roles,
   userRoles,
   users
-} from 'server/db/drizzle/schema'
+} from 'drizzle/schema'
 import { and, desc, eq, ilike, inArray, or } from 'drizzle-orm'
 import { addTokens, checkAllowUseAssistant } from 'server/db/query'
 import {

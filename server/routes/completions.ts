@@ -13,7 +13,7 @@ import { getUser } from '../session'
 import type { Request, Response } from 'express'
 import { saveFileByBase64 } from '../lib/utils'
 import { addTokens, checkAllowUseAssistant } from 'server/db/query'
-import { chats, messages } from 'server/db/drizzle/schema'
+import { chats, messages } from 'drizzle/schema'
 import { eq } from 'drizzle-orm'
 import { type DbInstance } from 'server/db'
 

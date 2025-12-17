@@ -10,7 +10,7 @@ import type {
   webSearches,
   settings,
   assistantUsages
-} from './drizzle/schema'
+} from '../../drizzle/schema'
 
 export type UserData = typeof users.$inferSelect
 

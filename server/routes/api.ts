@@ -20,7 +20,7 @@ import {
   chats,
   oauthAccounts,
   users
-} from 'server/db/drizzle/schema'
+} from 'drizzle/schema'
 import { and, eq, or } from 'drizzle-orm'
 import type { DbInstance } from 'server/db'
 import { addTokens } from 'server/db/query'

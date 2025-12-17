@@ -22,3 +22,6 @@ production-build.tar.gz
 files/
 .VSCodeCounter
 docker-compose-dev.yml
+Dockerfile.dev
+Dockerfile.postgres.dev
+dev.sh

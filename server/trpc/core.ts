@@ -6,7 +6,7 @@ import * as trpcExpress from '@trpc/server/adapters/express'
 import { publicAccess } from 'server/db/access'
 import { db } from 'server/db'
 import { eq } from 'drizzle-orm'
-import { accesses, accessRoles, userRoles } from 'server/db/drizzle/schema'
+import { accesses, accessRoles, userRoles } from 'drizzle/schema'
 
 export const createContext = async ({
   req

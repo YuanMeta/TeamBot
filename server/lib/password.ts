@@ -1,11 +1,10 @@
 import crypto from 'crypto'
 import jwt from 'jsonwebtoken'
 
-const secret = process.env.JWT_SECRET!
+const secret = process.env.APP_SECRET!
 
-// 生产环境必须设置JWT_SECRET
-if (process.env.NODE_ENV === 'production' && !process.env.JWT_SECRET) {
-  throw new Error('JWT_SECRET environment variable must be set in production')
+if (process.env.NODE_ENV === 'production' && !process.env.APP_SECRET) {
+  throw new Error('APP_SECRET environment variable must be set in production')
 }
 const pbkdf2Async = (
   password: string,

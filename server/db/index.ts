@@ -1,6 +1,6 @@
 import { sql, type AnyColumn } from 'drizzle-orm'
 import { drizzle } from 'drizzle-orm/node-postgres'
-import { relations } from './drizzle/relations'
+import { relations } from '../../drizzle/relations'
 export const db = drizzle({
   connection: process.env.DATABASE_URL!,
   relations: relations

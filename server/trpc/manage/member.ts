@@ -9,7 +9,7 @@ import {
   roles,
   userRoles,
   users
-} from 'server/db/drizzle/schema'
+} from 'drizzle/schema'
 import { and, count, desc, eq, like, or } from 'drizzle-orm'
 import { TRPCError, type TRPCRouterRecord } from '@trpc/server'
 import { PasswordManager } from 'server/lib/password'
