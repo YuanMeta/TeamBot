@@ -33,7 +33,7 @@ const SyntaxHighlighter = memo<SyntaxHighlighterProps>(
         dangerouslySetInnerHTML={{
           __html: dom as string
         }}
-        className={'text-sm'}
+        className={'text-[13px]'}
         dir='ltr'
       />
     )

@@ -67,14 +67,16 @@ export const Highlighter = observer<HighlighterProps>(
       >
         <div
           className={
-            'justify-between flex items-center h-10 pl-4 pr-2 absolute left-0 top-0 w-full'
+            'justify-between flex items-center h-9 pl-4 pr-1 absolute left-0 top-0 w-full'
           }
         >
-          <div className={'leading-normal text-secondary-foreground/70'}>
+          <div
+            className={'leading-normal text-secondary-foreground/70 text-sm'}
+          >
             {language}
           </div>
           <Button
-            size={'sm'}
+            size={'icon-sm'}
             variant={'ghost'}
             className={'text-secondary-foreground/70'}
             onClick={() => {
@@ -86,7 +88,7 @@ export const Highlighter = observer<HighlighterProps>(
             }}
           >
             {!state.copied ? <Copy size={14} /> : <Check size={14} />}
-            <span>复制</span>
+            {/* <span>复制</span> */}
           </Button>
         </div>
         <div>

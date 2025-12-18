@@ -223,7 +223,7 @@
 }
 
 .shiki {
-  @apply px-4 pb-4 pt-14 overflow-auto;
+  @apply px-4 pb-3 pt-9 overflow-auto;
 }
 
 .inline-code .shiki {

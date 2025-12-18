@@ -29,7 +29,7 @@ export const useComponents = () => {
           <h1
             {...props}
             className={
-              '[&:not(:first-child)]:mt-7 scroll-m-20 text-4xl font-extrabold tracking-tight text-balance'
+              '[&:not(:first-child)]:mt-7 scroll-m-20 text-2xl font-extrabold tracking-tight text-balance'
             }
           />
         ),
@@ -37,7 +37,7 @@ export const useComponents = () => {
           <h2
             {...props}
             className={
-              '[&:not(:first-child)]:mt-6 scroll-m-20 text-3xl font-semibold tracking-tight text-balance'
+              '[&:not(:first-child)]:mt-6 scroll-m-20 text-xl font-semibold tracking-tight text-balance'
             }
           />
         ),
@@ -45,7 +45,7 @@ export const useComponents = () => {
           <h3
             {...props}
             className={
-              '[&:not(:first-child)]:mt-5 scroll-m-20 text-2xl font-semibold tracking-tight text-balance'
+              '[&:not(:first-child)]:mt-5 scroll-m-20 text-lg font-semibold tracking-tight text-balance'
             }
           />
         ),
@@ -53,7 +53,7 @@ export const useComponents = () => {
           <h4
             {...props}
             className={
-              '[&:not(:first-child)]:mt-4 scroll-m-20 text-xl font-semibold tracking-tight text-balance'
+              '[&:not(:first-child)]:mt-4 scroll-m-20 text-base font-medium tracking-tight text-balance'
             }
           />
         ),
@@ -61,7 +61,7 @@ export const useComponents = () => {
           <h5
             {...props}
             className={
-              '[&:not(:first-child)]:mt-3 scroll-m-20 text-lg font-semibold tracking-tight text-balance'
+              '[&:not(:first-child)]:mt-3 scroll-m-20 text-base font-medium tracking-tight text-balance'
             }
           />
         ),
