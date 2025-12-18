@@ -38,13 +38,12 @@ export class ChatClient {
       model: model,
       updatedAt: dayjs().add(1, 'second').toDate()
     })
-    if (!chat) {
-      this.store.moveChatInput$.next()
-    }
     this.store.setState((state) => {
       state.messages.push(userMessage, aiMessage)
     })
-
+    if (!chat) {
+      this.store.moveChatInput$.next()
+    }
     const searchQuery = await this.getSearchQuery(data.text)
     if (searchQuery.query) {
       runInAction(() => {
@@ -195,7 +194,7 @@ export class ChatClient {
         abortController
       }
     })
-    const res = await fetch('/api/completions', {
+    const res = await fetch('/stream/completions', {
       method: 'POST',
       headers: {
         'Content-Type': 'application/json'
@@ -387,7 +386,7 @@ export class ChatClient {
   }) {
     if (this.generateTitleSet.has(data.chat.id) || data.chat.title) return
     this.generateTitleSet.add(data.chat.id)
-    const res = await fetch('/api/title', {
+    const res = await fetch('/stream/title', {
       method: 'POST',
       headers: {
         'Content-Type': 'application/json'

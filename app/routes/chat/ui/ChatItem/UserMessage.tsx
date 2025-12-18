@@ -193,7 +193,7 @@ export const UserMessage = observer<{
                     msg.files!.map((f) =>
                       typeof f === 'object'
                         ? URL.createObjectURL(f)
-                        : `/files/${f}`
+                        : `/stream/files/${f}`
                     )
                   )
                 }}
@@ -205,7 +205,7 @@ export const UserMessage = observer<{
                   src={
                     typeof f === 'object'
                       ? URL.createObjectURL(f)
-                      : `/files/${f}`
+                      : `/stream/files/${f}`
                   }
                   className={'w-full h-full object-cover'}
                   alt=''

@@ -13,14 +13,7 @@ import { join, resolve } from 'path'
 import { existsSync, createReadStream, statSync } from 'fs'
 import { lookup } from 'mime-types'
 import { routeInterceptor } from './interceptor'
-import type { NodePgDatabase } from 'drizzle-orm/node-postgres'
-import {
-  assistants,
-  authProviders,
-  chats,
-  oauthAccounts,
-  users
-} from 'drizzle/schema'
+import { authProviders, chats, oauthAccounts, users } from 'drizzle/schema'
 import { and, eq, or } from 'drizzle-orm'
 import type { DbInstance } from 'server/db'
 import { addTokens } from 'server/db/query'
@@ -132,7 +125,7 @@ export const registerRoutes = (app: Express, db: DbInstance) => {
   )
 
   app.post(
-    '/api/completions',
+    '/stream/completions',
     routeInterceptor(async (req, res) => {
       await completions(req, res, db)
     })
@@ -141,7 +134,7 @@ export const registerRoutes = (app: Express, db: DbInstance) => {
   // 支持多级路径：使用 :path(*) 来匹配包含斜杠的路径
   // 例如：/files/2025-12/image.png -> req.params.path = '2025-12/image.png'
   app.get(
-    '/files/*path',
+    '/stream/files/*path',
     routeInterceptor(async (req, res) => {
       try {
         const requestedPath = (req.params as any)[0]
@@ -197,7 +190,7 @@ export const registerRoutes = (app: Express, db: DbInstance) => {
     })
   )
   app.post(
-    '/api/title',
+    '/stream/title',
     routeInterceptor(async (req, res) => {
       const InputSchema = z.object({
         chatId: z.string(),

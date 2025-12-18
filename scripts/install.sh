@@ -130,7 +130,7 @@ POSTGRES_PORT=5432
 
 # 应用配置
 NODE_ENV=production
-PORT=3000
+PORT=3015
 
 # 数据库连接URL
 DATABASE_URL=postgresql://postgres:postgres@postgres:5432/teambot
