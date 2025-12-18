@@ -16,9 +16,9 @@ COPY build ./build
 COPY drizzle ./drizzle
 COPY drizzle.config.ts ./drizzle.config.ts
 COPY server.js ./
-COPY ecosystem.config.cjs ./
+# COPY ecosystem.config.cjs ./
 
-EXPOSE 3000
+EXPOSE 3015
 
 # 使用 pm2-runtime 启动应用
 CMD pnpm drizzle-kit push --force && node server.js
