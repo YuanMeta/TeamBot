@@ -26,7 +26,8 @@ export const loader = (args: Route.LoaderArgs) => {
 }
 export default observer(() => {
   const [state, setState] = useLocalState({
-    duration: false
+    duration: false,
+    moveBottom: false
   })
   let params = useParams()
   const store = useMemo(() => new ChatStore(), [])
@@ -34,6 +35,16 @@ export default observer(() => {
   useLayoutEffect(() => {
     if (store.state.ready) {
       store.selectChat(params.id as string)
+    }
+    if (!params.id) {
+      setState({
+        moveBottom: false,
+        duration: false
+      })
+    } else {
+      setState({
+        moveBottom: true
+      })
     }
   }, [params.id, store.state.ready])
   useSubject(
@@ -45,15 +56,13 @@ export default observer(() => {
   )
   useSubject(store.moveChatInput$, () => {
     setState({
-      duration: true
+      duration: true,
+      moveBottom: true
     })
     setTimeout(() => {
       setState({ duration: false })
     }, 200)
   })
-  const inputMoveButton = useMemo(() => {
-    return store.state.messages.length || !!params.id
-  }, [store.state.messages.length, params.id])
   if (!store.state.ready) return null
   return (
     <StoreContext value={store}>
@@ -68,21 +77,21 @@ export default observer(() => {
               </div>
             </ErrorBoundary>
             <div
-              className={`${state.duration ? 'duration-150' : ''}`}
+              className={`${state.duration ? 'duration-200' : ''}`}
               style={{
-                transform: inputMoveButton
+                transform: state.moveBottom
                   ? 'translateY(0px)'
                   : `translateY(calc((-100vh + 52px) / 2))`
               }}
             >
-              {!inputMoveButton && (
+              {!state.moveBottom && (
                 <div className={'text-center text-xl font-medium mb-6'}>
                   今天有什么可以帮到你？
                 </div>
               )}
 
               <ChatInput />
-              {inputMoveButton && (
+              {state.moveBottom && (
                 <div
                   className={
                     'h-8 flex items-center justify-center text-xs text-primary/50'
