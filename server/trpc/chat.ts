@@ -348,6 +348,7 @@ export const chatRouter = {
         .from(users)
         .innerJoin(userRoles, eq(users.id, userRoles.userId))
         .where(eq(users.id, ctx.userId))
+
       const ids = await ctx.db
         .select({
           assistantId: roleAssistants.assistantId
@@ -359,6 +360,7 @@ export const chatRouter = {
             roleIds.map((r) => r.roleId)
           )
         )
+      assistantIds = ids.map((r) => r.assistantId)
       if (!assistantIds.length) {
         return []
       }

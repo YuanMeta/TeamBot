@@ -54,7 +54,7 @@ export class PasswordManager {
   }
 }
 
-export const generateToken = (data: { uid: number; root: boolean }) => {
+export const generateToken = (data: { uid: number; root: boolean }): string => {
   return jwt.sign(data, secret, { expiresIn: '7d' })
 }
 

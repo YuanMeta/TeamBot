@@ -13,7 +13,7 @@ import { join, resolve } from 'path'
 import { existsSync, createReadStream, statSync } from 'fs'
 import { lookup } from 'mime-types'
 import { routeInterceptor } from './interceptor'
-import { authProviders, chats, oauthAccounts, users } from 'drizzle/schema'
+import { chats, oauthAccounts, userRoles, users } from 'drizzle/schema'
 import { and, eq, or } from 'drizzle-orm'
 import type { DbInstance } from 'server/db'
 import { addTokens } from 'server/db/query'
@@ -279,10 +279,9 @@ The historical dialogue is as follows: \n${messages
 
   app.get('/oauth/login/:provider', async (req, res) => {
     const state = randomString(24)
-    const [provider] = await db
-      .select()
-      .from(authProviders)
-      .where(eq(authProviders.id, Number(req.params.provider)))
+    const provider = await db.query.authProviders.findFirst({
+      where: { id: Number(req.params.provider) }
+    })
     if (!provider) {
       res.status(404).json({ error: 'Provider not found' })
       return
@@ -319,10 +318,11 @@ The historical dialogue is as follows: \n${messages
   app.get('/oauth/callback/:provider', async (req, res) => {
     try {
       const { code, state } = req.query
-      const [provider] = await db
-        .select()
-        .from(authProviders)
-        .where(eq(authProviders.id, Number(req.params.provider)))
+
+      const provider = await db.query.authProviders.findFirst({
+        where: { id: Number(req.params.provider) }
+      })
+
       if (!provider) {
         res.status(404).json({ error: 'Provider not found' })
         return
@@ -370,32 +370,44 @@ The historical dialogue is as follows: \n${messages
         })
         .json<{ id: string; email?: string; phone?: string; name?: string }>()
       if (userResp?.id) {
-        const [user] = await db
-          .select()
+        const [userData] = await db
+          .select({
+            id: users.id,
+            deleted: users.deleted
+          })
           .from(oauthAccounts)
+          .innerJoin(users, eq(oauthAccounts.userId, users.id))
           .where(
             and(
               eq(oauthAccounts.providerId, provider.id),
               eq(oauthAccounts.providerUserId, userResp.id)
             )
           )
-        if (user) {
-          const token = generateToken({ uid: user.userId, root: false })
-          res.setHeader('Set-Cookie', await userCookie.serialize(token))
+        if (userData) {
+          if (userData.deleted) {
+            return res
+              .json({
+                error: 'Your account has been disabled.'
+              })
+              .status(400)
+          } else {
+            const token = generateToken({ uid: userData.id, root: false })
+            res.setHeader('Set-Cookie', await userCookie.serialize(token))
+          }
         } else {
           if (userResp.email || userResp.phone) {
             let user: { id: number } | undefined
             if (userResp.email) {
-              ;[user] = await db
-                .select({ id: users.id })
-                .from(users)
-                .where(eq(users.email, userResp.email))
+              user = await db.query.users.findFirst({
+                columns: { id: true },
+                where: { email: userResp.email }
+              })
             }
             if (!user && userResp.phone) {
-              ;[user] = await db
-                .select({ id: users.id })
-                .from(users)
-                .where(eq(users.phone, userResp.phone))
+              user = await db.query.users.findFirst({
+                columns: { id: true },
+                where: { phone: userResp.phone }
+              })
             }
             if (user) {
               await db.insert(oauthAccounts).values({
@@ -420,6 +432,10 @@ The historical dialogue is as follows: \n${messages
                   providerUserId: userResp.id,
                   userId: newUser.id,
                   profileJson: JSON.stringify(userResp) as any
+                })
+                await t.insert(userRoles).values({
+                  userId: newUser.id,
+                  roleId: provider.roleId
                 })
                 return newUser
               })

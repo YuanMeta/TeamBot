@@ -1,8 +1,9 @@
 import { useForm } from '@tanstack/react-form'
-import { Form, Input, Modal, Switch } from 'antd'
+import { Form, Input, Modal, Select, Switch } from 'antd'
 import { observer } from 'mobx-react-lite'
 import { useEffect } from 'react'
 import { trpc } from '~/.client/trpc'
+import { useLocalState } from '~/hooks/localState'
 
 export const AddSsoProvider = observer(
   (props: {
@@ -12,14 +13,24 @@ export const AddSsoProvider = observer(
     onUpdate: () => void
   }) => {
     const [form] = Form.useForm()
+    const [state, setState] = useLocalState({
+      roles: [] as { value: number; label: string }[],
+      submitting: false
+    })
     useEffect(() => {
       if (props.open) {
         form.resetFields()
+        trpc.manage.getRoles.query({ page: 1, pageSize: 1000 }).then((res) => {
+          setState({
+            roles: res.list.map((r) => ({ value: r.id, label: r.name }))
+          })
+        })
         if (props.id) {
           trpc.manage.getAuthProvider.query(props.id).then((res) => {
             if (res) {
               form.setFieldsValue({
                 name: res.name,
+                roleId: res.roleId,
                 // issuer: res.issuer,
                 auth_url: res.authUrl,
                 token_url: res.tokenUrl,
@@ -41,13 +52,30 @@ export const AddSsoProvider = observer(
         onCancel={() => {
           props.onClose()
         }}
+        confirmLoading={state.submitting}
         title={props.id ? '编辑SSO提供者' : '添加SSO提供者'}
         onOk={() => {
           return form.validateFields().then(async (value) => {
-            if (props.id) {
-              await trpc.manage.updateAuthProvider.mutate({
-                id: props.id,
-                data: {
+            setState({ submitting: true })
+            try {
+              if (props.id) {
+                await trpc.manage.updateAuthProvider.mutate({
+                  id: props.id,
+                  data: {
+                    name: value.name,
+                    auth_url: value.auth_url,
+                    token_url: value.token_url,
+                    userinfo_url: value.userinfo_url,
+                    client_id: value.client_id,
+                    client_secret: value.client_secret,
+                    scopes: value.scopes,
+                    use_pkce: value.use_pkce,
+                    description: value.description,
+                    roleId: value.roleId
+                  }
+                })
+              } else {
+                await trpc.manage.createAuthProvider.mutate({
                   name: value.name,
                   auth_url: value.auth_url,
                   token_url: value.token_url,
@@ -56,24 +84,15 @@ export const AddSsoProvider = observer(
                   client_secret: value.client_secret,
                   scopes: value.scopes,
                   use_pkce: value.use_pkce,
-                  description: value.description
-                }
-              })
-            } else {
-              await trpc.manage.createAuthProvider.mutate({
-                name: value.name,
-                auth_url: value.auth_url,
-                token_url: value.token_url,
-                userinfo_url: value.userinfo_url,
-                client_id: value.client_id,
-                client_secret: value.client_secret,
-                scopes: value.scopes,
-                use_pkce: value.use_pkce,
-                description: value.description
-              })
+                  description: value.description,
+                  roleId: value.roleId
+                })
+              }
+              props.onUpdate()
+              props.onClose()
+            } finally {
+              setState({ submitting: false })
             }
-            props.onUpdate()
-            props.onClose()
           })
         }}
         width={450}
@@ -129,6 +148,14 @@ export const AddSsoProvider = observer(
             rules={[{ required: true, message: '请输入客户端密钥' }]}
           >
             <Input placeholder={'请输入客户端密钥'} />
+          </Form.Item>
+          <Form.Item
+            name='roleId'
+            tooltip={'登录后默认使用角色'}
+            rules={[{ required: true, message: '请选择默认角色' }]}
+            label='默认角色'
+          >
+            <Select placeholder={'请选择默认角色'} options={state.roles} />
           </Form.Item>
           <Form.Item
             name='use_pkce'

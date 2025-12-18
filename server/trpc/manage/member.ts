@@ -10,7 +10,7 @@ import {
   userRoles,
   users
 } from 'drizzle/schema'
-import { and, count, desc, eq, like, or } from 'drizzle-orm'
+import { and, count, desc, eq, like, or, sql } from 'drizzle-orm'
 import { TRPCError, type TRPCRouterRecord } from '@trpc/server'
 import { PasswordManager } from 'server/lib/password'
 import { cacheManage } from 'server/lib/cache'
@@ -159,14 +159,28 @@ export const memberRouter = {
   deleteRole: adminProcedure
     .input(z.number())
     .mutation(async ({ input, ctx }) => {
-      const [user] = await ctx.db
-        .select()
-        .from(userRoles)
-        .where(eq(userRoles.roleId, input))
+      const user = await ctx.db.query.users.findFirst({
+        columns: { id: true },
+        where: {
+          roles: {
+            id: input
+          }
+        }
+      })
       if (user) {
         throw new TRPCError({
           code: 'BAD_REQUEST',
           message: '角色已被用户使用，无法删除'
+        })
+      }
+      const authProvider = await ctx.db.query.authProviders.findFirst({
+        columns: { id: true },
+        where: { roleId: input }
+      })
+      if (authProvider) {
+        throw new TRPCError({
+          code: 'BAD_REQUEST',
+          message: '角色已被SSO提供者使用，无法删除'
         })
       }
       await ctx.db.transaction(async (trx) => {
@@ -306,7 +320,8 @@ export const memberRouter = {
         client_secret: z.string().optional(),
         scopes: z.string().optional(),
         use_pkce: z.boolean().optional(),
-        description: z.string().optional()
+        description: z.string().optional(),
+        roleId: z.number()
       })
     )
     .mutation(async ({ input, ctx }) => {
@@ -321,9 +336,18 @@ export const memberRouter = {
         clientSecret: input.client_secret,
         scopes: input.scopes,
         usePkce: input.use_pkce,
-        description: input.description
+        description: input.description,
+        roleId: input.roleId
       })
       return { success: true }
+    }),
+  toggleDisableAuthProvider: adminProcedure
+    .input(z.number())
+    .mutation(({ input, ctx }) => {
+      return ctx.db
+        .update(authProviders)
+        .set({ disabled: sql<boolean>`${!authProviders.disabled}` })
+        .where(eq(authProviders.id, input))
     }),
   updateAuthProvider: adminProcedure
     .input(
@@ -340,7 +364,8 @@ export const memberRouter = {
           client_secret: z.string().optional(),
           scopes: z.string().optional(),
           use_pkce: z.boolean().optional(),
-          description: z.string().optional()
+          description: z.string().optional(),
+          roleId: z.number()
         })
       })
     )

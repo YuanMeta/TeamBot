@@ -3,6 +3,7 @@ import { useEffect } from 'react'
 import { trpc } from '~/.client/trpc'
 import { useLocalState } from '~/hooks/localState'
 import { Form, Input, Modal, Select } from 'antd'
+import { toast } from 'sonner'
 
 export const AddMember = observer(
   (props: {
@@ -12,7 +13,8 @@ export const AddMember = observer(
     onUpdate: () => void
   }) => {
     const [state, setState] = useLocalState({
-      roles: [] as { value: number; label: string }[]
+      roles: [] as { value: number; label: string }[],
+      submitting: false
     })
     const [form] = Form.useForm()
     useEffect(() => {
@@ -43,34 +45,41 @@ export const AddMember = observer(
         open={props.open}
         title={props.id ? '编辑成员' : '添加成员'}
         width={450}
+        confirmLoading={state.submitting}
         onOk={() => {
-          return form.validateFields().then(async (value) => {
-            console.log('value', value)
-            if (props.id) {
-              await trpc.manage.updateMember.mutate({
-                userId: props.id,
-                email: value.email || undefined,
-                password: value.passowrd || undefined,
-                name: value.name,
-                roles: value.roles
-              })
-            } else {
-              await trpc.manage.createMember.mutate({
-                email: value.email || undefined,
-                password: value.passowrd,
-                name: value.name,
-                roles: value.roles
-              })
+          form.validateFields().then(async (value) => {
+            setState({ submitting: true })
+            try {
+              if (props.id) {
+                await trpc.manage.updateMember.mutate({
+                  userId: props.id,
+                  email: value.email || undefined,
+                  password: value.passowrd || undefined,
+                  name: value.name,
+                  roles: value.roles
+                })
+              } else {
+                await trpc.manage.createMember.mutate({
+                  email: value.email || undefined,
+                  password: value.passowrd,
+                  name: value.name,
+                  roles: value.roles
+                })
+              }
+              props.onUpdate()
+              props.onClose()
+            } catch (e: any) {
+              toast.error(e.message)
+            } finally {
+              setState({ submitting: false })
             }
-            props.onUpdate()
-            props.onClose()
           })
         }}
         onCancel={() => {
           props.onClose()
         }}
       >
-        <Form form={form} layout={'vertical'} validateTrigger={'submit'}>
+        <Form form={form} layout={'vertical'}>
           <Form.Item
             name={'name'}
             label={'名称'}

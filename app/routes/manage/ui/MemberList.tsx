@@ -135,6 +135,9 @@ export const MemberList = observer(() => {
                           .mutate({
                             memberId: record.id
                           })
+                          .then(() => {
+                            getMembers()
+                          })
                           .catch((e) => {
                             toast.error(e.message)
                           })

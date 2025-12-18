@@ -1,9 +1,7 @@
 import {
-  pgSchema,
   pgTable,
   integer,
   varchar,
-  serial,
   uuid,
   text,
   jsonb,
@@ -126,6 +124,10 @@ export const authProviders = pgTable('auth_providers', {
   clientId: text('client_id').notNull(),
   clientSecret: text('client_secret'),
   scopes: varchar(),
+  roleId: integer('role_id')
+    .references(() => roles.id)
+    .notNull(),
+  disabled: boolean('disabled').default(false).notNull(),
   usePkce: boolean('use_pkce').default(false).notNull(),
   createdAt: timestamp('created_at').defaultNow().notNull(),
   updatedAt: timestamp('updated_at').defaultNow().notNull()
@@ -210,7 +212,7 @@ export const oauthAccounts = pgTable(
 )
 
 export const roles = pgTable('roles', {
-  id: serial().primaryKey(),
+  id: integer().primaryKey().generatedAlwaysAsIdentity(),
   name: varchar().notNull(),
   allAssistants: boolean('all_assistants').notNull(),
   remark: text()

@@ -53,7 +53,8 @@ export const privateAccess = [
       'manage.getAuthProviders',
       'manage.createAuthProvider',
       'manage.updateAuthProvider',
-      'manage.deleteAuthProvider'
+      'manage.deleteAuthProvider',
+      'manage.toggleDisableAuthProvider'
     ]
   },
   {
