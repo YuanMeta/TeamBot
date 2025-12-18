@@ -129,6 +129,7 @@ POSTGRES_DB=teambot
 POSTGRES_PORT=5432
 
 # 应用配置
+APP_VERSION=latest
 NODE_ENV=production
 PORT=3015
 
