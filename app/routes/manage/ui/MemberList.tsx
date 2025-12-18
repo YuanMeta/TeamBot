@@ -1,5 +1,5 @@
-import { Input, Table, Tooltip } from 'antd'
-import { KeyRound, PencilLine, Trash } from 'lucide-react'
+import { Checkbox, Input, Table, Tooltip } from 'antd'
+import { KeyRound, PencilLine, Trash, UserRoundCheck } from 'lucide-react'
 import { observer } from 'mobx-react-lite'
 import { useCallback, useEffect } from 'react'
 import type { UserData } from 'server/db/type'
@@ -22,6 +22,7 @@ export const MemberList = observer(() => {
     keyword: '',
     data: [] as UserData[],
     total: 0,
+    deleted: false,
     openAddMember: false,
     selectedMemberId: null as null | number
   })
@@ -30,7 +31,8 @@ export const MemberList = observer(() => {
       .query({
         page: state.page,
         pageSize: state.pageSize,
-        keyword: state.keyword
+        keyword: state.keyword,
+        deleted: state.deleted
       })
       .then((res) => {
         setState({ data: res.members as any, total: res.total })
@@ -52,7 +54,19 @@ export const MemberList = observer(() => {
           }
         }}
       >
-        <div>
+        <Button
+          icon={<PlusOutlined />}
+          type={'primary'}
+          onClick={() => {
+            setState({
+              selectedMemberId: null,
+              openAddMember: true
+            })
+          }}
+        >
+          成员
+        </Button>
+        <div className={'flex items-center ml-2'}>
           <Input
             placeholder='搜索'
             prefix={<SearchOutlined />}
@@ -67,19 +81,18 @@ export const MemberList = observer(() => {
               setState({ keyword: e.target.value })
             }}
           />
+          <div className={'w-32 ml-2'}>
+            <Checkbox
+              onChange={(e) => {
+                setState({ deleted: e.target.checked })
+                getMembers()
+              }}
+              checked={state.deleted}
+            >
+              已删除
+            </Checkbox>
+          </div>
         </div>
-        <Button
-          icon={<PlusOutlined />}
-          type={'primary'}
-          onClick={() => {
-            setState({
-              selectedMemberId: null,
-              openAddMember: true
-            })
-          }}
-        >
-          成员
-        </Button>
       </TableHeader>
       <Table
         size={'small'}
@@ -112,41 +125,68 @@ export const MemberList = observer(() => {
             title: '操作',
             render: (_, record) => (
               <div className={'space-x-2'}>
-                <IconButton
-                  hidden={!hasAccess('manageMemberAndRole') || record.root!}
-                  onClick={() => {
-                    setState({
-                      openAddMember: true,
-                      selectedMemberId: record.id
-                    })
-                  }}
-                >
-                  <PencilLine />
-                </IconButton>
-                <IconButton
-                  hidden={!hasAccess('manageMemberAndRole') || record.root!}
-                  onClick={() => {
-                    adminConfirmDialog$.next({
-                      title: '提示',
-                      content: '删除后，用户将立即退出系统，是否继续',
-                      okButtonProps: { danger: true },
-                      onOk: () => {
-                        return trpc.manage.deleteMember
-                          .mutate({
-                            memberId: record.id
-                          })
-                          .then(() => {
-                            getMembers()
-                          })
-                          .catch((e) => {
-                            toast.error(e.message)
-                          })
-                      }
-                    })
-                  }}
-                >
-                  <Trash className={'size-3'} />
-                </IconButton>
+                {record.deleted ? (
+                  <IconButton
+                    hidden={!hasAccess('manageMemberAndRole') || record.root!}
+                    onClick={() => {
+                      adminConfirmDialog$.next({
+                        title: '提示',
+                        content: '是否恢复该用户账号？',
+                        okButtonProps: { danger: true },
+                        onOk: () => {
+                          return trpc.manage.restoreMember
+                            .mutate(record.id)
+                            .then(() => {
+                              getMembers()
+                            })
+                            .catch((e) => {
+                              toast.error(e.message)
+                            })
+                        }
+                      })
+                    }}
+                  >
+                    <UserRoundCheck />
+                  </IconButton>
+                ) : (
+                  <>
+                    <IconButton
+                      hidden={!hasAccess('manageMemberAndRole') || record.root!}
+                      onClick={() => {
+                        setState({
+                          openAddMember: true,
+                          selectedMemberId: record.id
+                        })
+                      }}
+                    >
+                      <PencilLine />
+                    </IconButton>
+                    <IconButton
+                      hidden={!hasAccess('manageMemberAndRole') || record.root!}
+                      onClick={() => {
+                        adminConfirmDialog$.next({
+                          title: '提示',
+                          content: '删除后，用户将立即退出系统，是否继续',
+                          okButtonProps: { danger: true },
+                          onOk: () => {
+                            return trpc.manage.deleteMember
+                              .mutate({
+                                memberId: record.id
+                              })
+                              .then(() => {
+                                getMembers()
+                              })
+                              .catch((e) => {
+                                toast.error(e.message)
+                              })
+                          }
+                        })
+                      }}
+                    >
+                      <Trash className={'size-3'} />
+                    </IconButton>
+                  </>
+                )}
               </div>
             )
           }

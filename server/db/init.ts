@@ -22,7 +22,17 @@ export const initDbData = async (db: NodePgDatabase) => {
       }
     ])
     .onConflictDoNothing()
-  await db.insert(accesses).values(privateAccess).onConflictDoNothing()
+  for (let access of privateAccess) {
+    await db
+      .insert(accesses)
+      .values(access)
+      .onConflictDoUpdate({
+        target: accesses.id,
+        set: {
+          trpcAccess: access.trpcAccess
+        }
+      })
+  }
   const rolesCount = await db.$count(roles)
   if (!rolesCount) {
     const res = await db

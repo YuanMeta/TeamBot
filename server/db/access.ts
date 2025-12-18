@@ -18,7 +18,8 @@ export const publicAccess = [
 
 export const privateAccess = [
   {
-    id: 'admin'
+    id: 'admin',
+    trpcAccess: []
   },
   {
     id: 'manageAssistant',
@@ -43,8 +44,9 @@ export const privateAccess = [
       'manage.createRole',
       'manage.updateRole',
       'manage.deleteRole',
-      'manage.remoteRoleFromUser',
-      'manage.addRoleToUser'
+      'manage.removeRoleFromUser',
+      'manage.addRoleToUser',
+      'manage.restoreMember'
     ]
   },
   {

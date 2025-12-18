@@ -451,14 +451,15 @@ export const memberRouter = {
       z.object({
         page: z.number(),
         pageSize: z.number(),
-        keyword: z.string().optional()
+        keyword: z.string().optional(),
+        deleted: z.boolean().default(false)
       })
     )
     .query(async ({ input, ctx }) => {
       const where = input.keyword
         ? {
             AND: [
-              { deleted: false },
+              { deleted: input.deleted },
               {
                 OR: [
                   { name: { like: `%${input.keyword}%` } },
@@ -467,7 +468,7 @@ export const memberRouter = {
               }
             ]
           }
-        : { deleted: false }
+        : { deleted: input.deleted }
       const members = await ctx.db.query.users.findMany({
         columns: {
           id: true,
@@ -475,7 +476,8 @@ export const memberRouter = {
           name: true,
           avatar: true,
           root: true,
-          createdAt: true
+          createdAt: true,
+          deleted: true
         },
         orderBy: {
           id: 'desc'
@@ -497,13 +499,13 @@ export const memberRouter = {
         users,
         input.keyword
           ? and(
-              eq(users.deleted, false),
+              eq(users.deleted, input.deleted),
               or(
                 like(users.name, `%${input.keyword}%`),
                 like(users.email, `%${input.keyword}%`)
               )
             )
-          : eq(users.deleted, false)
+          : eq(users.deleted, input.deleted)
       )
 
       return { members, total }
@@ -537,6 +539,15 @@ export const memberRouter = {
         }
         return user.id
       })
+    }),
+  restoreMember: adminProcedure
+    .input(z.number())
+    .mutation(async ({ input, ctx }) => {
+      await ctx.db
+        .update(users)
+        .set({ deleted: false })
+        .where(eq(users.id, input))
+      return { success: true }
     }),
   updateMember: adminProcedure
     .input(
