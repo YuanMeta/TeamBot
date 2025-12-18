@@ -293,7 +293,8 @@ export const memberRouter = {
           createdAt: true,
           usePkce: true,
           updatedAt: true,
-          description: true
+          description: true,
+          disabled: true
         },
         orderBy: {
           createdAt: 'desc'
@@ -346,7 +347,7 @@ export const memberRouter = {
     .mutation(({ input, ctx }) => {
       return ctx.db
         .update(authProviders)
-        .set({ disabled: sql<boolean>`${!authProviders.disabled}` })
+        .set({ disabled: sql<boolean>`NOT ${authProviders.disabled}` })
         .where(eq(authProviders.id, input))
     }),
   updateAuthProvider: adminProcedure

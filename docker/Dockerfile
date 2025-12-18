@@ -21,4 +21,4 @@ COPY ecosystem.config.cjs ./
 EXPOSE 3000
 
 # 使用 pm2-runtime 启动应用
-CMD pnpm drizzle-kit push && node server.js
+CMD pnpm drizzle-kit push --force && node server.js

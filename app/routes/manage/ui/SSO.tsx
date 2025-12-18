@@ -2,7 +2,7 @@ import { PencilLine, Trash } from 'lucide-react'
 import { observer } from 'mobx-react-lite'
 import { useCallback, useEffect } from 'react'
 import { trpc } from '~/.client/trpc'
-import { Button, Table } from 'antd'
+import { Button, Switch, Table } from 'antd'
 import { useLocalState } from '~/hooks/localState'
 import { AddSsoProvider } from './AddSsoProvider'
 import { useAccess } from '~/lib/access'
@@ -80,6 +80,28 @@ export const SSO = observer(() => {
             dataIndex: 'description',
             ellipsis: true,
             key: 'description'
+          },
+          {
+            title: '启用',
+            dataIndex: 'disabled',
+            render: (v, record) => (
+              <Switch
+                checked={!v}
+                onChange={(e) => {
+                  adminConfirmDialog$.next({
+                    title: '提示',
+                    content: `确定要${v ? '启用' : '禁用'}该SSO提供者吗？`,
+                    onOk: () => {
+                      return trpc.manage.toggleDisableAuthProvider
+                        .mutate(record.id)
+                        .then(() => {
+                          getProviders()
+                        })
+                    }
+                  })
+                }}
+              />
+            )
           },
           {
             dataIndex: 'actions',

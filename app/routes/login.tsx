@@ -27,7 +27,8 @@ export const loader = async (args: Route.LoaderArgs) => {
     columns: {
       id: true,
       name: true
-    }
+    },
+    where: { disabled: false }
   })
   return providers
 }
