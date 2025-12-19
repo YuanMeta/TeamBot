@@ -9,7 +9,8 @@ import type {
   messages,
   webSearches,
   settings,
-  assistantUsages
+  assistantUsages,
+  limits
 } from '../../drizzle/schema'
 
 export type UserData = typeof users.$inferSelect
@@ -33,6 +34,8 @@ export type AuthProviderData = typeof authProviders.$inferSelect
 export type WebSearchData = typeof webSearches.$inferSelect
 
 export type SettingsData = typeof settings.$inferSelect
+
+export type LimitData = typeof limits.$inferSelect
 
 export type AssistantOptions = {
   webSearchMode: 'none' | 'builtin' | 'custom'

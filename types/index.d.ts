@@ -1,3 +1,4 @@
+import type { TRPC_ERROR_CODE_KEY } from '@trpc/server'
 import type { DbInstance } from 'server/db'
 import type { AssistantData } from 'server/db/type'
 
@@ -89,3 +90,13 @@ export interface AiContext {
 }
 
 export type WebSearchMode = 'google' | 'exa' | 'tavily' | 'bocha' | 'zhipu'
+
+export interface TrpcErrorMeta {
+  code: number
+  data: {
+    code: TRPC_ERROR_CODE_KEY
+    path: string
+    httpStatus: number
+  }
+  message: string
+}

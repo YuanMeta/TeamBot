@@ -12,7 +12,7 @@ import { MessageManager } from '../lib/message'
 import { getUser } from '../session'
 import type { Request, Response } from 'express'
 import { saveFileByBase64 } from '../lib/utils'
-import { addTokens, checkAllowUseAssistant } from 'server/db/query'
+import { recordRequest, testAssistantAuth } from 'server/db/query'
 import { chats, messages } from 'drizzle/schema'
 import { eq } from 'drizzle-orm'
 import { type DbInstance } from 'server/db'
@@ -45,6 +45,13 @@ export const completions = async (
       message: (e as Error).message
     })
   }
+  if (!user.root) {
+    await testAssistantAuth(db, {
+      assistantId: json.assistantId,
+      model: json.model,
+      userId: user.uid
+    })
+  }
   const { uiMessages, chat, client, aiMsg, assistant, userMsg } =
     await MessageManager.getStreamMessage(db, {
       chatId: json.chatId,
@@ -53,15 +60,6 @@ export const completions = async (
       model: json.model,
       images: json.images
     })
-  if (!user.root) {
-    const allow = await checkAllowUseAssistant(db, uid, assistant.id)
-    if (!allow) {
-      throw new TRPCError({
-        code: 'FORBIDDEN',
-        message: 'permission denied'
-      })
-    }
-  }
   if (json.images?.length) {
     let paths: string[] = []
     for (let image of json.images) {
@@ -230,10 +228,14 @@ export const completions = async (
           })
           .where(eq(messages.id, aiMsg.id))
       }
-      await addTokens(db, {
+      await recordRequest(db, {
         assistantId: assistant.id,
         usage: usage,
-        model: json.model
+        model: json.model,
+        body: data.request.body || null,
+        messageId: aiMsg.id,
+        chatId: chat.id,
+        task: 'chat'
       })
     },
     onError: async (error: any) => {
@@ -244,7 +246,8 @@ export const completions = async (
           error: err.message
         })
         .where(eq(messages.id, aiMsg.id))
-      console.log('err request', JSON.stringify(err.requestBodyValues))
+      console.log('err request', err)
+      console.log('err request body', JSON.stringify(err.requestBodyValues))
     }
   })
   result.pipeUIMessageStreamToResponse(res)

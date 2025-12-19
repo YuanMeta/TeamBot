@@ -16,6 +16,7 @@ import {
   ErrorBoundary,
   ErrorFallback
 } from '~/components/project/ErrorBoundary'
+import { ErrorDialog } from './ui/ErrorDialog'
 
 export const loader = (args: Route.LoaderArgs) => {
   const userId = args.context.userId
@@ -54,11 +55,18 @@ export default observer(() => {
     },
     [navigate]
   )
-  useSubject(store.moveChatInput$, () => {
-    setState({
-      duration: true,
-      moveBottom: true
-    })
+  useSubject(store.moveChatInput$, (bottom: boolean) => {
+    if (bottom) {
+      setState({
+        duration: true,
+        moveBottom: true
+      })
+    } else {
+      setState({
+        duration: false,
+        moveBottom: false
+      })
+    }
     setTimeout(() => {
       setState({ duration: false })
     }, 200)
@@ -107,6 +115,7 @@ export default observer(() => {
         <ChatRename />
         <SearchModal />
         <PreviewImage />
+        <ErrorDialog />
       </ErrorBoundary>
     </StoreContext>
   )

@@ -1,4 +1,7 @@
 {
   "debug.javascript.autoAttachFilter": "onlyWithFlag",
-  "makefile.configureOnOpen": false
+
+  "search.exclude": {
+    "**/migrations": true
+  }
 }

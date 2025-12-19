@@ -16,7 +16,7 @@ import { routeInterceptor } from './interceptor'
 import { chats, oauthAccounts, userRoles, users } from 'drizzle/schema'
 import { and, eq, or } from 'drizzle-orm'
 import type { DbInstance } from 'server/db'
-import { addTokens } from 'server/db/query'
+import { recordRequest } from 'server/db/query'
 import { cacheManage } from 'server/lib/cache'
 // 防暴力破解：登录尝试记录
 const loginAttempts = new Map<string, { count: number; lockedUntil: number }>()
@@ -260,10 +260,12 @@ The historical dialogue is as follows: \n${messages
                 .where(eq(chats.id, json.chatId))
             }
             if (data.usage) {
-              await addTokens(db, {
+              await recordRequest(db, {
                 model: taskModel.taskModel!,
                 assistantId: taskModel.id,
-                usage: data.usage
+                usage: data.usage,
+                body: data.request.body,
+                task: 'title'
               })
             }
           }

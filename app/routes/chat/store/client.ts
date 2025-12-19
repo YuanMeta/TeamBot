@@ -2,7 +2,13 @@ import dayjs from 'dayjs'
 import type { ChatData, ChatStore, MessageData } from './store'
 import { trpc } from '~/.client/trpc'
 import { parseJsonEventStream, type UIMessageChunk } from 'ai'
-import type { MessagePart, ReasonPart, TextPart, ToolPart } from 'types'
+import type {
+  MessagePart,
+  ReasonPart,
+  TextPart,
+  ToolPart,
+  TrpcErrorMeta
+} from 'types'
 import { observable, runInAction } from 'mobx'
 import { cid, fileToBase64, findLast } from '../../../lib/utils'
 import { uiMessageChunkSchema, type TemaMessageChunk } from './msgSchema'
@@ -42,7 +48,7 @@ export class ChatClient {
       state.messages.push(userMessage, aiMessage)
     })
     if (!chat) {
-      this.store.moveChatInput$.next()
+      this.store.moveChatInput$.next(true)
     }
     const searchQuery = await this.getSearchQuery(data.text)
     if (searchQuery.query) {
@@ -78,6 +84,8 @@ export class ChatClient {
       await trpc.chat.createMessages.mutate({
         chatId: chat.id,
         userPrompt: data.text,
+        assistantId: this.store.state.assistant!.id,
+        model: this.store.state.model!,
         context: userMessage.context || null,
         userMessageId: userMessage.id!,
         assistantMessageId: aiMessage.id!
@@ -433,35 +441,84 @@ export class ChatClient {
     const message = chat.messages!.slice(0, offset)
     const removeMessages = chat.messages!.slice(offset)
     const [userMessage, aiMessage] = message.slice(-2)
-    this.store.setState((state) => {
-      state.messages = message
-      if (userPrompt) {
-        userMessage.text = userPrompt
-      }
-      chat.messages = message
-      const lastMessage = message[message.length - 1]
-      lastMessage.parts = undefined
-      lastMessage.terminated = false
-      lastMessage.error = undefined
-    })
-    this.store.scrollToActiveMessage$.next()
-    await trpc.chat.regenerate.mutate({
-      chatId: chat.id!,
-      removeMessages: removeMessages.map((m) => m.id!),
-      offset,
-      aiMessageId: aiMessage.id!,
-      userMessage: userPrompt
-        ? {
-            msgId: userMessage.id!,
-            prompt: userPrompt
-          }
-        : undefined
-    })
     const assistantId = this.store.state.assistant!.id
     const model = this.store.state.model!
-    return this.completion(chat, {
-      assistantId,
-      model
-    })
+    try {
+      if (userPrompt) {
+        const searchQuery = await this.getSearchQuery(userPrompt)
+        if (searchQuery.query) {
+          runInAction(() => {
+            userMessage.context = observable({
+              ...userMessage.context,
+              searchResult: {
+                query: searchQuery.query!
+              }
+            })
+          })
+          try {
+            const res = await trpc.chat.searchWeb.query({
+              keyword: searchQuery.query,
+              assistantId,
+              model,
+              webSearchId: searchQuery.webSearchId,
+              query: userPrompt
+            })
+            runInAction(() => {
+              userMessage.context!.searchResult!.results = res.results
+              userMessage.context!.searchResult!.summary =
+                res.summary || undefined
+            })
+          } catch (e: any) {
+            console.error(e)
+            runInAction(() => {
+              userMessage.context!.searchResult!.error = e.message
+            })
+          }
+        }
+      }
+
+      this.store.setState((state) => {
+        state.messages = message
+        if (userPrompt) {
+          userMessage.text = userPrompt
+        }
+        chat.messages = message
+        const lastMessage = message[message.length - 1]
+        lastMessage.parts = undefined
+        lastMessage.terminated = false
+        lastMessage.error = undefined
+      })
+      this.store.scrollToActiveMessage$.next()
+      await trpc.chat.regenerate.mutate({
+        chatId: chat.id!,
+        removeMessages: removeMessages.map((m) => m.id!),
+        offset,
+        model,
+        assistantId,
+        aiMessageId: aiMessage.id!,
+        userMessage: userPrompt
+          ? {
+              msgId: userMessage.id!,
+              prompt: userPrompt,
+              context: userMessage.context
+            }
+          : undefined
+      })
+      await this.completion(chat, {
+        assistantId,
+        model
+      })
+    } catch (e: any) {
+      const meta = e.meta as TrpcErrorMeta
+      if (meta) {
+        let data = meta.message.startsWith('{')
+          ? JSON.parse(meta.message)
+          : null
+        this.store.errorDialog$.next({
+          status: meta.data.code,
+          meta: data
+        })
+      }
+    }
   }
 }

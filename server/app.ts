@@ -11,6 +11,10 @@ import { fetchOpenRouterModels } from './lib/openRouterModels'
 import { getUser } from './session'
 import { initDbData } from './db/init'
 import { db, type DbInstance } from './db'
+import cron from 'node-cron'
+import dayjs from 'dayjs'
+import { requests } from 'drizzle/schema'
+import { lt } from 'drizzle-orm'
 declare module 'react-router' {
   interface AppLoadContext {
     db: DbInstance
@@ -21,6 +25,13 @@ declare module 'react-router' {
 initDbData(db)
 fetchOpenRouterModels(db)
 export const app = express()
+
+cron.schedule('0 2 * * *', () => {
+  const date = dayjs()
+  db.delete(requests).where(
+    lt(requests.createdAt, date.startOf('month').subtract(1, 'month').toDate())
+  )
+})
 app.use(
   express.json({
     limit: '20mb'

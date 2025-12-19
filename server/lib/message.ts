@@ -9,7 +9,7 @@ import { eq } from 'drizzle-orm'
 import type { AssistantData, MessageContext, MessageData } from 'server/db/type'
 import { type DbInstance } from 'server/db'
 import { cacheManage } from './cache'
-import { addTokens } from 'server/db/query'
+import { recordRequest } from 'server/db/query'
 
 type MessageItem = Pick<
   MessageData,
@@ -107,10 +107,15 @@ async function getMessagesByCompress(
         })
         .where(eq(messages.id, summaryMsg.id))
       if (summaryData.usage) {
-        await addTokens(db, {
+        await recordRequest(db, {
           assistantId: taskModel!.id,
           usage: summaryData.usage,
-          model: taskModel!.taskModel!
+          model: taskModel!.taskModel!,
+          body: {
+            summary: summaryData.text,
+            previousSummary: latestSummary?.previousSummary
+          },
+          task: 'compress'
         })
       }
       summaryMsg.previousSummary = summaryData.text

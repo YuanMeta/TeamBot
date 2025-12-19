@@ -14,7 +14,7 @@ import {
   users
 } from 'drizzle/schema'
 import { and, desc, eq, ilike, inArray, or } from 'drizzle-orm'
-import { addTokens, checkAllowUseAssistant } from 'server/db/query'
+import { recordRequest, testAssistantAuth } from 'server/db/query'
 import {
   compressSearchResults,
   extractOrDetermineSearch
@@ -23,6 +23,23 @@ import { runWebSearch } from 'server/lib/search'
 import { cacheManage } from 'server/lib/cache'
 import type { MessagePart } from 'types'
 export const chatRouter = {
+  testAssistantAuth: procedure
+    .input(
+      z.object({
+        assistantId: z.number(),
+        model: z.string()
+      })
+    )
+    .mutation(async ({ input, ctx }) => {
+      if (!ctx.root) {
+        await testAssistantAuth(ctx.db, {
+          assistantId: input.assistantId,
+          model: input.model,
+          userId: ctx.userId
+        })
+      }
+      return { success: true }
+    }),
   getMsgContext: procedure.input(z.string()).query(async ({ input, ctx }) => {
     const msg = await ctx.db.query.messages.findFirst({
       columns: { context: true },
@@ -41,6 +58,13 @@ export const chatRouter = {
       })
     )
     .query(async ({ input, ctx }) => {
+      if (!ctx.root) {
+        await testAssistantAuth(ctx.db, {
+          assistantId: input.assistantId,
+          model: input.model,
+          userId: ctx.userId
+        })
+      }
       const assistant = await ctx.db.query.assistants.findFirst({
         where: { id: input.assistantId }
       })
@@ -87,10 +111,12 @@ export const chatRouter = {
             searchResults: searchResults
           })
           summary = res.summary
-          await addTokens(ctx.db, {
+          await recordRequest(ctx.db, {
             assistantId: assistant.id,
             usage: res.usage,
-            model: input.model
+            model: input.model,
+            body: { query: input.query, results: searchResults },
+            task: 'compress'
           })
         }
       }
@@ -106,15 +132,11 @@ export const chatRouter = {
       })
     )
     .query(async ({ input, ctx }) => {
-      const allow = await checkAllowUseAssistant(
-        ctx.db,
-        ctx.userId,
-        input.assistantId
-      )
-      if (!allow) {
-        throw new TRPCError({
-          code: 'FORBIDDEN',
-          message: 'permission denied'
+      if (!ctx.root) {
+        await testAssistantAuth(ctx.db, {
+          assistantId: input.assistantId,
+          model: input.model,
+          userId: ctx.userId
         })
       }
       const taskModel = await cacheManage.getTaskModel({
@@ -139,10 +161,12 @@ export const chatRouter = {
         historyQuery: []
       })
       if (res.usage) {
-        await addTokens(ctx.db, {
+        await recordRequest(ctx.db, {
           assistantId: taskModel.id,
           usage: res.usage,
-          model: taskModel.taskModel!
+          model: taskModel.taskModel!,
+          body: { query: input.question, plan: res.query },
+          task: 'query_plan'
         })
       }
       return res.query
@@ -153,7 +177,7 @@ export const chatRouter = {
         userMessageId: z.string().min(1),
         assistantMessageId: z.string().min(1),
         assistantId: z.number(),
-        model: z.string().optional(),
+        model: z.string(),
         context: z
           .object({
             docs: z
@@ -177,6 +201,13 @@ export const chatRouter = {
       })
     )
     .mutation(async ({ input, ctx }) => {
+      if (!ctx.root) {
+        await testAssistantAuth(ctx.db, {
+          assistantId: input.assistantId,
+          model: input.model,
+          userId: ctx.userId
+        })
+      }
       const date = new Date()
       return await ctx.db.transaction(async (t) => {
         const [chat] = await t
@@ -399,6 +430,8 @@ export const chatRouter = {
         userPrompt: z.string().optional(),
         userMessageId: z.string().min(1),
         assistantMessageId: z.string().min(1),
+        model: z.string(),
+        assistantId: z.number(),
         context: z
           .object({
             docs: z
@@ -421,6 +454,13 @@ export const chatRouter = {
       })
     )
     .mutation(async ({ input, ctx }) => {
+      // if (!ctx.root) {
+      await testAssistantAuth(ctx.db, {
+        assistantId: input.assistantId,
+        model: input.model,
+        userId: ctx.userId
+      })
+      // }
       let date = new Date()
       const chat = await ctx.db.query.chats.findFirst({
         columns: {
@@ -521,15 +561,23 @@ export const chatRouter = {
         removeMessages: z.string().array(),
         offset: z.number(),
         aiMessageId: z.string(),
+        model: z.string(),
+        assistantId: z.number(),
         userMessage: z
           .object({
             msgId: z.string(),
-            prompt: z.string()
+            prompt: z.string(),
+            context: z.custom<any>()
           })
           .optional()
       })
     )
     .mutation(async ({ input, ctx }) => {
+      await testAssistantAuth(ctx.db, {
+        assistantId: input.assistantId,
+        model: input.model,
+        userId: ctx.userId
+      })
       return ctx.db.transaction(async (t) => {
         const chat = await t.query.chats.findFirst({
           where: {
@@ -567,6 +615,7 @@ export const chatRouter = {
               text: input.userMessage.prompt,
               context: {
                 ...oldUserMsg?.context,
+                ...input.userMessage.context,
                 toolCallOriginData: {}
               }
             })

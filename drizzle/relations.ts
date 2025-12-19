@@ -38,7 +38,8 @@ export const relations = defineRelations(schema, (r) => ({
     roles: r.many.roles({
       from: r.assistants.id.through(r.roleAssistants.assistantId),
       to: r.roles.id.through(r.roleAssistants.roleId)
-    })
+    }),
+    limits: r.many.limits()
   },
   tools: {
     assistants: r.many.assistants()
@@ -80,6 +81,12 @@ export const relations = defineRelations(schema, (r) => ({
     role: r.one.roles({
       from: r.authProviders.roleId,
       to: r.roles.id
+    })
+  },
+  limits: {
+    assistants: r.one.assistants({
+      from: r.limits.assistantId,
+      to: r.assistants.id
     })
   }
 }))

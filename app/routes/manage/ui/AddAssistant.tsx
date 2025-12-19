@@ -134,7 +134,12 @@ export const AddAssistant = observer(
       submitting: false,
       tools: [] as ToolData[],
       webSearchTools: [] as WebSearchData[],
-      remoteModels: [] as { id: number; model: string; provider: string }[]
+      remoteModels: [] as {
+        id: number
+        model: string
+        provider: string
+        options: string | null
+      }[]
     })
     const [form] = Form.useForm<AssistantData & { tools: string[] }>()
     const mode = Form.useWatch('mode', form)
@@ -183,12 +188,15 @@ export const AddAssistant = observer(
     }, [props.id])
     const modelOptions = useMemo(() => {
       if (mode === 'openrouter') {
-        return state.remoteModels.map((m) => {
-          return {
-            label: m.model,
-            value: m.model
-          }
-        })
+        return state.remoteModels
+          .map((m) => {
+            const options = m.options ? JSON.parse(m.options) : null
+            return {
+              label: options?.id,
+              value: options?.id
+            }
+          })
+          .filter((m) => !!m.value)
       }
       return state.remoteModels
         .filter((m) => !mode || m.provider === mode)

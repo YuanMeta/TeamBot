@@ -5,7 +5,7 @@ import type { AiContext, SearchResult, WebSearchMode } from 'types'
 import { google } from 'googleapis'
 import z from 'zod'
 import { compressSearchResults } from './prompt'
-import { addTokens } from 'server/db/query'
+import { recordRequest } from 'server/db/query'
 import { messages } from 'drizzle/schema'
 import { eq } from 'drizzle-orm'
 import type { WebSearchParams } from 'server/db/type'
@@ -163,10 +163,16 @@ export const createWebSearchTool = (
             query: query,
             searchResults: results
           })
-          await addTokens(ctx.db, {
+          await recordRequest(ctx.db, {
             assistantId: taskModel.id,
             model: taskModel.taskModel!,
-            usage: res.usage
+            usage: res.usage,
+            body: {
+              model: taskModel.taskModel!,
+              query: query,
+              results: results
+            },
+            task: 'compress'
           })
           const msg = await ctx.db.query.messages.findFirst({
             columns: { context: true },
@@ -190,6 +196,36 @@ export const createWebSearchTool = (
         }
       } else if (results) {
         return results
+        // const msg = await ctx.db.query.messages.findFirst({
+        //   columns: { context: true },
+        //   where: { id: ctx.aiMessageId }
+        // })
+        // if (msg) {
+        //   await ctx.db
+        //     .update(messages)
+        //     .set({
+        //       context: {
+        //         ...msg.context,
+        //         toolCallOriginData: {
+        //           ...msg.context?.toolCallOriginData,
+        //           [toolCallId]: results
+        //         }
+        //       }
+        //     })
+        //     .where(eq(messages.id, ctx.aiMessageId))
+        // }
+        // return results
+        //   .map((result, index) => {
+        //     const parts = [`${index + 1}. [${result.title}](${result.url})`]
+        //     if (result.summary || result.snippet) {
+        //       parts.push(`   ${result.summary || result.snippet}`)
+        //     }
+        //     if (result.date) {
+        //       parts.push(`   发布时间: ${result.date}`)
+        //     }
+        //     return parts.join('\n')
+        //   })
+        //   .join('\n\n')
       }
       return 'No search tool available'
     }

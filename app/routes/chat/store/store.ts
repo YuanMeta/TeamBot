@@ -4,9 +4,8 @@ import { trpc } from '~/.client/trpc'
 import { isClient } from '~/lib/utils'
 import { Subject } from 'rxjs'
 import { ChatClient } from './client'
-import type { MessagePart, SearchResult } from 'types'
+import type { MessagePart, SearchResult, TrpcErrorMeta } from 'types'
 import { observable, runInAction } from 'mobx'
-import { builtInSearchMode } from '~/routes/manage/ui/data'
 import 'dayjs/locale/zh-cn'
 import dayjs from 'dayjs'
 import relativeTime from 'dayjs/plugin/relativeTime'
@@ -15,6 +14,7 @@ import type {
   MessageContext,
   ToolData
 } from 'server/db/type'
+import type { TRPC_ERROR_CODE_KEY } from '@trpc/server'
 dayjs.extend(relativeTime)
 dayjs.locale('zh-cn')
 export interface MessageData {
@@ -143,9 +143,13 @@ export class ChatStore extends StructStore<typeof state> {
   scrollToBottom$ = new Subject<void>()
   transList$ = new Subject<void>()
   navigate$ = new Subject<string>()
-  moveChatInput$ = new Subject<void>()
+  moveChatInput$ = new Subject<boolean>()
   renameChatTitle$ = new Subject<(typeof this.state.chats)[number]>()
   openPreviewImages$ = new Subject<string[]>()
+  errorDialog$ = new Subject<{
+    status: TRPC_ERROR_CODE_KEY
+    meta: null | { num: number; time: 'day' | 'week' | 'month' }
+  }>()
   abortController: AbortController | null = null
   client = new ChatClient(this)
   loadMoreChats = true
@@ -316,8 +320,21 @@ export class ChatStore extends StructStore<typeof state> {
         docs: data.docs,
         images: data.images
       })
-    } catch (e) {
-      console.log('err', e)
+    } catch (e: any) {
+      const meta = e.meta as TrpcErrorMeta
+      if (meta) {
+        let data = meta.message.startsWith('{')
+          ? JSON.parse(meta.message)
+          : null
+        this.errorDialog$.next({
+          status: meta.data.code,
+          meta: data
+        })
+        this.state.messages = this.state.messages.slice(0, -2)
+        if (!this.state.messages.length) {
+          this.moveChatInput$.next(false)
+        }
+      }
     }
   }
   async stop(chatId: string) {

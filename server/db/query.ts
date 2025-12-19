@@ -3,14 +3,18 @@ import {
   accesses,
   accessRoles,
   assistantUsages,
+  requests,
   roleAssistants,
   roles,
   userRoles
 } from 'drizzle/schema'
-import { and, eq, or } from 'drizzle-orm'
+import { and, eq, gte, or } from 'drizzle-orm'
 import { increment, type DbInstance } from '.'
 import type { Usage } from 'types'
 import dayjs from 'dayjs'
+import { TRPCError } from '@trpc/server'
+import type { LimitData } from './type'
+import { cacheable } from 'server/lib/cache'
 
 export const isAdmin = async (db: DbInstance, userId: number) => {
   const result = await db
@@ -29,8 +33,13 @@ export const isAdmin = async (db: DbInstance, userId: number) => {
 
 export const checkAllowUseAssistant = async (
   db: NodePgDatabase,
-  userId: number,
-  assistantId: number
+  {
+    userId,
+    assistantId
+  }: {
+    userId: number
+    assistantId: number
+  }
 ) => {
   const result = await db
     .select({
@@ -77,16 +86,24 @@ export const parseRecord = <T extends Record<string, any>>(
   }, {} as any)
 }
 
-export const addTokens = async (
+export const recordRequest = async (
   db: DbInstance,
   {
     usage,
     model,
-    assistantId
+    assistantId,
+    body,
+    messageId,
+    chatId,
+    task
   }: {
     assistantId: number
     model: string
     usage: Usage
+    body: any
+    messageId?: string
+    chatId?: string
+    task: 'chat' | 'title' | 'compress' | 'query_plan'
   }
 ) => {
   const today = dayjs().startOf('day')
@@ -130,4 +147,95 @@ export const addTokens = async (
       createdAt: today.toDate()
     })
   }
+  await db
+    .insert(requests)
+    .values({
+      assistantId: assistantId,
+      task: task,
+      totalTokens: usage.totalTokens,
+      inputTokens: usage.inputTokens,
+      outputTokens: usage.outputTokens,
+      chatId,
+      messageId,
+      model,
+      detail: JSON.stringify(body || null)
+    })
+    .catch((e) => {
+      console.error(e)
+    })
+}
+
+export const testAssistantAuth = async (
+  db: DbInstance,
+  options: {
+    userId: number
+    assistantId: number
+    model: string
+  }
+) => {
+  const cache = await cacheable.get(
+    `auth:${options.userId}:${options.assistantId}:${options.model}`
+  )
+  if (cache) {
+    return true
+  }
+  const allow = await checkAllowUseAssistant(db, {
+    userId: options.userId,
+    assistantId: options.assistantId
+  })
+  if (!allow) {
+    throw new TRPCError({
+      code: 'FORBIDDEN'
+    })
+  }
+  const assistant = await db.query.assistants.findFirst({
+    where: { id: options.assistantId },
+    columns: {
+      models: true
+    },
+    with: {
+      limits: {
+        where: { type: 'chat' }
+      }
+    }
+  })
+  if (!assistant || !assistant.models.includes(options.model)) {
+    throw new TRPCError({
+      code: 'NOT_FOUND'
+    })
+  }
+  if (assistant.limits.length > 0) {
+    for (let limit of assistant.limits) {
+      if (limit.num > 0) {
+        let date = dayjs()
+        if (limit.time === 'day') {
+          date = date.startOf('day')
+        } else if (limit.time === 'week') {
+          date = date.startOf('week')
+        } else if (limit.time === 'month') {
+          date = date.startOf('month')
+        }
+        const count = await db.$count(
+          requests,
+          and(
+            eq(requests.assistantId, options.assistantId),
+            eq(requests.task, 'chat'),
+            gte(requests.createdAt, date.toDate())
+          )
+        )
+        if (count >= limit.num) {
+          throw new TRPCError({
+            code: 'TOO_MANY_REQUESTS',
+            message: JSON.stringify({ num: limit.num, time: limit.time })
+          })
+        }
+      }
+    }
+  }
+  await cacheable.set(
+    `auth:${options.userId}:${options.assistantId}:${options.model}`,
+    true,
+    8000
+  )
+  return true
 }

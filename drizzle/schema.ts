@@ -282,3 +282,44 @@ export const settings = pgTable('settings', {
   id: varchar().primaryKey().$type<keyof SettingsRecord>(),
   value: json().notNull().$type<any>()
 })
+
+export const limits = pgTable(
+  'limits',
+  {
+    id: integer().primaryKey().generatedAlwaysAsIdentity(),
+    assistantId: integer('assistant_id').references(() => assistants.id),
+    type: varchar().notNull().$type<'chat'>(),
+    time: varchar().notNull().$type<'day' | 'week' | 'month'>(),
+    num: integer().notNull(),
+    options: jsonb(),
+    createdAt: timestamp('created_at').defaultNow().notNull(),
+    updatedAt: timestamp('updated_at').defaultNow().notNull()
+  },
+  (table) => [index().on(table.assistantId, table.type)]
+)
+
+export const requests = pgTable(
+  'requests',
+  {
+    id: integer().primaryKey().generatedAlwaysAsIdentity(),
+    task: varchar()
+      .notNull()
+      .$type<'chat' | 'title' | 'compress' | 'query_plan'>(),
+    assistantId: integer('assistant_id'),
+    model: varchar(),
+    userId: integer('user_id'),
+    messageId: varchar('message_id'),
+    chatId: varchar('chat_id'),
+    totalTokens: integer('total_tokens').default(0).notNull(),
+    inputTokens: integer('input_tokens').default(0).notNull(),
+    outputTokens: integer('output_tokens').default(0).notNull(),
+    detail: text(),
+    createdAt: timestamp('created_at').defaultNow().notNull()
+  },
+  (table) => [
+    index().on(table.task, table.assistantId, table.createdAt),
+    index().on(table.chatId, table.messageId),
+    index().on(table.createdAt),
+    index().on(table.model)
+  ]
+)

@@ -5,6 +5,7 @@ import { checkLLmConnect } from 'server/lib/connect'
 import {
   assistants,
   assistantUsages,
+  limits,
   models,
   roleAssistants,
   tools
@@ -100,7 +101,12 @@ export const assistantRouter = {
           id: 'desc'
         },
         offset: (input.page - 1) * input.pageSize,
-        limit: input.pageSize
+        limit: input.pageSize,
+        with: {
+          limits: {
+            columns: { id: true }
+          }
+        }
       })
       const total = await ctx.db.$count(assistants)
       return {
@@ -184,6 +190,57 @@ export const assistantRouter = {
       }
       return { success: true }
     }),
+  deleteAssistantLimit: adminProcedure
+    .input(z.number())
+    .mutation(async ({ input, ctx }) => {
+      await ctx.db.delete(limits).where(eq(limits.id, input))
+      return { success: true }
+    }),
+  updateAssistantLimit: adminProcedure
+    .input(
+      z.object({
+        id: z.number(),
+        data: z.object({
+          num: z.number(),
+          time: z.enum(['day', 'week', 'month'])
+        })
+      })
+    )
+    .mutation(async ({ input, ctx }) => {
+      await ctx.db
+        .update(limits)
+        .set({
+          num: input.data.num,
+          time: input.data.time
+        })
+        .where(eq(limits.id, input.id))
+      return { success: true }
+    }),
+  addAssistantLimit: adminProcedure
+    .input(
+      z.object({
+        assistantId: z.number(),
+        time: z.enum(['day', 'week', 'month']),
+        num: z.number()
+      })
+    )
+    .mutation(async ({ input, ctx }) => {
+      await ctx.db.insert(limits).values({
+        assistantId: input.assistantId,
+        type: 'chat',
+        time: input.time,
+        num: input.num
+      })
+      return { success: true }
+    }),
+  getAssistantLimit: adminProcedure
+    .input(z.number())
+    .query(async ({ input, ctx }) => {
+      const limit = await ctx.db.query.limits.findFirst({
+        where: { assistantId: input, type: 'chat' }
+      })
+      return limit
+    }),
   deleteAssistant: adminProcedure
     .input(
       z.object({
@@ -192,6 +249,9 @@ export const assistantRouter = {
     )
     .mutation(async ({ input, ctx }) => {
       await ctx.db.transaction(async (trx) => {
+        await trx
+          .delete(limits)
+          .where(eq(limits.assistantId, input.assistantId))
         await trx
           .delete(assistantUsages)
           .where(eq(assistantUsages.assistantId, input.assistantId))
@@ -372,7 +432,8 @@ export const assistantRouter = {
         .select({
           id: models.id,
           model: models.model,
-          provider: models.provider
+          provider: models.provider,
+          options: models.options
         })
         .from(models)
         .where(whereCondition)

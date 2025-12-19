@@ -57,8 +57,8 @@ importers:
         specifier: ^0.6.0
         version: 0.6.0
       '@openrouter/ai-sdk-provider':
-        specifier: ^1.2.0
-        version: 1.2.8(ai@5.0.113(zod@4.1.13))(zod@4.1.13)
+        specifier: ^1.5.4
+        version: 1.5.4(ai@5.0.113(zod@4.1.13))(zod@4.1.13)
       '@radix-ui/react-accordion':
         specifier: ^1.2.12
         version: 1.2.12(@types/react-dom@19.2.3(@types/react@19.2.7))(@types/react@19.2.7)(react-dom@19.2.0(react@19.2.0))(react@19.2.0)
@@ -195,8 +195,8 @@ importers:
         specifier: ^10.0.0
         version: 10.0.0
       drizzle-orm:
-        specifier: 1.0.0-beta.2-3a98f3a
-        version: 1.0.0-beta.2-3a98f3a(@opentelemetry/api@1.9.0)(@types/mssql@9.1.8)(@types/pg@8.15.6)(mssql@11.0.1)(pg@8.16.3)
+        specifier: 1.0.0-beta.3-702eadc
+        version: 1.0.0-beta.3-702eadc(@opentelemetry/api@1.9.0)(@types/mssql@9.1.8)(@types/pg@8.15.6)(mssql@11.0.1)(pg@8.16.3)
       exa-js:
         specifier: ^2.0.0
         version: 2.0.11(ws@8.18.3)
@@ -260,6 +260,9 @@ importers:
       nanoid:
         specifier: ^5.1.6
         version: 5.1.6
+      node-cron:
+        specifier: ^4.2.1
+        version: 4.2.1
       openai:
         specifier: ^6.9.1
         version: 6.9.1(ws@8.18.3)(zod@4.1.13)
@@ -412,8 +415,8 @@ importers:
         specifier: ^3.0.3
         version: 3.0.3
       drizzle-kit:
-        specifier: 1.0.0-beta.2-3a98f3a
-        version: 1.0.0-beta.2-3a98f3a
+        specifier: 1.0.0-beta.3-702eadc
+        version: 1.0.0-beta.3-702eadc
       tailwindcss:
         specifier: ^4.1.13
         version: 4.1.17
@@ -788,6 +791,9 @@ packages:
 
   '@codemirror/commands@6.10.0':
     resolution: {integrity: sha512-2xUIc5mHXQzT16JnyOFkh8PvfeXuIut3pslWGfsGOhxP/lpgRm9HOl/mpzLErgt5mXDovqA0d11P21gofRLb9w==}
+
+  '@codemirror/commands@6.10.1':
+    resolution: {integrity: sha512-uWDWFypNdQmz2y1LaNJzK7fL7TYKLeUAU0npEC685OKTF3KcQ2Vu3klIM78D7I6wGhktme0lh3CuQLv0ZCrD9Q==}
 
   '@codemirror/lang-javascript@6.2.4':
     resolution: {integrity: sha512-0WVmhp1QOqZ4Rt6GlVGwKJN3KW7Xh4H2q8ZZNGZaP6lRdxXJzmjm4FqvmOojVj6khWJHIb9sp7U/72W7xQgqAA==}
@@ -1546,8 +1552,8 @@ packages:
     resolution: {integrity: sha512-gGq0NJkIGSwdbUt4yhdF8ZrmkGKVz9vAdVzpOfnom+V8PLSmSOVhZwbNvZZS1EYcJN5hzzKBxmmVVAInM6HQLg==}
     engines: {node: ^14.17.0 || ^16.13.0 || >=18.0.0}
 
-  '@openrouter/ai-sdk-provider@1.2.8':
-    resolution: {integrity: sha512-pQT8AzZBKg9f4bkt4doF486ZlhK0XjKkevrLkiqYgfh1Jplovieu28nK4Y+xy3sF18/mxjqh9/2y6jh01qzLrA==}
+  '@openrouter/ai-sdk-provider@1.5.4':
+    resolution: {integrity: sha512-xrSQPUIH8n9zuyYZR0XK7Ba0h2KsjJcMkxnwaYfmv13pKs3sDkjPzVPPhlhzqBGddHb5cFEwJ9VFuFeDcxCDSw==}
     engines: {node: '>=18'}
     peerDependencies:
       ai: ^5.0.0
@@ -3749,12 +3755,12 @@ packages:
     resolution: {integrity: sha512-JVUnt+DUIzu87TABbhPmNfVdBDt18BLOWjMUFJMSi/Qqg7NTYtabbvSNJGOJ7afbRuv9D/lngizHtP7QyLQ+9w==}
     engines: {node: '>=12'}
 
-  drizzle-kit@1.0.0-beta.2-3a98f3a:
-    resolution: {integrity: sha512-YMFiY0uBZ3+fx+wSYSGXeC1MaL16/jUX6B+MFFsdYoFSF8/AH4ztBp+uU/94/XIOw6QxjJXavCNITx2TXoiHbA==}
+  drizzle-kit@1.0.0-beta.3-702eadc:
+    resolution: {integrity: sha512-ht0hSQaSCO2QUPW/9U9QmjCMS46qYcjp/sg8cwniuGem7RLKSwt4QEiNovU03WCvgD1DDN9/eh7paOCyqCu2tg==}
     hasBin: true
 
-  drizzle-orm@1.0.0-beta.2-3a98f3a:
-    resolution: {integrity: sha512-q2ax54PTJt3tYwzTaZOev/HUWeW3wS8lGY+kC/sq0IRf976avwlnUh6WAcFM23CTNYbQF1nbZd4TwKLXTF7ORw==}
+  drizzle-orm@1.0.0-beta.3-702eadc:
+    resolution: {integrity: sha512-WqMMwmjDzepvMTuViXihBqMOgQ4X27ctoyhDcXk1+0fK7OPD2Yp41pM6RHFvvOrjOSur68UTtJhYbE5jslqA/w==}
     peerDependencies:
       '@aws-sdk/client-rds-data': '>=3'
       '@cloudflare/workers-types': '>=4'
@@ -5031,6 +5037,10 @@ packages:
   negotiator@1.0.0:
     resolution: {integrity: sha512-8Ofs/AUQh8MaEcrlq5xOX0CQ9ypTF5dl78mjlMNfOK08fzpgTHQRQPBxcPlEtIw0yRpws+Zo/3r+5WRby7u3Gg==}
     engines: {node: '>= 0.6'}
+
+  node-cron@4.2.1:
+    resolution: {integrity: sha512-lgimEHPE/QDgFlywTd8yTR61ptugX3Qer29efeyWw2rv259HtGBNn1vZVmp8lB9uo9wC0t/AT4iGqXxia+CJFg==}
+    engines: {node: '>=6.0.0'}
 
   node-domexception@1.0.0:
     resolution: {integrity: sha512-/jKZoMpw0F8GRwl4/eLROPA3cfcXtLApP0QzLmUT/HuPCZWyB7IY9ZrMeKw2O/nFIqPQB3PVM9aYm0F312AXDQ==}
@@ -6982,6 +6992,13 @@ snapshots:
       '@codemirror/view': 6.38.8
       '@lezer/common': 1.4.0
 
+  '@codemirror/commands@6.10.1':
+    dependencies:
+      '@codemirror/language': 6.11.3
+      '@codemirror/state': 6.5.2
+      '@codemirror/view': 6.39.4
+      '@lezer/common': 1.4.0
+
   '@codemirror/lang-javascript@6.2.4':
     dependencies:
       '@codemirror/autocomplete': 6.20.0
@@ -7862,7 +7879,7 @@ snapshots:
     dependencies:
       which: 3.0.1
 
-  '@openrouter/ai-sdk-provider@1.2.8(ai@5.0.113(zod@4.1.13))(zod@4.1.13)':
+  '@openrouter/ai-sdk-provider@1.5.4(ai@5.0.113(zod@4.1.13))(zod@4.1.13)':
     dependencies:
       '@openrouter/sdk': 0.1.27
       ai: 5.0.113(zod@4.1.13)
@@ -9877,7 +9894,7 @@ snapshots:
   codemirror@6.0.2:
     dependencies:
       '@codemirror/autocomplete': 6.20.0
-      '@codemirror/commands': 6.10.0
+      '@codemirror/commands': 6.10.1
       '@codemirror/language': 6.11.3
       '@codemirror/lint': 6.9.2
       '@codemirror/search': 6.5.11
@@ -10269,7 +10286,7 @@ snapshots:
 
   dotenv@17.2.3: {}
 
-  drizzle-kit@1.0.0-beta.2-3a98f3a:
+  drizzle-kit@1.0.0-beta.3-702eadc:
     dependencies:
       '@drizzle-team/brocli': 0.11.0
       '@js-temporal/polyfill': 0.5.1
@@ -10278,7 +10295,7 @@ snapshots:
     transitivePeerDependencies:
       - supports-color
 
-  drizzle-orm@1.0.0-beta.2-3a98f3a(@opentelemetry/api@1.9.0)(@types/mssql@9.1.8)(@types/pg@8.15.6)(mssql@11.0.1)(pg@8.16.3):
+  drizzle-orm@1.0.0-beta.3-702eadc(@opentelemetry/api@1.9.0)(@types/mssql@9.1.8)(@types/pg@8.15.6)(mssql@11.0.1)(pg@8.16.3):
     dependencies:
       '@types/mssql': 9.1.8
       mssql: 11.0.1
@@ -11961,6 +11978,8 @@ snapshots:
   negotiator@0.6.4: {}
 
   negotiator@1.0.0: {}
+
+  node-cron@4.2.1: {}
 
   node-domexception@1.0.0: {}
 

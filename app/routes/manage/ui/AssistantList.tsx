@@ -7,7 +7,7 @@ import { useAccess } from '~/lib/access'
 import { TableHeader } from './TableHeader'
 import { Button, Table, Tag } from 'antd'
 import { DashboardOutlined, PlusOutlined } from '@ant-design/icons'
-import { PencilLine, Trash } from 'lucide-react'
+import { PencilLine, Shield, Trash } from 'lucide-react'
 import { adminConfirmDialog$ } from '~/components/project/confirm-dialog'
 import { toast } from 'sonner'
 import { Usage } from './Usage'
@@ -16,17 +16,19 @@ import { IconButton } from '~/components/project/icon-button'
 import { ModelIcon } from '~/lib/ModelIcon'
 import { TextHelp } from '~/components/project/text-help'
 import { TaskModel } from './TaskModel'
+import { AddAssistantLimit } from './AddAssistantLimit'
 
 export const AssistantList = observer(() => {
   const [state, setState] = useLocalState({
     openProviderForm: false,
     selectedProviderId: null as null | number,
-    data: [] as AssistantData[],
+    data: [] as (AssistantData & { limits: { id: number }[] })[],
     openUsage: false,
     page: 1,
     pageSize: 10,
     total: 0,
-    openTaskModel: false
+    openTaskModel: false,
+    openLimitModal: false
   })
   const { hasAccess } = useAccess()
   const getAssistantsList = useCallback(() => {
@@ -37,7 +39,9 @@ export const AssistantList = observer(() => {
       })
       .then((res) => {
         setState({
-          data: res.list as unknown as AssistantData[],
+          data: res.list as unknown as (AssistantData & {
+            limits: { id: number }[]
+          })[],
           total: res.total
         })
       })
@@ -140,6 +144,28 @@ export const AssistantList = observer(() => {
               )
             },
             {
+              title: '限制',
+              key: 'limit',
+              render: (_, record) => (
+                <div className={'inline-flex flex-wrap items-center'}>
+                  <IconButton
+                    onClick={() => {
+                      setState({
+                        selectedProviderId: record.id,
+                        openLimitModal: true
+                      })
+                    }}
+                  >
+                    <Shield
+                      className={`${
+                        record.limits?.length ? 'text-amber-500' : ''
+                      }`}
+                    />
+                  </IconButton>
+                </div>
+              )
+            },
+            {
               title: '操作',
               dataIndex: 'actions',
               key: 'actions',
@@ -204,6 +230,14 @@ export const AssistantList = observer(() => {
         onUpdate={() => {
           getAssistantsList()
         }}
+      />
+      <AddAssistantLimit
+        open={state.openLimitModal}
+        onClose={() => setState({ openLimitModal: false })}
+        onUpdate={() => {
+          getAssistantsList()
+        }}
+        assistantId={state.selectedProviderId!}
       />
     </div>
   )
