@@ -28,7 +28,11 @@ export const privateAccess = [
       'manage.updateAssistant',
       'manage.deleteAssistant',
       'manage.getSystemTools',
-      'manage.addTaskModel'
+      'manage.addTaskModel',
+      'manage.addAssistantLimit',
+      'manage.updateAssistantLimit',
+      'manage.deleteAssistantLimit',
+      'manage.getAssistantLimit'
     ]
   },
   {

@@ -21,4 +21,4 @@ COPY server.js ./
 EXPOSE 3015
 
 # 使用 pm2-runtime 启动应用
-CMD pnpm drizzle-kit push --force && node server.js
+CMD pnpm drizzle-kit migrate && node server.js

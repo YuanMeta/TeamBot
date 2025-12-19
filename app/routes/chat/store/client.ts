@@ -51,21 +51,20 @@ export class ChatClient {
       this.store.moveChatInput$.next(true)
     }
     const searchQuery = await this.getSearchQuery(data.text)
-    if (searchQuery.query) {
+    if (searchQuery) {
       runInAction(() => {
         userMessage.context = observable({
           ...userMessage.context,
           searchResult: {
-            query: searchQuery.query!
+            query: searchQuery
           }
         })
       })
       try {
         const res = await trpc.chat.searchWeb.query({
-          keyword: searchQuery.query,
+          keyword: searchQuery,
           assistantId,
           model: model,
-          webSearchId: searchQuery.webSearchId,
           query: data.text
         })
         runInAction(() => {
@@ -167,7 +166,6 @@ export class ChatClient {
     const openSearch = this.store.state.openWebSearch
     if (
       this.store.state.assistant?.options.webSearchMode === 'custom' &&
-      this.store.state.assistant?.webSearchId &&
       openSearch &&
       !this.store.state.assistant?.options.agentWebSearch
     ) {
@@ -176,12 +174,9 @@ export class ChatClient {
         model: this.store.state.model!,
         question: text
       })
-      return {
-        query: res.action === 'search' ? res.query : null,
-        webSearchId: this.store.state.assistant!.webSearchId
-      }
+      return res.action === 'search' ? res.query : null
     }
-    return { query: null, webSearchId: this.store.state.assistant!.webSearchId }
+    return null
   }
   private async completion(
     chat: ChatData,
@@ -446,21 +441,20 @@ export class ChatClient {
     try {
       if (userPrompt) {
         const searchQuery = await this.getSearchQuery(userPrompt)
-        if (searchQuery.query) {
+        if (searchQuery) {
           runInAction(() => {
             userMessage.context = observable({
               ...userMessage.context,
               searchResult: {
-                query: searchQuery.query!
+                query: searchQuery
               }
             })
           })
           try {
             const res = await trpc.chat.searchWeb.query({
-              keyword: searchQuery.query,
+              keyword: searchQuery,
               assistantId,
               model,
-              webSearchId: searchQuery.webSearchId,
               query: userPrompt
             })
             runInAction(() => {

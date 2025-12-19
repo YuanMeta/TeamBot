@@ -104,8 +104,6 @@ export const commonRouter = {
             ? input.params
             : undefined
         })
-        console.log('res', res.status)
-
         if (res.ok) {
           return res.text()
         } else {

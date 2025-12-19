@@ -117,21 +117,20 @@ export const assistantRouter = {
   getAssistant: adminProcedure
     .input(z.number())
     .query(async ({ input, ctx }) => {
-      const [record] = await ctx.db
-        .select()
-        .from(assistants)
-        .where(eq(assistants.id, input))
-      if (!record) return null
-      const toolsList = await ctx.db
-        .select({
-          toolId: assistantTools.toolId
-        })
-        .from(assistantTools)
-        .where(eq(assistantTools.assistantId, input))
+      const assistant = await ctx.db.query.assistants.findFirst({
+        where: { id: input },
+        with: {
+          tools: { columns: { id: true, type: true } }
+        }
+      })
+      if (!assistant) return null
       return {
-        ...record,
-        apiKey: record.apiKey ? await aesDecrypt(record.apiKey) : null,
-        tools: toolsList.map((t) => t.toolId)
+        ...assistant,
+        apiKey: assistant.apiKey ? await aesDecrypt(assistant.apiKey) : null,
+        tools: assistant.tools
+          .filter((t) => t.type !== 'web_search')
+          .map((t) => t.id),
+        webSearchId: assistant.tools.find((t) => t.type === 'web_search')?.id
       }
     }),
   updateAssistant: adminProcedure
@@ -145,7 +144,7 @@ export const assistantRouter = {
           models: z.array(z.string()).min(1),
           api_key: z.string().nullable(),
           base_url: z.string().nullable(),
-          webSearchId: z.number().nullable(),
+          webSearchId: z.string().nullable(),
           prompt: z.string().nullable(),
           options: z.record(z.string(), z.any()) as unknown as AssistantOptions
         })
@@ -154,13 +153,19 @@ export const assistantRouter = {
     .mutation(async ({ input, ctx }) => {
       await ctx.db.transaction(async (trx) => {
         await trx
+          .delete(assistantTools)
+          .where(eq(assistantTools.assistantId, input.id))
+        const tools = input.tools
+        if (input.data.webSearchId) {
+          tools.push(input.data.webSearchId)
+        }
+        await trx
           .update(assistants)
           .set({
             name: input.data.name,
             mode: input.data.mode,
             models: input.data.models,
             prompt: input.data.prompt,
-            webSearchId: input.data.webSearchId,
             apiKey: input.data.api_key
               ? await aesEncrypt(input.data.api_key)
               : null,
@@ -168,9 +173,6 @@ export const assistantRouter = {
             options: input.data.options as AssistantOptions
           })
           .where(eq(assistants.id, input.id))
-        await trx
-          .delete(assistantTools)
-          .where(eq(assistantTools.assistantId, input.id))
         if (input.tools.length > 0) {
           if (input.tools.length) {
             await trx.insert(assistantTools).values(
@@ -280,7 +282,7 @@ export const assistantRouter = {
           prompt: z.string().nullable(),
           api_key: z.string().nullable(),
           base_url: z.string().nullable(),
-          webSearchId: z.number().nullable(),
+          webSearchId: z.string().nullable(),
           options: z.record(z.string(), z.any()) as unknown as AssistantOptions
         })
       })
@@ -294,7 +296,6 @@ export const assistantRouter = {
             mode: input.data.mode,
             models: input.data.models,
             prompt: input.data.prompt,
-            webSearchId: input.data.webSearchId,
             apiKey: input.data.api_key
               ? await aesEncrypt(input.data.api_key)
               : null,
@@ -302,6 +303,9 @@ export const assistantRouter = {
             options: input.data.options as unknown as AssistantOptions
           })
           .returning({ id: assistants.id })
+        if (input.data.webSearchId) {
+          input.tools.push(input.data.webSearchId)
+        }
         if (input.tools.length) {
           await trx.insert(assistantTools).values(
             input.tools.map((tool) => {
@@ -385,10 +389,13 @@ export const assistantRouter = {
         orderBy: {
           createdAt: 'desc'
         },
+        where: {
+          type: { ne: 'web_search' }
+        },
         offset: (input.page - 1) * input.pageSize,
         limit: input.pageSize
       })
-      const total = await ctx.db.$count(tools)
+      const total = await ctx.db.$count(tools, ne(tools.type, 'web_search'))
       return { tools: toolsData, total }
     }),
   getTool: adminProcedure.input(z.string()).query(async ({ input, ctx }) => {

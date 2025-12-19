@@ -3,7 +3,7 @@ import { trpc } from '~/.client/trpc'
 import { useCallback, useEffect, useMemo } from 'react'
 import { useLocalState } from '~/hooks/localState'
 import { Card, CardContent, CardHeader, CardTitle } from '~/components/ui/card'
-import type { AssistantData, ToolData, WebSearchData } from 'server/db/type'
+import type { AssistantData, ToolData } from 'server/db/type'
 import {
   Button,
   Checkbox,
@@ -133,7 +133,7 @@ export const AddAssistant = observer(
     const [state, setState] = useLocalState({
       submitting: false,
       tools: [] as ToolData[],
-      webSearchTools: [] as WebSearchData[],
+      webSearchTools: [] as ToolData[],
       remoteModels: [] as {
         id: number
         model: string
@@ -141,7 +141,9 @@ export const AddAssistant = observer(
         options: string | null
       }[]
     })
-    const [form] = Form.useForm<AssistantData & { tools: string[] }>()
+    const [form] = Form.useForm<
+      AssistantData & { tools: string[]; webSearchId?: string }
+    >()
     const mode = Form.useWatch('mode', form)
     const summaryMode = Form.useWatch(['options', 'summaryMode'], form)
     const webSearchMode = Form.useWatch(['options', 'webSearchMode'], form)
@@ -174,7 +176,7 @@ export const AddAssistant = observer(
       trpc.manage.getWebSearches
         .query({ page: 1, pageSize: 100 })
         .then((res) => {
-          setState({ webSearchTools: res.list as WebSearchData[] })
+          setState({ webSearchTools: res.list as ToolData[] })
         })
     }, [])
     useEffect(() => {
@@ -443,14 +445,14 @@ export const AddAssistant = observer(
                                     <img
                                       src={
                                         searchModes.find(
-                                          (m) => m.value === t.mode
+                                          (m) => m.value === t.webSearchMode
                                         )?.icon
                                       }
                                       className={'size-4'}
                                     />
                                     {
                                       searchModes.find(
-                                        (m) => m.value === t.mode
+                                        (m) => m.value === t.webSearchMode
                                       )?.label
                                     }
                                   </div>

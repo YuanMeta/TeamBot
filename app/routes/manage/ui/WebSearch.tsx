@@ -10,13 +10,13 @@ import { IconButton } from '~/components/project/icon-button'
 import { PencilLine, Trash } from 'lucide-react'
 import { adminConfirmDialog$ } from '~/components/project/confirm-dialog'
 import { toast } from 'sonner'
-import type { WebSearchData } from 'server/db/type'
 import { searchModes } from './data'
+import type { ToolData } from 'server/db/type'
 
 const AddWebSearch = observer(
   (props: {
     open: boolean
-    id: number | null
+    id: string | null
     onClose: () => void
     onUpdate: () => void
   }) => {
@@ -31,10 +31,10 @@ const AddWebSearch = observer(
         if (props.id) {
           trpc.manage.getWebSearch.query(props.id).then((res) => {
             form.setFieldsValue({
-              ...res,
-              apiKey: res?.params?.apiKey,
-              modeParams: res?.params?.modeParams,
-              count: res?.params?.count
+              name: res?.name,
+              description: res?.description,
+              mode: res?.webSearchMode,
+              params: res?.params
             })
           })
         }
@@ -53,13 +53,13 @@ const AddWebSearch = observer(
             try {
               await trpc.manage.connectSearch.mutate({
                 mode: v.mode,
-                params: v.params
+                params: v.params.webSearch
               })
               if (props.id) {
                 await trpc.manage.updateWebSearch.mutate({
                   id: props.id,
                   data: {
-                    title: v.title,
+                    title: v.name,
                     description: v.description,
                     mode: v.mode,
                     params: v.params
@@ -67,7 +67,7 @@ const AddWebSearch = observer(
                 })
               } else {
                 await trpc.manage.createWebSearch.mutate({
-                  title: v.title,
+                  title: v.name,
                   description: v.description,
                   mode: v.mode,
                   params: v.params
@@ -113,7 +113,7 @@ const AddWebSearch = observer(
           </Form.Item>
           <Form.Item
             label={'名称'}
-            name={'title'}
+            name={'name'}
             rules={[{ required: true, message: '请输入名称' }]}
           >
             <Input placeholder={'请输入名称'} />
@@ -121,7 +121,7 @@ const AddWebSearch = observer(
 
           <Form.Item
             label={'API Key'}
-            name={['params', 'apiKey']}
+            name={['params', 'webSearch', 'apiKey']}
             rules={[{ required: true, message: '请输入API Key' }]}
           >
             <Input.Password placeholder={'请输入API Key'} />
@@ -129,7 +129,7 @@ const AddWebSearch = observer(
           {mode === 'google' && (
             <Form.Item
               label={'CSE ID'}
-              name={['params', 'modeParams', 'google', 'cseId']}
+              name={['params', 'webSearch', 'modeParams', 'google', 'cseId']}
               rules={[{ required: true, message: '请输入CSE ID' }]}
             >
               <Input placeholder={'请输入CSE ID'} />
@@ -140,7 +140,13 @@ const AddWebSearch = observer(
               label={'搜索引擎'}
               initialValue={'search_std'}
               rules={[{ required: true, message: '请选择搜索引擎' }]}
-              name={['params', 'modeParams', 'zhipu', 'search_engine']}
+              name={[
+                'params',
+                'webSearch',
+                'modeParams',
+                'zhipu',
+                'search_engine'
+              ]}
             >
               <Select
                 placeholder={'请选择搜索引擎'}
@@ -155,7 +161,7 @@ const AddWebSearch = observer(
           )}
           <Form.Item
             label={'最大查询条数'}
-            name={['params', 'count']}
+            name={['params', 'webSearch', 'count']}
             initialValue={5}
           >
             <Slider min={3} step={1} max={15} />
@@ -174,10 +180,10 @@ export const WebSearch = observer(() => {
   const [state, setState] = useLocalState({
     page: 1,
     pageSize: 10,
-    data: [] as WebSearchData[],
+    data: [] as ToolData[],
     total: 0,
     openAddWebSearch: false,
-    selectedWebSearchId: null as null | number
+    selectedWebSearchId: null as null | string
   })
   const getWebSearches = useCallback(() => {
     trpc.manage.getWebSearches
@@ -186,7 +192,7 @@ export const WebSearch = observer(() => {
         pageSize: state.pageSize
       })
       .then((res) => {
-        setState({ data: res.list as WebSearchData[], total: res.total })
+        setState({ data: res.list as ToolData[], total: res.total })
       })
   }, [])
   useEffect(() => {
@@ -224,18 +230,20 @@ export const WebSearch = observer(() => {
         columns={[
           {
             title: '名称',
-            dataIndex: 'title',
-            render: (_, v) => {
+            dataIndex: 'name',
+            render: (v, record) => {
               return (
                 <div className={'flex items-center gap-2'}>
                   <img
                     src={
-                      searchModes.find((mode) => mode.value === v.mode)?.icon
+                      searchModes.find(
+                        (mode) => mode.value === record.webSearchMode
+                      )?.icon
                     }
-                    alt={v.title}
+                    alt={v}
                     className={'size-4'}
                   />
-                  {v.title}
+                  {v}
                 </div>
               )
             }

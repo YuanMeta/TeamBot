@@ -35,7 +35,6 @@ CREATE TABLE "assistants" (
 	"mode" varchar NOT NULL,
 	"api_key" varchar,
 	"base_url" text,
-	"web_search_id" integer,
 	"prompt" text,
 	"taskModel" varchar,
 	"models" jsonb NOT NULL,
@@ -164,7 +163,8 @@ CREATE TABLE "tools" (
 	"name" varchar NOT NULL,
 	"description" text NOT NULL,
 	"type" varchar NOT NULL,
-	"params" jsonb DEFAULT '{}' NOT NULL,
+	"params" json,
+	"webSearchMode" varchar,
 	"created_at" timestamp DEFAULT now() NOT NULL,
 	"updated_at" timestamp DEFAULT now() NOT NULL
 );
@@ -188,16 +188,6 @@ CREATE TABLE "users" (
 	"created_at" timestamp DEFAULT now() NOT NULL
 );
 --> statement-breakpoint
-CREATE TABLE "web_searches" (
-	"id" integer PRIMARY KEY GENERATED ALWAYS AS IDENTITY (sequence name "web_searches_id_seq" INCREMENT BY 1 MINVALUE 1 MAXVALUE 2147483647 START WITH 1 CACHE 1),
-	"title" text NOT NULL,
-	"description" text,
-	"mode" varchar NOT NULL,
-	"params" jsonb NOT NULL,
-	"created_at" timestamp DEFAULT now() NOT NULL,
-	"updated_at" timestamp DEFAULT now() NOT NULL
-);
---> statement-breakpoint
 CREATE INDEX "access_roles_role_id_index" ON "access_roles" ("role_id");--> statement-breakpoint
 CREATE INDEX "assistant_tools_assistant_id_index" ON "assistant_tools" ("assistant_id");--> statement-breakpoint
 CREATE INDEX "assistant_usages_created_at_index" ON "assistant_usages" ("created_at");--> statement-breakpoint
@@ -209,13 +199,13 @@ CREATE INDEX "requests_chat_id_message_id_index" ON "requests" ("chat_id","messa
 CREATE INDEX "requests_created_at_index" ON "requests" ("created_at");--> statement-breakpoint
 CREATE INDEX "requests_model_index" ON "requests" ("model");--> statement-breakpoint
 CREATE INDEX "role_assistants_role_id_index" ON "role_assistants" ("role_id");--> statement-breakpoint
+CREATE INDEX "tools_type_index" ON "tools" ("type");--> statement-breakpoint
 CREATE INDEX "user_roles_user_id_index" ON "user_roles" ("user_id");--> statement-breakpoint
 ALTER TABLE "access_roles" ADD CONSTRAINT "access_roles_role_id_roles_id_fkey" FOREIGN KEY ("role_id") REFERENCES "roles"("id");--> statement-breakpoint
 ALTER TABLE "access_roles" ADD CONSTRAINT "access_roles_access_id_accesses_id_fkey" FOREIGN KEY ("access_id") REFERENCES "accesses"("id");--> statement-breakpoint
 ALTER TABLE "assistant_tools" ADD CONSTRAINT "assistant_tools_assistant_id_assistants_id_fkey" FOREIGN KEY ("assistant_id") REFERENCES "assistants"("id");--> statement-breakpoint
 ALTER TABLE "assistant_tools" ADD CONSTRAINT "assistant_tools_tool_id_tools_id_fkey" FOREIGN KEY ("tool_id") REFERENCES "tools"("id");--> statement-breakpoint
 ALTER TABLE "assistant_usages" ADD CONSTRAINT "assistant_usages_assistant_id_assistants_id_fkey" FOREIGN KEY ("assistant_id") REFERENCES "assistants"("id");--> statement-breakpoint
-ALTER TABLE "assistants" ADD CONSTRAINT "assistants_web_search_id_web_searches_id_fkey" FOREIGN KEY ("web_search_id") REFERENCES "web_searches"("id");--> statement-breakpoint
 ALTER TABLE "auth_providers" ADD CONSTRAINT "auth_providers_role_id_roles_id_fkey" FOREIGN KEY ("role_id") REFERENCES "roles"("id");--> statement-breakpoint
 ALTER TABLE "chats" ADD CONSTRAINT "chats_user_id_users_id_fkey" FOREIGN KEY ("user_id") REFERENCES "users"("id");--> statement-breakpoint
 ALTER TABLE "chats" ADD CONSTRAINT "chats_assistant_id_assistants_id_fkey" FOREIGN KEY ("assistant_id") REFERENCES "assistants"("id") ON DELETE SET NULL;--> statement-breakpoint

@@ -31,10 +31,6 @@ export const relations = defineRelations(schema, (r) => ({
       to: r.users.id.through(r.chats.userId)
     }),
     messages: r.many.messages(),
-    webSearch: r.one.webSearches({
-      from: r.assistants.webSearchId,
-      to: r.webSearches.id
-    }),
     roles: r.many.roles({
       from: r.assistants.id.through(r.roleAssistants.assistantId),
       to: r.roles.id.through(r.roleAssistants.roleId)

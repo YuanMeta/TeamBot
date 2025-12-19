@@ -1,11 +1,12 @@
 import { TRPCError, type TRPCRouterRecord } from '@trpc/server'
 import { adminProcedure } from '../core'
 import z from 'zod'
-import { webSearches } from 'drizzle/schema'
 import { eq } from 'drizzle-orm'
 import { runWebSearch } from 'server/lib/search'
 import type { WebSearchParams } from 'server/db/type'
 import type { WebSearchMode } from 'types'
+import { tools } from 'drizzle/schema'
+import { tid } from 'server/lib/utils'
 
 export const webSearchRouter = {
   connectSearch: adminProcedure
@@ -37,28 +38,29 @@ export const webSearchRouter = {
       })
     )
     .query(async ({ input, ctx }) => {
-      const list = await ctx.db.query.webSearches.findMany({
+      const list = await ctx.db.query.tools.findMany({
         columns: {
           params: false
         },
         offset: (input.page - 1) * input.pageSize,
-        limit: input.pageSize
+        limit: input.pageSize,
+        where: { type: 'web_search' }
       })
-      const total = await ctx.db.$count(webSearches)
+      const total = await ctx.db.$count(tools, eq(tools.type, 'web_search'))
       return { list, total }
     }),
   getWebSearch: adminProcedure
-    .input(z.number())
+    .input(z.string())
     .query(async ({ input, ctx }) => {
-      return ctx.db.query.webSearches.findFirst({
+      return ctx.db.query.tools.findFirst({
         where: { id: input }
       })
     }),
   deleteWebSearch: adminProcedure
-    .input(z.number())
+    .input(z.string())
     .mutation(async ({ input, ctx }) => {
       const first = await ctx.db.query.assistants.findFirst({
-        where: { webSearchId: input }
+        where: { tools: { id: input } }
       })
       if (first) {
         throw new TRPCError({
@@ -66,7 +68,7 @@ export const webSearchRouter = {
           message: '搜索引擎已被助手使用，无法删除'
         })
       }
-      await ctx.db.delete(webSearches).where(eq(webSearches.id, input))
+      await ctx.db.delete(tools).where(eq(tools.id, input))
       return { success: true }
     }),
   createWebSearch: adminProcedure
@@ -80,37 +82,44 @@ export const webSearchRouter = {
     )
     .mutation(async ({ input, ctx }) => {
       return ctx.db
-        .insert(webSearches)
+        .insert(tools)
         .values({
-          title: input.title,
-          description: input.description,
-          mode: input.mode as WebSearchMode,
-          params: input.params
+          id: tid(),
+          name: input.title,
+          description: input.description || '',
+          webSearchMode: input.mode as WebSearchMode,
+          params: {
+            webSearch: input.params
+          },
+          type: 'web_search'
         })
-        .returning({ id: webSearches.id })
+        .returning({ id: tools.id })
     }),
   updateWebSearch: adminProcedure
     .input(
       z.object({
-        id: z.number(),
+        id: z.string(),
         data: z.object({
           title: z.string(),
           description: z.string().nullish(),
           mode: z.string(),
-          params: z.custom<WebSearchParams>()
+          params: z.custom<{
+            http?: Record<string, any>
+            webSearch?: WebSearchParams
+          }>()
         })
       })
     )
     .mutation(async ({ input, ctx }) => {
       await ctx.db
-        .update(webSearches)
+        .update(tools)
         .set({
-          title: input.data.title,
-          description: input.data.description,
-          mode: input.data.mode as WebSearchMode,
+          name: input.data.title,
+          description: input.data.description || '',
+          webSearchMode: input.data.mode as WebSearchMode,
           params: input.data.params
         })
-        .where(eq(webSearches.id, input.id))
+        .where(eq(tools.id, input.id))
       return { success: true }
     })
 } satisfies TRPCRouterRecord

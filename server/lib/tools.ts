@@ -150,7 +150,7 @@ export const composeTools = async (
     for (let t of assistant.tools) {
       if (t.type === 'http') {
         try {
-          const http = JSON.parse(t.params.http)
+          const http = t.params?.http! as any
           toolsRecord[t.id] = createHttpTool({
             description: t.description,
             ...http
@@ -162,21 +162,16 @@ export const composeTools = async (
       if (t.type === 'system' && t.id === 'fetch_url_content') {
         toolsRecord[t.id] = getUrlContent
       }
-    }
-  }
-  if (
-    assistant.webSearchId &&
-    assistant.options.webSearchMode === 'custom' &&
-    assistant.options.agentWebSearch
-  ) {
-    const searchData = await db.query.webSearches.findFirst({
-      where: { id: assistant.webSearchId }
-    })
-    if (searchData) {
-      toolsRecord['web_search'] = createWebSearchTool(
-        searchData.mode,
-        searchData.params
-      )
+      if (
+        t.type === 'web_search' &&
+        assistant.options.webSearchMode === 'custom' &&
+        assistant.options.agentWebSearch
+      ) {
+        toolsRecord['web_search'] = createWebSearchTool(
+          t.webSearchMode!,
+          t.params?.webSearch!
+        )
+      }
     }
   }
   return toolsRecord

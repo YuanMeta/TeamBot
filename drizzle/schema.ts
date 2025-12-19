@@ -87,7 +87,6 @@ export const assistants = pgTable('assistants', {
   mode: varchar().notNull(),
   apiKey: varchar('api_key'),
   baseUrl: text('base_url'),
-  webSearchId: integer('web_search_id').references(() => webSearches.id),
   prompt: text(),
   // 用于常规快捷任务
   taskModel: varchar(),
@@ -218,16 +217,24 @@ export const roles = pgTable('roles', {
   remark: text()
 })
 
-export const tools = pgTable('tools', {
-  id: varchar().primaryKey(),
-  name: varchar().notNull(),
-  description: text().notNull(),
-  // http system
-  type: varchar().notNull().$type<'system' | 'http'>(),
-  params: jsonb().notNull().$type<Record<string, any>>().default({}),
-  createdAt: timestamp('created_at').defaultNow().notNull(),
-  updatedAt: timestamp('updated_at').defaultNow().notNull()
-})
+export const tools = pgTable(
+  'tools',
+  {
+    id: varchar().primaryKey(),
+    name: varchar().notNull(),
+    description: text().notNull(),
+    // http system
+    type: varchar().notNull().$type<'system' | 'http' | 'web_search'>(),
+    params: json().$type<{
+      http?: Record<string, any>
+      webSearch?: WebSearchParams
+    }>(),
+    webSearchMode: varchar().$type<WebSearchMode>(),
+    createdAt: timestamp('created_at').defaultNow().notNull(),
+    updatedAt: timestamp('updated_at').defaultNow().notNull()
+  },
+  (table) => [index().on(table.type)]
+)
 
 export const userRoles = pgTable(
   'user_roles',
@@ -267,16 +274,6 @@ export const users = pgTable(
     unique().on(table.phone)
   ]
 )
-
-export const webSearches = pgTable('web_searches', {
-  id: integer().primaryKey().generatedAlwaysAsIdentity(),
-  title: text().notNull(),
-  description: text(),
-  mode: varchar().notNull().$type<WebSearchMode>(),
-  params: jsonb().notNull().$type<WebSearchParams>(),
-  createdAt: timestamp('created_at').defaultNow().notNull(),
-  updatedAt: timestamp('updated_at').defaultNow().notNull()
-})
 
 export const settings = pgTable('settings', {
   id: varchar().primaryKey().$type<keyof SettingsRecord>(),

@@ -90,7 +90,6 @@ export const completions = async (
     })
     .where(eq(chats.id, chat.id))
   const toolChoose =
-    assistant.webSearchId &&
     assistant.options.webSearchMode === 'custom' &&
     assistant.options.agentWebSearch &&
     json.webSearch

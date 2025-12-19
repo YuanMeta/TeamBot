@@ -24,7 +24,7 @@ export const TaskModel = observer(
             pageSize: 1000
           })
           .then((res) => {
-            setState({ assistants: res.list as AssistantData[] })
+            setState({ assistants: res.list as unknown as AssistantData[] })
             trpc.manage.getTaskModel.query().then((res) => {
               if (res) {
                 form.setFieldsValue({

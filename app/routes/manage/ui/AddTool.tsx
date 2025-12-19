@@ -181,17 +181,32 @@ export const AddTool = observer(
           if (props.id) {
             await trpc.manage.updateTool.mutate({
               id: props.id,
-              data: data as any
+              data: {
+                name: data.name,
+                description: data.description,
+                params: {
+                  http: JSON.parse(data.params)
+                }
+              }
             })
           } else {
-            await trpc.manage.createTool.mutate(data as any)
+            await trpc.manage.createTool.mutate({
+              id: data.id,
+              name: data.name,
+              description: data.description,
+              params: {
+                http: JSON.parse(data.params)
+              }
+            })
           }
         } catch (e: any) {
           toast.error(e.message)
           return
         }
-        props.onUpdate()
-        props.onClose()
+        setTimeout(() => {
+          props.onUpdate()
+          props.onClose()
+        }, 100)
       },
       [props.id]
     )
@@ -230,7 +245,7 @@ export const AddTool = observer(
               form.setFieldsValue({
                 name: res.name,
                 description: res.description,
-                params: res.params,
+                params: JSON.stringify(res.params?.http, null, 2),
                 id: res.id
               })
             }
@@ -322,7 +337,7 @@ export const AddTool = observer(
           open={state.openInputParams}
           input={state.inputParams}
           onConfirm={async (params) => {
-            const http = JSON.parse(dataRef.current.params.http)
+            const http = JSON.parse(dataRef.current.params)
             const res = await httpTest({
               url: http.url,
               method: http.method,

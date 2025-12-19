@@ -31,8 +31,6 @@ export type MessageData = typeof messages.$inferSelect
 
 export type AuthProviderData = typeof authProviders.$inferSelect
 
-export type WebSearchData = typeof webSearches.$inferSelect
-
 export type SettingsData = typeof settings.$inferSelect
 
 export type LimitData = typeof limits.$inferSelect

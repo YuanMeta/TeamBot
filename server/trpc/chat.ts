@@ -52,7 +52,6 @@ export const chatRouter = {
       z.object({
         keyword: z.string(),
         query: z.string(),
-        webSearchId: z.number(),
         assistantId: z.number(),
         model: z.string()
       })
@@ -66,7 +65,13 @@ export const chatRouter = {
         })
       }
       const assistant = await ctx.db.query.assistants.findFirst({
-        where: { id: input.assistantId }
+        where: { id: input.assistantId },
+        with: {
+          tools: {
+            columns: { id: true },
+            where: { type: 'web_search' }
+          }
+        }
       })
       if (!assistant) {
         throw new TRPCError({
@@ -74,8 +79,8 @@ export const chatRouter = {
           message: 'Assistant not found'
         })
       }
-      const data = await ctx.db.query.webSearches.findFirst({
-        where: { id: input.webSearchId }
+      const data = await ctx.db.query.tools.findFirst({
+        where: { id: assistant.tools[0].id }
       })
       if (!data) {
         throw new TRPCError({
@@ -85,8 +90,8 @@ export const chatRouter = {
       }
       const searchResults = await runWebSearch(
         input.keyword,
-        data.mode,
-        data.params
+        data.webSearchMode!,
+        data.params?.webSearch!
       )
       if (!searchResults) {
         return { results: [], summary: null }
@@ -403,8 +408,7 @@ export const chatRouter = {
         mode: true,
         models: true,
         name: true,
-        options: true,
-        webSearchId: true
+        options: true
       },
       where: allAssistant
         ? undefined
@@ -454,13 +458,13 @@ export const chatRouter = {
       })
     )
     .mutation(async ({ input, ctx }) => {
-      // if (!ctx.root) {
-      await testAssistantAuth(ctx.db, {
-        assistantId: input.assistantId,
-        model: input.model,
-        userId: ctx.userId
-      })
-      // }
+      if (!ctx.root) {
+        await testAssistantAuth(ctx.db, {
+          assistantId: input.assistantId,
+          model: input.model,
+          userId: ctx.userId
+        })
+      }
       let date = new Date()
       const chat = await ctx.db.query.chats.findFirst({
         columns: {
@@ -573,11 +577,14 @@ export const chatRouter = {
       })
     )
     .mutation(async ({ input, ctx }) => {
-      await testAssistantAuth(ctx.db, {
-        assistantId: input.assistantId,
-        model: input.model,
-        userId: ctx.userId
-      })
+      if (!ctx.root) {
+        await testAssistantAuth(ctx.db, {
+          assistantId: input.assistantId,
+          model: input.model,
+          userId: ctx.userId
+        })
+      }
+
       return ctx.db.transaction(async (t) => {
         const chat = await t.query.chats.findFirst({
           where: {
