@@ -1,11 +1,9 @@
-import { useCallback, useEffect, useRef } from 'react'
+import { useCallback, useRef } from 'react'
 import MessageContent from './MessageContent'
 import dayjs from 'dayjs'
-import relativeTime from 'dayjs/plugin/relativeTime'
 import { AlertCircleIcon, Check, Clipboard, RotateCcw } from 'lucide-react'
 
 import { observer } from 'mobx-react-lite'
-import { useTranslation } from 'react-i18next'
 import { Alert, AlertDescription, AlertTitle } from '~/components/ui/alert'
 import { useStore, type MessageData } from '../../store/store'
 import { copyToClipboard } from '~/.client/copy'
@@ -13,7 +11,6 @@ import { markdownToPureHtml } from '~/lib/mdToHtml'
 import { useLocalState } from '~/hooks/localState'
 import type { MessagePart } from 'types'
 import { Button } from '~/components/ui/button'
-import type { MessageContext } from 'server/db/type'
 
 export const AiMessage = observer<{
   msg: MessageData

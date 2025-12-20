@@ -12,13 +12,12 @@ import { Button } from '~/components/ui/button'
 import { ChevronLeft, FileSearch } from 'lucide-react'
 import ChatItem from './ui/ChatItem'
 import { useMemo } from 'react'
-import { ChatStore, StoreContext } from './store/store'
+import { ChatStore, StoreContext, type MessageData } from './store/store'
 import { SearchResult } from './ui/SearchResult'
+import ClientOnly from '~/components/project/ClientOnly'
 
-export const loader = async ({
-  context: { db, userId },
-  params
-}: Route.LoaderArgs) => {
+export const loader = async ({ context, params }: Route.LoaderArgs) => {
+  const { db, userId } = context
   if (!userId) {
     return redirect('/login')
   }
@@ -50,8 +49,13 @@ export const loader = async ({
 export default function () {
   const data = useLoaderData<typeof loader>()
   const navigate = useNavigate()
-  const store = useMemo(() => new ChatStore(true), [])
-
+  const store = useMemo(() => {
+    const store = new ChatStore(true)
+    store.setState((state) => {
+      state.messages = data.messages as MessageData[]
+    })
+    return store
+  }, [])
   if (!data.chat) {
     return (
       <div
@@ -76,26 +80,33 @@ export default function () {
     )
   }
   return (
-    <StoreContext value={store}>
-      <div className={'flex h-screen'}>
-        <div className={'flex flex-col h-full w-full'}>
-          <header
-            className={
-              'h-13 border-b flex items-center justify-center px-3 truncate w-full'
-            }
-          >
-            {data.chat?.title}
-          </header>
-          <div className={'flex-1 overflow-y-auto  px-3 pt-5 pb-20 w-full'}>
-            <div className={`chat-list animate-show !max-w-[720px] mx-auto`}>
-              {data.messages.map((m, i) => (
-                <ChatItem key={m.id} msg={m as any} preview={true} index={i} />
-              ))}
+    <ClientOnly>
+      <StoreContext value={store}>
+        <div className={'flex h-screen'}>
+          <div className={'flex flex-col h-full w-full'}>
+            <header
+              className={
+                'h-13 border-b flex items-center justify-center px-3 truncate w-full'
+              }
+            >
+              {data.chat?.title}
+            </header>
+            <div className={'flex-1 overflow-y-auto  px-3 pt-5 pb-20 w-full'}>
+              <div className={`chat-list animate-show max-w-[720px]! mx-auto`}>
+                {data.messages.map((m, i) => (
+                  <ChatItem
+                    key={m.id}
+                    msg={m as any}
+                    preview={true}
+                    index={i}
+                  />
+                ))}
+              </div>
             </div>
           </div>
+          <SearchResult />
         </div>
-        <SearchResult />
-      </div>
-    </StoreContext>
+      </StoreContext>
+    </ClientOnly>
   )
 }

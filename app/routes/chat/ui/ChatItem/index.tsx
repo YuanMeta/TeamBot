@@ -15,6 +15,7 @@ const ChatItem = observer<{
   }
   if (msg.role === 'assistant') {
     return <AiMessage msg={msg} preview={preview} index={index} />
+    return null
   }
 })
 
