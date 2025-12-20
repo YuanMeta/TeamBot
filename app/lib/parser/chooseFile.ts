@@ -1,4 +1,5 @@
 import { fileOpen } from 'browser-fs-access'
+import { cid } from '../utils'
 
 const programmingFileExtensions = [
   '.py',
@@ -120,7 +121,15 @@ const programmingFileExtensions = [
   '.properties' // Java属性文件
 ]
 
-export const chooseFile = async () => {
+export type DocFile = {
+  id: string
+  name: string
+  content: string
+  status: 'pending' | 'completed' | 'error'
+}
+export const chooseFile = async (
+  onParsed: (id: string, content: string | null) => void
+) => {
   const file = await fileOpen({
     extensions: [
       '.csv',
@@ -132,39 +141,46 @@ export const chooseFile = async () => {
     ],
     multiple: false
   })
-  const extension = file.name.split('.').pop()
-  if (programmingFileExtensions.includes(`.${extension}`)) {
-    return {
-      content: await file.text(),
-      name: file.name
-    }
-  } else {
-    try {
-      if (/\.(pdf)$/.test(file.name)) {
-        return import('./pdfParser').then(async ({ PDFParser }) => {
-          const res = await PDFParser.parsePDF(file)
-          return { content: res.text, name: file.name }
-        })
-      } else if (/\.(xlsx|xls|csv)$/.test(file.name)) {
-        return import('./excelParser').then(async ({ excelToCsv }) => {
-          const res = await excelToCsv(file, { format: 'markdown' })
-          return {
-            content: res.map((v) => v.content).join('\n\n'),
-            name: file.name
-          }
-        })
-      } else if (/\.docx$/.test(file.name)) {
-        return import('./wordParser').then(async ({ WordParser }) => {
-          return {
-            content: await WordParser.processForLLM(file),
-            name: file.name
-          }
-        })
+  const contents: DocFile[] = []
+  const runTask = async (items: DocFile[]) => {
+    for (let i = 0; i < items.length; i++) {
+      const item = items[i]
+      try {
+        if (item.content) {
+          continue
+        }
+        if (/\.(pdf)$/.test(item.name)) {
+          import('./pdfParser').then(async ({ PDFParser }) => {
+            const res = await PDFParser.parsePDF(file)
+            onParsed(item.id, res.text)
+          })
+        } else if (/\.(xlsx|xls|csv)$/.test(item.name)) {
+          import('./excelParser').then(async ({ excelToCsv }) => {
+            const res = await excelToCsv(file, { format: 'markdown' })
+            onParsed(item.id, res.map((v) => v.content).join('\n\n'))
+          })
+        } else if (/\.docx$/.test(item.name)) {
+          import('./wordParser').then(async ({ WordParser }) => {
+            const res = await WordParser.processForLLM(file)
+            onParsed(item.id, res)
+          })
+        }
+      } catch (error) {
+        console.error(`Parse file ${item.name} error`, error)
+        onParsed(item.id, null)
       }
-    } catch (error) {
-      console.error(`Parse file ${file.name} error`, error)
-      return { content: null, name: null }
     }
   }
-  return { content: null, name: null }
+  const extension = file.name.split('.').pop()
+  const content = programmingFileExtensions.includes(`.${extension}`)
+    ? await file.text()
+    : ''
+  contents.push({
+    id: cid(),
+    name: file.name,
+    status: 'pending',
+    content
+  })
+  runTask(contents)
+  return contents
 }

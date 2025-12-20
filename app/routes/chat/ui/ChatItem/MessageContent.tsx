@@ -34,7 +34,7 @@ const MessageContent = observer<{
   }
   return (
     <div className={`relative max-w-full`}>
-      <div className={'flex flex-col gap-2.5'}>
+      <div className={'flex flex-col gap-3'}>
         {!!context?.searchResult && (
           <WebSearchInfo result={context?.searchResult} />
         )}

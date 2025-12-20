@@ -9,12 +9,13 @@ import {
   DropdownMenuTrigger
 } from '~/components/ui/dropdown-menu'
 import { useStore } from '../../store/store'
-import { chooseFile } from '~/lib/parser/chooseFile'
+import { chooseFile, type DocFile } from '~/lib/parser/chooseFile'
 import { fileOpen } from 'browser-fs-access'
 
 export const InputTools = observer(
   (props: {
-    onSelectFile: (file: { name: string; content: string }) => void
+    onSelectFile: (file: DocFile[]) => void
+    onParseFile: (id: string, content: string | null) => void
     onSelectImage: (image: File) => void
   }) => {
     const store = useStore()
@@ -29,10 +30,10 @@ export const InputTools = observer(
           <DropdownMenuGroup>
             <DropdownMenuItem
               onClick={() => {
-                chooseFile().then((res) => {
-                  if (res.content) {
-                    props.onSelectFile(res)
-                  }
+                chooseFile((id, content) => {
+                  props.onParseFile(id, content)
+                }).then((res) => {
+                  props.onSelectFile(res)
                 })
               }}
             >

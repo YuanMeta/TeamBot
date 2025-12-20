@@ -1,4 +1,10 @@
-import { CircleStop, CircleX, Globe, SendHorizontal } from 'lucide-react'
+import {
+  CircleStop,
+  CircleX,
+  Globe,
+  Loader2,
+  SendHorizontal
+} from 'lucide-react'
 import { observer } from 'mobx-react-lite'
 import { useCallback, useEffect } from 'react'
 import { InputArea } from './InputArea'
@@ -8,22 +14,22 @@ import { InputTools } from './InputTools'
 import { Button } from '~/components/ui/button'
 import { toast } from 'sonner'
 import { mediaType } from '~/lib/utils'
-import { trpc } from '~/.client/trpc'
-import { HelpText } from '~/routes/manage/ui/HelpText'
 import {
   Tooltip,
   TooltipContent,
   TooltipTrigger
 } from '~/components/ui/tooltip'
+import type { DocFile } from '~/lib/parser/chooseFile'
 export const ChatInput = observer(() => {
   const store = useStore()
   const [state, setState] = useLocalState({
-    docs: [] as { name: string; content: string }[],
+    docs: [] as DocFile[],
     images: [] as File[],
     prompt: '',
     webSearch: false
   })
   const onSend = useCallback(async () => {
+    if (state.docs.find((d) => d.status === 'pending')) return
     if (!store.state.assistant?.id) {
       toast.error('管理员尚未创建助手。')
       return
@@ -31,7 +37,9 @@ export const ChatInput = observer(() => {
     if (!state.prompt || store.state.pending) return
     store.chat({
       text: state.prompt,
-      docs: state.docs,
+      docs: state.docs
+        .filter((f) => f.status === 'completed')
+        .map((d) => ({ name: d.name, content: d.content })),
       images: state.images
     })
     setState({ prompt: '', docs: [], images: [] })
@@ -40,7 +48,6 @@ export const ChatInput = observer(() => {
     setState((state) => {
       if (mediaType(file.name) === 'image') {
         state.images = [file]
-      } else {
       }
     })
   }, [])
@@ -73,17 +80,29 @@ export const ChatInput = observer(() => {
                     key={i}
                   >
                     <div className='flex items-center justify-between w-full'>
-                      <span className={'text-sm truncate'} title={f.name}>
+                      <span
+                        className={`text-sm truncate ${
+                          f.status === 'error' ? 'text-red-500' : ''
+                        }`}
+                        title={f.name}
+                      >
                         {f.name}
                       </span>
+                      {f.status === 'completed' && (
+                        <span
+                          className={
+                            'px-2 py-1 bg-black/20 rounded-full text-xs scale-90 ml-1'
+                          }
+                        >
+                          {f.name.split('.').pop()}
+                        </span>
+                      )}
 
-                      <span
-                        className={
-                          'px-2 py-1 bg-black/20 rounded-full text-xs scale-90 ml-1'
-                        }
-                      >
-                        {f.name.split('.').pop()}
-                      </span>
+                      {f.status === 'pending' && (
+                        <span className='p-1 bg-black/20 rounded-full text-xs scale-90 ml-1'>
+                          <Loader2 className='animate-spin size-4' />
+                        </span>
+                      )}
                       <div
                         className='absolute bg-black/60 rounded-lg text-white p-[3px] right-0.5 top-0.5  flex items-center group-hover:opacity-100 opacity-0'
                         onMouseDown={(e) => {
@@ -103,12 +122,12 @@ export const ChatInput = observer(() => {
               </div>
             )}
             {!!state.images.length && (
-              <div className={'pb-2 space-x-2 flex flex-wrap'}>
+              <div className={'pb-2 space-x-2 flex flex-wrap px-0.5'}>
                 {state.images.map((item, i) => (
                   <div
                     key={i}
                     className={
-                      'w-16 mb-0.5 h-16 rounded-xl overflow-hidden bg-white/10 flex items-center justify-between relative group flex-wrap group cursor-default'
+                      'w-16 mb-0.5 h-16 rounded-lg shadow shadow-black/20 dark:shadow-black/70 overflow-hidden bg-white/10 flex items-center justify-between relative group flex-wrap group cursor-default'
                     }
                   >
                     <img
@@ -156,9 +175,18 @@ export const ChatInput = observer(() => {
                   state.images = [file]
                 })
               }}
-              onSelectFile={(file) => {
+              onParseFile={(id, content) => {
                 setState((state) => {
-                  state.docs.push(file)
+                  const doc = state.docs.find((f) => f.id === id)
+                  if (doc) {
+                    doc.content = content || ''
+                    doc.status = content ? 'completed' : 'error'
+                  }
+                })
+              }}
+              onSelectFile={(files) => {
+                setState((state) => {
+                  state.docs.push(...files)
                 })
               }}
             />
