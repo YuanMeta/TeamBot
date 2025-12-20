@@ -25,7 +25,7 @@ declare module 'react-router' {
 initDbData(db)
 fetchOpenRouterModels(db)
 export const app = express()
-app.disabled('x-powered-by')
+app.set('x-powered-by', false)
 cron.schedule('0 2 * * *', () => {
   const date = dayjs()
   db.delete(requests).where(
