@@ -71,6 +71,11 @@ export const SSO = observer(() => {
         dataSource={state.data}
         columns={[
           {
+            title: 'ID',
+            dataIndex: 'id',
+            key: 'id'
+          },
+          {
             title: '名称',
             dataIndex: 'name',
             key: 'name'

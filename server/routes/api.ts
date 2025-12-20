@@ -288,7 +288,9 @@ The historical dialogue is as follows: \n${messages
       res.status(404).json({ error: 'Provider not found' })
       return
     }
-    const origin = `${req.protocol}://${req.get('host')}`
+    const origin = `${
+      process.env.NODE_ENV === 'production' ? 'https' : 'http'
+    }://${req.get('host')}`
     const oauthState: Record<string, any> = {
       state,
       provider: provider.id,
