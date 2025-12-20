@@ -164,7 +164,7 @@ const AddWebSearch = observer(
             name={['params', 'webSearch', 'count']}
             initialValue={5}
           >
-            <Slider min={3} step={1} max={15} />
+            <Slider min={3} step={1} max={30} />
           </Form.Item>
           <Form.Item label={'备注'} name={'description'}>
             <Input.TextArea placeholder={'请输入备注'} />

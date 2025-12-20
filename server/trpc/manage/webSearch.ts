@@ -88,9 +88,7 @@ export const webSearchRouter = {
           name: input.title,
           description: input.description || '',
           webSearchMode: input.mode as WebSearchMode,
-          params: {
-            webSearch: input.params
-          },
+          params: input.params,
           type: 'web_search'
         })
         .returning({ id: tools.id })
