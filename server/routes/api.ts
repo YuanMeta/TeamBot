@@ -63,7 +63,7 @@ export const registerRoutes = (app: Express, db: DbInstance) => {
       )
       return res
         .status(429)
-        .send(`账户已被锁定，请在 ${remainingMinutes} 分钟后重试`)
+        .json({ error: `账户已被锁定，请在 ${remainingMinutes} 分钟后重试` })
         .end()
     }
 
@@ -81,15 +81,21 @@ export const registerRoutes = (app: Express, db: DbInstance) => {
       )
     if (!user) {
       recordFailedAttempt(attemptKey)
-      return res.status(429).send('用户名或密码错误').end()
+      return res
+        .status(429)
+        .json({ error: '用户名或密码错误', try: 5 - attempts.count })
+        .end()
     }
 
     if (user.deleted) {
-      return res.status(401).send('该账户已被禁用').end()
+      return res.status(401).json({ error: '该账户已被禁用' }).end()
     }
 
     if (!user.password) {
-      return res.status(401).send('该账户未设置密码，请联系管理员').end()
+      return res
+        .status(401)
+        .json({ error: '用户名或密码错误', try: 5 - attempts.count })
+        .end()
     }
 
     const isPasswordValid = await PasswordManager.verifyPassword(
@@ -99,7 +105,10 @@ export const registerRoutes = (app: Express, db: DbInstance) => {
 
     if (!isPasswordValid) {
       recordFailedAttempt(attemptKey)
-      return res.status(401).send('用户名或密码错误').end()
+      return res
+        .status(401)
+        .json({ error: '用户名或密码错误', try: 5 - attempts.count })
+        .end()
     }
 
     // 登录成功，清除失败记录
@@ -353,12 +362,16 @@ The historical dialogue is as follows: \n${messages
         return
       }
 
-      const origin = `${req.protocol}://${req.get('host')}`
+      const origin = `${
+        process.env.NODE_ENV === 'production' ? 'https' : 'http'
+      }://${req.get('host')}`
       const tokenResp = await ky
         .post(provider.tokenUrl, {
           json: {
             client_id: provider.clientId,
-            client_secret: provider.clientSecret,
+            client_secret: provider.clientSecret
+              ? await aesDecrypt(provider.clientSecret)
+              : undefined,
             code,
             redirect_uri: `${origin}/oauth/callback/${provider.id}`,
             code_verifier: oauthState.codeVerifier || undefined

@@ -14,6 +14,7 @@ import { and, count, desc, eq, like, or, sql } from 'drizzle-orm'
 import { TRPCError, type TRPCRouterRecord } from '@trpc/server'
 import { PasswordManager } from 'server/lib/password'
 import { cacheManage } from 'server/lib/cache'
+import { aesDecrypt, aesEncrypt } from 'server/lib/utils'
 
 export const memberRouter = {
   getRoleMembers: adminProcedure
@@ -334,7 +335,9 @@ export const memberRouter = {
         userinfoUrl: input.userinfo_url,
         jwksUri: input.jwks_uri,
         clientId: input.client_id,
-        clientSecret: input.client_secret,
+        clientSecret: input.client_secret
+          ? await aesEncrypt(input.client_secret)
+          : undefined,
         scopes: input.scopes,
         usePkce: input.use_pkce,
         description: input.description,
@@ -373,7 +376,22 @@ export const memberRouter = {
     .mutation(async ({ input, ctx }) => {
       await ctx.db
         .update(authProviders)
-        .set(input.data)
+        .set({
+          name: input.data.name,
+          issuer: input.data.issuer,
+          authUrl: input.data.auth_url,
+          tokenUrl: input.data.token_url,
+          userinfoUrl: input.data.userinfo_url,
+          jwksUri: input.data.jwks_uri,
+          clientId: input.data.client_id,
+          clientSecret: input.data.client_secret
+            ? await aesEncrypt(input.data.client_secret)
+            : undefined,
+          scopes: input.data.scopes,
+          usePkce: input.data.use_pkce,
+          description: input.data.description,
+          roleId: input.data.roleId
+        })
         .where(eq(authProviders.id, input.id))
       return { success: true }
     }),
@@ -397,9 +415,15 @@ export const memberRouter = {
   getAuthProvider: adminProcedure
     .input(z.number())
     .query(async ({ input, ctx }) => {
-      return ctx.db.query.authProviders.findFirst({
+      const data = await ctx.db.query.authProviders.findFirst({
         where: { id: input }
       })
+      return {
+        ...data,
+        clientSecret: data?.clientSecret
+          ? await aesDecrypt(data.clientSecret)
+          : undefined
+      }
     }),
   deleteMember: adminProcedure
     .input(

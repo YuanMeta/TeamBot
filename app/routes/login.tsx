@@ -55,9 +55,15 @@ export default observer(() => {
         if (res.ok) {
           navigate('/chat', { replace: true })
         } else {
-          const text = await res.text()
-          if (text) {
-            toast.error(text)
+          const json = await res.json()
+          if (json) {
+            toast.error(
+              `${json.error}${
+                json.try !== undefined
+                  ? `，您还可以尝试登录${json.try}次。`
+                  : ''
+              }`
+            )
           }
         }
       } catch (e: any) {
