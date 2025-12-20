@@ -681,9 +681,12 @@ export const chatRouter = {
         .from(chats)
         .leftJoin(messages, eq(chats.id, messages.chatId))
         .where(
-          or(
-            ilike(messages.text, `%${input.query}%`),
-            ilike(chats.title, `%${input.query}%`)
+          and(
+            eq(chats.userId, ctx.userId),
+            or(
+              ilike(messages.text, `%${input.query}%`),
+              ilike(chats.title, `%${input.query}%`)
+            )
           )
         )
         .offset((input.page - 1) * 10)
