@@ -6,7 +6,7 @@ import { completions } from './completions'
 import { TRPCError } from '@trpc/server'
 import { createClient } from 'server/lib/connect'
 import { APICallError, streamText } from 'ai'
-import { aesDecrypt, randomString } from 'server/lib/utils'
+import { aesDecrypt, randomString, tid } from 'server/lib/utils'
 import ky from 'ky'
 import { createHash } from 'crypto'
 import { join, resolve } from 'path'
@@ -473,11 +473,37 @@ The historical dialogue is as follows: \n${messages
               res.setHeader('Set-Cookie', await userCookie.serialize(token))
             }
           } else {
-            res
-              .json({
-                error: 'Missing email or phone'
+            const user = await db.transaction(async (t) => {
+              const id = tid()
+              const [newUser] = await t
+                .insert(users)
+                .values({
+                  name: `访客:${id}`,
+                  email: `${id}@teambot.com`,
+                  password: null
+                })
+                .returning()
+              await t.insert(oauthAccounts).values({
+                providerId: provider.id,
+                providerUserId: userResp.id,
+                userId: newUser.id,
+                profileJson: JSON.stringify(userResp) as any
               })
-              .status(400)
+              await t.insert(userRoles).values({
+                userId: newUser.id,
+                roleId: provider.roleId
+              })
+              return newUser
+            })
+            const token = generateToken({ uid: user.id!, root: false })
+            res.setHeader('Set-Cookie', await userCookie.serialize(token))
+            log.info({ user }, 'visitor user created')
+
+            // res
+            //   .json({
+            //     error: 'Missing email or phone'
+            //   })
+            //   .status(400)
           }
         }
         res.send(`
