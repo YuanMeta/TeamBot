@@ -176,7 +176,7 @@ export const completions = async (
           }
         }
         for (let c of s.content) {
-          if (c.type === 'text') {
+          if (c.type === 'text' && !/^[\s\n]*$/.test(c.text || '')) {
             parts.push({
               type: 'text',
               text: c.text

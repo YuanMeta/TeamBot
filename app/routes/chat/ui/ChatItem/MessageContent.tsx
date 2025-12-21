@@ -42,7 +42,10 @@ const MessageContent = observer<{
           <div
             key={index}
             className={`${
-              msg.terminated && p.type === 'tool' && p.state !== 'completed'
+              (msg.terminated &&
+                p.type === 'tool' &&
+                p.state !== 'completed') ||
+              (p.type === 'text' && /^[\s\n]*$/.test(p.text || ''))
                 ? 'hidden'
                 : ''
             }`}
