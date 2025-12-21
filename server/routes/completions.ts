@@ -11,11 +11,12 @@ import { composeTools } from '../lib/tools'
 import { MessageManager } from '../lib/message'
 import { getUser } from '../session'
 import type { Request, Response } from 'express'
-import { saveFileByBase64 } from '../lib/utils'
+import { saveFileByBase64, tid } from '../lib/utils'
 import { recordRequest, testAssistantAuth } from 'server/db/query'
 import { chats, messages } from 'drizzle/schema'
 import { eq } from 'drizzle-orm'
 import { type DbInstance } from 'server/db'
+import dayjs from 'dayjs'
 
 const InputSchema = z.object({
   chatId: z.string(),
@@ -75,7 +76,16 @@ export const completions = async (
   const tools = await composeTools(db, assistant, {
     search: !!json.webSearch
   })
-
+  uiMessages.unshift({
+    id: tid(),
+    role: 'system',
+    parts: [
+      {
+        type: 'text',
+        text: `Current time: ${dayjs().format('YYYY-MM-DD HH:mm')}`
+      }
+    ]
+  })
   const controller = new AbortController()
   res.once('close', () => {
     controller.abort()

@@ -2,6 +2,7 @@ import { convertToModelMessages, generateText, type UIMessage } from 'ai'
 import { createClient } from './connect'
 import { aesDecrypt, tid } from './utils'
 import type { SearchResult, Usage } from 'types'
+import dayjs from 'dayjs'
 
 export const extractOrDetermineSearch = async ({
   assistant,
@@ -44,6 +45,7 @@ export const extractOrDetermineSearch = async ({
   const res = await generateText({
     model: client(model),
     system: `你的任务是判断用户提问是否需要联网搜索，如果需要则重写搜索查询语句。
+当前时间：${dayjs().format('YYYY-MM-DD HH:mm')}
 请严格遵循以下判断标准：
 
 【必须搜索的情况】
