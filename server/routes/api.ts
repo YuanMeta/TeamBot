@@ -18,6 +18,18 @@ import { and, eq, or } from 'drizzle-orm'
 import type { DbInstance } from 'server/db'
 import { recordRequest } from 'server/db/query'
 import { cacheManage } from 'server/lib/cache'
+import logger from 'pino'
+
+const log = logger({
+  transport: {
+    target: 'pino/file',
+    options: {
+      destination: 'logs/api.log',
+      mkdir: true
+    }
+  }
+})
+
 // 防暴力破解：登录尝试记录
 const loginAttempts = new Map<string, { count: number; lockedUntil: number }>()
 const MAX_ATTEMPTS = 5
@@ -317,7 +329,7 @@ The historical dialogue is as follows: \n${messages
       response_type: 'code',
       client_id: provider.clientId,
       redirect_uri: `${origin}/oauth/callback/${provider.id}`,
-      scope: provider.scopes || '',
+      scope: provider.scopes || 'read:user user:email',
       state
     })
     if (codeChallenge) {
@@ -386,6 +398,7 @@ The historical dialogue is as follows: \n${messages
           }
         })
         .json<{ id: string; email?: string; phone?: string; name?: string }>()
+      log.info({ tokenResp, userResp }, 'auth callback')
       if (userResp?.id) {
         const [userData] = await db
           .select({
