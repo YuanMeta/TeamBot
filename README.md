@@ -1,7 +1,7 @@
 # 🤖 TeamBot — 基于团队的大模型对话平台
 
 > **让团队高效、安全地使用大模型，并自定义扩展。**  
-> 💡 当前状态：**预览版（Preview）**
+> 💡 当前状态：**预览版（Preview）** [GitHub](https://github.com/YuanMeta/TeamBot)
 
 ---
 
@@ -86,7 +86,7 @@ TeamBot 是一款专为团队打造的统一 AI 对话平台。通过集中管�
 ## 🐳 快速部署（Docker）
 
 ```bash
-## 目前处于Preview版， 需要修改.env文件 APP_VERSION=v0.1.0-beta15。
+## 目前处于Preview版， 需要修改.env文件 APP_VERSION=v0.1.0-beta16。
 mkdir teambot
 cd teambot
 curl -sSL https://raw.githubusercontent.com/YuanMeta/teambot/main/docker/install.sh | bash
