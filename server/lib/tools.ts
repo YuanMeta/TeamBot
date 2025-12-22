@@ -1,4 +1,4 @@
-import { tool, type Tool, type ToolSet } from 'ai'
+import { tool, type ToolSet } from 'ai'
 import z from 'zod'
 import { htmlToMarkdown } from '~/lib/utils'
 import { getReadability } from './utils'
@@ -7,7 +7,6 @@ import { google } from '@ai-sdk/google'
 import { openai } from '@ai-sdk/openai'
 import { anthropic } from '@ai-sdk/anthropic'
 import type { AssistantData, ToolData } from 'server/db/type'
-import type { DbInstance } from 'server/db'
 import { mcpManager } from './mcp'
 
 export const systemTools = ['fetch_url_content']

@@ -107,7 +107,7 @@ export const useComponents = () => {
           <code
             {...props}
             className={
-              'bg-neutral-200/70 dark:bg-neutral-700/80 relative rounded px-[0.3rem] py-[0.2rem] font-mono text-sm'
+              'bg-neutral-200/70 dark:bg-neutral-700/80 relative rounded px-[0.3rem] py-0.5 font-mono text-sm'
             }
           />
         ),

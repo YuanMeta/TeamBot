@@ -65,7 +65,7 @@
     "@trpc/server": "^11.6.0",
     "@uiw/codemirror-theme-github": "^4.25.3",
     "@uiw/react-codemirror": "^4.25.3",
-    "ai": "^5.0.116",
+    "ai": "^5.0.113",
     "antd": "^6.1.0",
     "browser-fs-access": "^0.38.0",
     "cacheable": "^2.3.0",
