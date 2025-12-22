@@ -194,6 +194,7 @@ export const AddTool = observer(
               id: data.id,
               name: data.name,
               description: data.description,
+              type: 'http',
               params: {
                 http: JSON.parse(data.params)
               }
@@ -289,7 +290,7 @@ export const AddTool = observer(
                 }
               ]}
               tooltip={
-                '工具ID是工具的唯一标识，只能包含小写字母和下划线。例如: web_search, 工具一旦创建，ID不可更改。'
+                '工具ID是工具的唯一标识，只能包含小写字母和下划线。工具一旦创建，ID不可更改。'
               }
             >
               <Input placeholder='请输入工具ID' />

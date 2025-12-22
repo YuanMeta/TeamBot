@@ -29,7 +29,8 @@ export const ToolList = observer(() => {
     trpc.manage.getTools
       .query({
         page: state.page,
-        pageSize: state.pageSize
+        pageSize: state.pageSize,
+        type: ['system', 'http']
       })
       .then((res) => {
         setState({ data: res.tools as ToolData[], total: res.total })

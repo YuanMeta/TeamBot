@@ -6,6 +6,7 @@ import { TRPCError } from '@trpc/server'
 import ky from 'ky'
 import { users, accesses, userRoles, accessRoles } from 'drizzle/schema'
 import { eq } from 'drizzle-orm'
+import { mcpManager } from 'server/lib/mcp'
 
 export const commonRouter = {
   getUserInfo: procedure.query(async ({ ctx }) => {
@@ -34,6 +35,17 @@ export const commonRouter = {
       admin: await isAdmin(ctx.db, ctx.userId)
     }
   }),
+  mcpConnectTest: procedure
+    .input(
+      z.object({
+        url: z.string().min(1),
+        type: z.enum(['http', 'sse']),
+        headers: z.record(z.string(), z.string()).optional()
+      })
+    )
+    .mutation(async ({ input }) => {
+      return mcpManager.connectTest(input)
+    }),
   getUserAccess: procedure.query(async ({ ctx }) => {
     if (ctx.root) {
       const accessData = await ctx.db.select({ id: accesses.id }).from(accesses)

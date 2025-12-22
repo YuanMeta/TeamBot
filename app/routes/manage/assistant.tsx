@@ -1,4 +1,4 @@
-import { Bot, Globe, Shovel } from 'lucide-react'
+import { Bot, Globe, Recycle, Shovel } from 'lucide-react'
 
 import { observer } from 'mobx-react-lite'
 import { useLocalState } from '~/hooks/localState'
@@ -9,6 +9,7 @@ import { Tabs } from 'antd'
 import { AssistantList } from './ui/AssistantList'
 import { ToolList } from './ui/ToolList'
 import { WebSearch } from './ui/WebSearch'
+import { Mcp } from './ui/Mcp'
 
 export default observer(() => {
   const [state, setState] = useLocalState({
@@ -68,6 +69,16 @@ export default observer(() => {
               </div>
             ),
             children: <ToolList />
+          },
+          {
+            key: 'mcp',
+            label: (
+              <div className={'flex items-center gap-1.5'}>
+                <Recycle size={16} />
+                MCP
+              </div>
+            ),
+            children: <Mcp />
           },
           {
             key: 'webSearch',

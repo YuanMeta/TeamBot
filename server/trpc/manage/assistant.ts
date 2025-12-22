@@ -326,6 +326,7 @@ export const assistantRouter = {
         name: z.string().min(1),
         id: z.string().min(1),
         description: z.string().min(1),
+        type: z.enum(['http', 'mcp']),
         params: z.record(z.string(), z.any())
       })
     )
@@ -334,7 +335,7 @@ export const assistantRouter = {
         .select()
         .from(tools)
         .where(eq(tools.id, input.id))
-      if (existingTool) {
+      if (existingTool || input.id === 'web_search') {
         throw new TRPCError({
           code: 'BAD_REQUEST',
           message: '工具ID已存在'
@@ -343,7 +344,7 @@ export const assistantRouter = {
       await ctx.db.insert(tools).values({
         id: input.id,
         name: input.name,
-        type: 'http',
+        type: input.type,
         description: input.description,
         params: input.params as any
       })
@@ -374,7 +375,8 @@ export const assistantRouter = {
     .input(
       z.object({
         page: z.number(),
-        pageSize: z.number()
+        pageSize: z.number(),
+        type: z.enum(['http', 'mcp', 'system']).array()
       })
     )
     .query(async ({ input, ctx }) => {
@@ -384,13 +386,14 @@ export const assistantRouter = {
           name: true,
           type: true,
           createdAt: true,
-          description: true
+          description: true,
+          params: true
         },
         orderBy: {
           createdAt: 'desc'
         },
         where: {
-          type: { ne: 'web_search' }
+          type: { in: input.type }
         },
         offset: (input.page - 1) * input.pageSize,
         limit: input.pageSize
