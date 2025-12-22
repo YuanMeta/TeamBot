@@ -73,6 +73,11 @@ export type WebSearchParams = {
   }
 }
 
+export type MCPParams = {
+  url: string
+  type: 'http' | 'sse'
+  headers?: Record<string, string>
+}
 export type MessageContext = {
   searchResult?: {
     query: string

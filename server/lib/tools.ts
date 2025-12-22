@@ -1,4 +1,4 @@
-import { tool, type Tool } from 'ai'
+import { tool, type Tool, type ToolSet } from 'ai'
 import z from 'zod'
 import { htmlToMarkdown } from '~/lib/utils'
 import { getReadability } from './utils'
@@ -8,6 +8,7 @@ import { openai } from '@ai-sdk/openai'
 import { anthropic } from '@ai-sdk/anthropic'
 import type { AssistantData, ToolData } from 'server/db/type'
 import type { DbInstance } from 'server/db'
+import { mcpManager } from './mcp'
 
 export const systemTools = ['fetch_url_content']
 
@@ -115,13 +116,12 @@ export const createHttpTool = (options: {
 }
 
 export const composeTools = async (
-  db: DbInstance,
   assistant: AssistantData & { tools: ToolData[] },
   options: {
     search: boolean
   }
 ) => {
-  const toolsRecord: Record<string, Tool> = {}
+  let toolsRecord: ToolSet = {}
   if (assistant.options.webSearchMode === 'builtin' && options.search) {
     if (assistant.mode === 'gemini') {
       toolsRecord.google_search = google.tools.googleSearch({})
@@ -171,6 +171,10 @@ export const composeTools = async (
           t.webSearchMode!,
           t.params?.webSearch!
         )
+      }
+      if (t.type === 'mcp') {
+        const tools = await mcpManager.getTools(t.id)
+        Object.assign(toolsRecord, tools)
       }
     }
   }

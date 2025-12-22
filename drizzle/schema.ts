@@ -14,6 +14,7 @@ import {
 } from 'drizzle-orm/pg-core'
 import type {
   AssistantOptions,
+  MCPParams,
   MessageContext,
   SettingsRecord,
   WebSearchParams
@@ -223,11 +224,11 @@ export const tools = pgTable(
     id: varchar().primaryKey(),
     name: varchar().notNull(),
     description: text().notNull(),
-    // http system
-    type: varchar().notNull().$type<'system' | 'http' | 'web_search'>(),
+    type: varchar().notNull().$type<'system' | 'http' | 'web_search' | 'mcp'>(),
     params: json().$type<{
       http?: Record<string, any>
       webSearch?: WebSearchParams
+      mcp?: MCPParams
     }>(),
     webSearchMode: varchar().$type<WebSearchMode>(),
     createdAt: timestamp('created_at').defaultNow().notNull(),

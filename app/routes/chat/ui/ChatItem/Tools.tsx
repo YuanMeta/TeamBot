@@ -3,6 +3,7 @@ import {
   ChevronRight,
   FileSearch2,
   GitBranchPlus,
+  Recycle,
   Search,
   X
 } from 'lucide-react'
@@ -12,7 +13,24 @@ import { getDomain } from '~/lib/utils'
 import type { ToolPart } from 'types'
 import { useStore } from '../../store/store'
 import type { MessageContext } from 'server/db/type'
+import { useMemo } from 'react'
 
+export const OtherTools = observer(({ tool }: { tool: ToolPart }) => {
+  const className = useMemo(() => {
+    if (tool.state === 'completed') return ''
+    if (tool.state === 'error') return 'text-red-600/80 dark:text-red-500/80'
+    return 'shine-text'
+  }, [tool.state])
+  return (
+    <Badge
+      variant={'secondary'}
+      className={`text-sm cursor-default ${className}`}
+    >
+      <Recycle />
+      <span>{tool.toolName}</span>
+    </Badge>
+  )
+})
 export const UrlTool = observer(({ tool }: { tool: ToolPart }) => {
   if (tool.state === 'start') {
     return (

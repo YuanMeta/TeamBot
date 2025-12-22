@@ -73,7 +73,7 @@ export const completions = async (
       })
       .where(eq(messages.id, userMsg.id))
   }
-  const tools = await composeTools(db, assistant, {
+  const tools = await composeTools(assistant, {
     search: !!json.webSearch
   })
   uiMessages.unshift({

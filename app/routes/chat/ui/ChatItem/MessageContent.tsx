@@ -1,10 +1,16 @@
-import { useMemo, type ReactNode } from 'react'
+import { type ReactNode } from 'react'
 import { observer } from 'mobx-react-lite'
 import Markdown from '~/components/project/markdown/markdown'
 import BubblesLoading from './BubbleLoading'
 import { useStore, type MessageData } from '../../store/store'
 import { Reasoning } from './Reasion'
-import { HttpTool, UrlTool, WebSearchInfo, WebSearchTool } from './Tools'
+import {
+  HttpTool,
+  OtherTools,
+  UrlTool,
+  WebSearchInfo,
+  WebSearchTool
+} from './Tools'
 import { formatStreamText } from '~/lib/chat'
 import type { MessageContext } from 'server/db/type'
 
@@ -34,7 +40,7 @@ const MessageContent = observer<{
   }
   return (
     <div className={`relative max-w-full`}>
-      <div className={'flex flex-col gap-3'}>
+      <div className={'flex flex-col gap-2.5'}>
         {!!context?.searchResult && (
           <WebSearchInfo result={context?.searchResult} />
         )}
@@ -72,6 +78,9 @@ const MessageContent = observer<{
                   {store.state.toolsMap.get(p.toolName)?.type === 'http' && (
                     <HttpTool tool={p} />
                   )}
+                  {p.toolName !== 'fetch_url_content' &&
+                    p.toolName !== 'web_search' &&
+                    p.toolName !== 'http' && <OtherTools tool={p} />}
                 </div>
               )}
 

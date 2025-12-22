@@ -77,3 +77,12 @@ app.use(
     res.status(500).json({ error: err })
   }
 )
+
+process.on('SIGTERM', () => {
+  console.log('exit2')
+})
+process.on('SIGTERM', async () => {
+  console.log('exit')
+
+  // await mcpClient.close()
+})
