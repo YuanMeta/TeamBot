@@ -142,7 +142,7 @@ export const AddAssistant = observer(
       }[]
     })
     const [form] = Form.useForm<
-      AssistantData & { tools: string[]; webSearchId?: string }
+      AssistantData & { tools: string[]; webSearchId?: string; mcps: string[] }
     >()
     const mode = Form.useWatch('mode', form)
     const summaryMode = Form.useWatch(['options', 'summaryMode'], form)
@@ -165,7 +165,8 @@ export const AddAssistant = observer(
       trpc.manage.getTools
         .query({
           page: 1,
-          pageSize: 1000
+          pageSize: 1000,
+          type: ['http', 'mcp', 'system']
         })
         .then((res) => {
           setState({ tools: res.tools as ToolData[] })
@@ -226,6 +227,7 @@ export const AddAssistant = observer(
           if (props.id) {
             await trpc.manage.updateAssistant.mutate({
               tools: v.tools,
+              mcps: v.mcps,
               id: props.id,
               data: {
                 name: v.name,
@@ -241,6 +243,7 @@ export const AddAssistant = observer(
           } else {
             await trpc.manage.createAssistant.mutate({
               tools: v.tools,
+              mcps: v.mcps,
               data: {
                 name: v.name,
                 mode: v.mode,
@@ -340,28 +343,30 @@ export const AddAssistant = observer(
                       labelRender={(props) =>
                         state.tools.find((t) => t.id === props.value)?.name
                       }
-                      options={state.tools.map((t) => {
-                        return {
-                          value: t.id,
-                          label: (
-                            <div className={'space-y-0.5'}>
-                              <div
-                                className={'text-sm flex items-center gap-1'}
-                              >
-                                <span className={'text-sm'}>{t.name}</span>
+                      options={state.tools
+                        .filter((t) => t.type !== 'mcp')
+                        .map((t) => {
+                          return {
+                            value: t.id,
+                            label: (
+                              <div className={'space-y-0.5'}>
+                                <div
+                                  className={'text-sm flex items-center gap-1'}
+                                >
+                                  <span className={'text-sm'}>{t.name}</span>
+                                </div>
+                                <div
+                                  title={t.description}
+                                  className={
+                                    'text-xs text-secondary-foreground/80 line-clamp-2 max-w-full whitespace-normal'
+                                  }
+                                >
+                                  <span>{t.description}</span>
+                                </div>
                               </div>
-                              <div
-                                title={t.description}
-                                className={
-                                  'text-xs text-secondary-foreground/80 line-clamp-2 max-w-full whitespace-normal'
-                                }
-                              >
-                                <span>{t.description}</span>
-                              </div>
-                            </div>
-                          )
-                        }
-                      })}
+                            )
+                          }
+                        })}
                     />
                   </Form.Item>
                   <Form.Item
@@ -387,7 +392,7 @@ export const AddAssistant = observer(
                       }
                     ]}
                     tooltip={
-                      '如果超出该调用次数，对话自动终止，防止意外循环调用。'
+                      '如果超出该调用次数，对话自动终止，防止意外循环调用。如果使用了mcp服务，建议调高该值。'
                     }
                   >
                     <Slider min={3} max={50} step={1} />
@@ -397,10 +402,27 @@ export const AddAssistant = observer(
                     name={'prompt'}
                     tooltip={'系统提示词可定义助手的性格、行为等。'}
                   >
-                    <Input.TextArea placeholder={'你是一个有用的AI助手'} />
+                    <Input.TextArea
+                      placeholder={'你是一个有用的AI助手'}
+                      rows={3}
+                    />
                   </Form.Item>
                 </div>
                 <div className={'flex-1'}>
+                  <Form.Item label={'MCP服务'} name={'mcps'} initialValue={[]}>
+                    <Select
+                      mode='multiple'
+                      placeholder={'选择MCP服务'}
+                      options={state.tools
+                        .filter((t) => t.type === 'mcp')
+                        .map((t) => {
+                          return {
+                            label: t.name,
+                            value: t.id
+                          }
+                        })}
+                    />
+                  </Form.Item>
                   <Form.Item
                     label={'网络搜索'}
                     name={['options', 'webSearchMode']}

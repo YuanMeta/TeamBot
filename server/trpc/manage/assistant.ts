@@ -10,12 +10,13 @@ import {
   roleAssistants,
   tools
 } from 'drizzle/schema'
-import { and, eq, gte, isNotNull, ne, sum } from 'drizzle-orm'
+import { and, eq, gte, inArray, isNotNull, ne, sum } from 'drizzle-orm'
 import { aesDecrypt, aesEncrypt } from 'server/lib/utils'
 import { assistantTools } from 'drizzle/schema'
 import dayjs from 'dayjs'
 import type { AssistantOptions } from 'server/db/type'
 import { cacheManage } from 'server/lib/cache'
+import { mcpManager } from 'server/lib/mcp'
 
 export const assistantRouter = {
   getTaskModel: adminProcedure.query(async ({ input, ctx }) => {
@@ -128,9 +129,10 @@ export const assistantRouter = {
         ...assistant,
         apiKey: assistant.apiKey ? await aesDecrypt(assistant.apiKey) : null,
         tools: assistant.tools
-          .filter((t) => t.type !== 'web_search')
+          .filter((t) => t.type !== 'web_search' && t.type !== 'mcp')
           .map((t) => t.id),
-        webSearchId: assistant.tools.find((t) => t.type === 'web_search')?.id
+        webSearchId: assistant.tools.find((t) => t.type === 'web_search')?.id,
+        mcps: assistant.tools.filter((t) => t.type === 'mcp').map((t) => t.id)
       }
     }),
   updateAssistant: adminProcedure
@@ -138,6 +140,7 @@ export const assistantRouter = {
       z.object({
         id: z.number(),
         tools: z.string().array(),
+        mcps: z.string().array(),
         data: z.object({
           name: z.string().min(1),
           mode: z.string().min(1),
@@ -158,6 +161,10 @@ export const assistantRouter = {
         const tools = input.tools
         if (input.data.webSearchId) {
           tools.push(input.data.webSearchId)
+        }
+        if (input.mcps.length) {
+          tools.push(...input.mcps)
+          mcpManager.addMcp(input.mcps)
         }
         await trx
           .update(assistants)
@@ -275,6 +282,7 @@ export const assistantRouter = {
     .input(
       z.object({
         tools: z.string().array(),
+        mcps: z.string().array(),
         data: z.object({
           name: z.string().min(1),
           mode: z.string().min(1),
@@ -305,6 +313,9 @@ export const assistantRouter = {
           .returning({ id: assistants.id })
         if (input.data.webSearchId) {
           input.tools.push(input.data.webSearchId)
+        }
+        if (input.mcps.length) {
+          input.mcps.push(...input.mcps)
         }
         if (input.tools.length) {
           await trx.insert(assistantTools).values(
@@ -398,7 +409,7 @@ export const assistantRouter = {
         offset: (input.page - 1) * input.pageSize,
         limit: input.pageSize
       })
-      const total = await ctx.db.$count(tools, ne(tools.type, 'web_search'))
+      const total = await ctx.db.$count(tools, inArray(tools.type, input.type))
       return { tools: toolsData, total }
     }),
   getTool: adminProcedure.input(z.string()).query(async ({ input, ctx }) => {
@@ -422,6 +433,12 @@ export const assistantRouter = {
           code: 'BAD_REQUEST',
           message: '工具已被助手使用，无法删除'
         })
+      }
+      const tool = await ctx.db.query.tools.findFirst({
+        where: { id: input.toolId }
+      })
+      if (tool?.type === 'mcp') {
+        await mcpManager.disconnect(input.toolId)
       }
       await ctx.db
         .delete(tools)

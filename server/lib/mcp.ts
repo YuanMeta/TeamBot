@@ -39,28 +39,30 @@ class MCPManager {
       }
     }
   }
-  async addMcp(id: string) {
-    const mcp = await this.db.query.tools.findFirst({
-      where: { id },
+  async addMcp(ids: string[]) {
+    const mcps = await this.db.query.tools.findMany({
+      where: { id: { in: ids } },
       with: {
         assistants: {
           columns: { id: true }
         }
       }
     })
-    if (mcp) {
-      const params = mcp.params?.mcp!
-      if (params && mcp.assistants.length) {
-        try {
-          const client = await createMCPClient({
-            transport: {
-              type: params.type || 'http',
-              url: params.url
-            }
-          })
-          this.mcps[id] = client
-        } catch (e) {
-          console.error(e)
+    if (mcps.length) {
+      for (const mcp of mcps) {
+        const params = mcp.params?.mcp!
+        if (!this.mcps[mcp.id] && params) {
+          try {
+            const client = await createMCPClient({
+              transport: {
+                type: params.type || 'http',
+                url: params.url
+              }
+            })
+            this.mcps[mcp.id] = client
+          } catch (e) {
+            console.error(e)
+          }
         }
       }
     }

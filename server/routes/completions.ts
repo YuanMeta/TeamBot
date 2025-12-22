@@ -103,6 +103,7 @@ export const completions = async (
     assistant.options.webSearchMode === 'custom' &&
     assistant.options.agentWebSearch &&
     json.webSearch
+
   const result = streamText({
     model: client(json.model),
     messages: convertToModelMessages(uiMessages),
