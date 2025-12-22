@@ -1,7 +1,7 @@
 # 🤖 TeamBot — 基于团队的大模型对话平台
 
 > **让团队高效、安全地使用大模型，并自定义扩展。**  
-> 💡 当前状态：**预览版（Preview）** [GitHub](https://github.com/YuanMeta/TeamBot)
+> 💡 当前状态：**Beta** [GitHub](https://github.com/YuanMeta/TeamBot)
 
 ---
 
@@ -13,13 +13,13 @@ TeamBot 是一款专为团队打造的统一 AI 对话平台。通过集中管�
 
 ## ✨ 核心特性
 
-| 功能                             | 描述                                                                         | 优势                       |
-| -------------------------------- | ---------------------------------------------------------------------------- | -------------------------- |
-| **🌐 多模型统一接入**            | 支持 OpenAI、Qwen、DeepSeek、Gemini、Zhipu、DouBao、OpenRouter、Anthropic 等 | 无需切换平台，统一入口     |
-| **🔒 团队安全管控**              | 后台集中管理密钥，加密存储；基于助手/时间的 Token 统计                       | 防止密钥泄露，合规可控     |
-| **🧠 智能搜索 + Agent 模式**     | 内置或自定义搜索引擎；支持 Agent 自主多轮检索                                | 更适合研究型、探索型任务   |
-| **🔐 SSO 集成**                  | 支持基于 OAuth 2.0）单点登录                                                 | 接现有身份系统             |
-| **🛠️ 自定义工具调用与 MCP 服务** | 支持自建 HTTP/API 工具集成，可复用和共享；兼容 MCP（多模型插件）生态         | 无缝扩展业务场景，团队 API |
+| 功能                             | 描述                                                                         | 优势                     |
+| -------------------------------- | ---------------------------------------------------------------------------- | ------------------------ |
+| **🌐 多模型统一接入**            | 支持 OpenAI、Qwen、DeepSeek、Gemini、Zhipu、DouBao、OpenRouter、Anthropic 等 | 无需切换平台，统一入口   |
+| **🔒 团队安全管控**              | 后台集中管理密钥，加密存储；基于助手/时间的 Token 统计                       | 防止密钥泄露，合规可控   |
+| **🧠 智能搜索 + Agent 模式**     | 内置或自定义搜索引擎；支持 Agent 自主多轮检索                                | 更适合研究型、探索型任务 |
+| **🔐 SSO 集成**                  | 支持基于 OAuth 2.0）单点登录                                                 | 接现有身份系统           |
+| **🛠️ 自定义工具调用与 MCP 服务** | 支持自建 HTTP/API 工具集成，可复用和共享；兼容 MCP（多模型插件）生态         | 扩展业务场景，团队 API   |
 
 ---
 
@@ -91,7 +91,7 @@ TeamBot 是一款专为团队打造的统一 AI 对话平台。通过集中管�
 ## 🐳 快速部署（Docker）
 
 ```bash
-## 目前处于Preview版， 需要修改.env文件 APP_VERSION=v0.1.0-beta16。
+## 目前处于Beta版， 需要修改.env文件 APP_VERSION=v0.1.0-beta17。
 mkdir teambot
 cd teambot
 curl -sSL https://raw.githubusercontent.com/YuanMeta/teambot/main/docker/install.sh | bash
