@@ -3,7 +3,7 @@ import { trpc } from '~/.client/trpc'
 import { useCallback, useEffect, useMemo } from 'react'
 import { useLocalState } from '~/hooks/localState'
 import { Card, CardContent, CardHeader, CardTitle } from '~/components/ui/card'
-import type { AssistantData, ToolData } from 'server/db/type'
+import type { AssistantData, ToolData } from '~/.server/db/type'
 import {
   Button,
   Checkbox,

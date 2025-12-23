@@ -15,10 +15,9 @@ RUN pnpm install --prod --frozen-lockfile && pnpm add drizzle-kit
 COPY build ./build
 COPY drizzle ./drizzle
 COPY drizzle.config.ts ./drizzle.config.ts
-COPY server.js ./
 # COPY ecosystem.config.cjs ./
 
 EXPOSE 3015
 
 # 使用 pm2-runtime 启动应用
-CMD pnpm drizzle-kit migrate && node server.js
+CMD pnpm drizzle-kit migrate && node ./build/server/index.js

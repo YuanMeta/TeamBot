@@ -1,6 +1,6 @@
 import { observer } from 'mobx-react-lite'
 import { useCallback, useEffect } from 'react'
-import type { AssistantData } from 'server/db/type'
+import type { AssistantData } from '~/.server/db/type'
 import { trpc } from '~/.client/trpc'
 import { useLocalState } from '~/hooks/localState'
 import { useAccess } from '~/lib/access'

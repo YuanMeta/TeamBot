@@ -11,7 +11,7 @@ import { PencilLine, Trash } from 'lucide-react'
 import { adminConfirmDialog$ } from '~/components/project/confirm-dialog'
 import { toast } from 'sonner'
 import { searchModes } from './data'
-import type { ToolData } from 'server/db/type'
+import type { ToolData } from '~/.server/db/type'
 
 const AddWebSearch = observer(
   (props: {

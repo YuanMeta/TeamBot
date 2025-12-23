@@ -1,7 +1,7 @@
 import { AutoComplete, Form, Input, Modal, Select } from 'antd'
 import { observer } from 'mobx-react-lite'
 import { useEffect, useMemo } from 'react'
-import type { AssistantData } from 'server/db/type'
+import type { AssistantData } from '~/.server/db/type'
 import { toast } from 'sonner'
 import { trpc } from '~/.client/trpc'
 import { useLocalState } from '~/hooks/localState'

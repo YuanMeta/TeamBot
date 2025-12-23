@@ -9,7 +9,7 @@ import { useStore, type MessageData } from '../../store/store'
 import { copyToClipboard } from '~/.client/copy'
 import { markdownToPureHtml } from '~/lib/mdToHtml'
 import { useLocalState } from '~/hooks/localState'
-import type { MessagePart } from 'types'
+import type { MessagePart } from '~/types'
 import { Button } from '~/components/ui/button'
 
 export const AiMessage = observer<{

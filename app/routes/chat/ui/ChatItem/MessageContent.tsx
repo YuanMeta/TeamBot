@@ -12,7 +12,7 @@ import {
   WebSearchTool
 } from './Tools'
 import { formatStreamText } from '~/lib/chat'
-import type { MessageContext } from 'server/db/type'
+import type { MessageContext } from '~/.server/db/type'
 
 export interface MessageContentProps {
   fontSize?: number

@@ -4,7 +4,7 @@ import { trpc } from '~/.client/trpc'
 import { isClient } from '~/lib/utils'
 import { Subject } from 'rxjs'
 import { ChatClient } from './client'
-import type { MessagePart, SearchResult, TrpcErrorMeta } from 'types'
+import type { MessagePart, SearchResult, TrpcErrorMeta } from '~/types'
 import { observable, runInAction } from 'mobx'
 import 'dayjs/locale/zh-cn'
 import dayjs from 'dayjs'
@@ -13,7 +13,7 @@ import type {
   AssistantData as AssistantDataType,
   MessageContext,
   ToolData
-} from 'server/db/type'
+} from '~/.server/db/type'
 import type { TRPC_ERROR_CODE_KEY } from '@trpc/server'
 dayjs.extend(relativeTime)
 dayjs.locale('zh-cn')

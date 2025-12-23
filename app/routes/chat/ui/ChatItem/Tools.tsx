@@ -11,9 +11,9 @@ import {
 import { observer } from 'mobx-react-lite'
 import { Badge } from '~/components/ui/badge'
 import { getDomain } from '~/lib/utils'
-import type { ToolPart } from 'types'
+import type { ToolPart } from '~/types'
 import { useStore } from '../../store/store'
-import type { MessageContext } from 'server/db/type'
+import type { MessageContext } from '~/.server/db/type'
 import { useMemo } from 'react'
 
 export const OtherTools = observer(({ tool }: { tool: ToolPart }) => {

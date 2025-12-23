@@ -19,10 +19,6 @@ export default [
     {
       path: 'role',
       file: 'routes/manage/role.tsx'
-    },
-    {
-      path: 'tool',
-      file: 'routes/manage/tool.tsx'
     }
   ]),
   route('*', 'routes/404.tsx')

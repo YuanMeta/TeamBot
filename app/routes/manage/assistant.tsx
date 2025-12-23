@@ -2,9 +2,6 @@ import { Bot, Globe, Recycle, Shovel } from 'lucide-react'
 
 import { observer } from 'mobx-react-lite'
 import { useLocalState } from '~/hooks/localState'
-import { useCallback, useEffect } from 'react'
-import { trpc } from '~/.client/trpc'
-import type { AssistantData } from 'server/db/type'
 import { Tabs } from 'antd'
 import { AssistantList } from './ui/AssistantList'
 import { ToolList } from './ui/ToolList'
@@ -13,31 +10,8 @@ import { Mcp } from './ui/Mcp'
 
 export default observer(() => {
   const [state, setState] = useLocalState({
-    openProviderForm: false,
-    selectedProviderId: null as null | number,
-    data: [] as AssistantData[],
-    openUsage: false,
-    page: 1,
-    pageSize: 10,
-    total: 0,
     tabKey: 'assistant'
   })
-  const getAssistantsList = useCallback(() => {
-    trpc.manage.getAssistants
-      .query({
-        page: state.page,
-        pageSize: state.pageSize
-      })
-      .then((res) => {
-        setState({
-          data: res.list as unknown as AssistantData[],
-          total: res.total
-        })
-      })
-  }, [])
-  useEffect(() => {
-    getAssistantsList()
-  }, [])
   return (
     <div className='w-full'>
       <Tabs

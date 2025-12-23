@@ -12,7 +12,7 @@ import type {
   TextPart,
   ToolPart,
   TrpcErrorMeta
-} from 'types'
+} from '~/types'
 import { observable, runInAction } from 'mobx'
 import { cid, fileToBase64, findLast } from '../../../lib/utils'
 export class ChatClient {
