@@ -6,7 +6,7 @@ import * as trpcExpress from '@trpc/server/adapters/express'
 import { publicAccess } from '../db/access'
 import { db, type DbInstance } from '../db'
 import { eq } from 'drizzle-orm'
-import { accesses, accessRoles, userRoles } from '~/.server/drizzle/schema'
+import { accesses, accessRoles, userRoles } from 'drizzle/schema'
 
 const t = initTRPC
   .context<{

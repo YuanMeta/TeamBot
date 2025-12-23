@@ -12,7 +12,7 @@ import {
   roles,
   userRoles,
   users
-} from '~/.server/drizzle/schema'
+} from 'drizzle/schema'
 import { and, desc, eq, ilike, inArray, or } from 'drizzle-orm'
 import { recordRequest, testAssistantAuth } from '../db/query'
 import {

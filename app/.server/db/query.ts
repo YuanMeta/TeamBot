@@ -7,7 +7,7 @@ import {
   roleAssistants,
   roles,
   userRoles
-} from '~/.server/drizzle/schema'
+} from 'drizzle/schema'
 import { and, eq, gte, or } from 'drizzle-orm'
 import { increment, type DbInstance } from '.'
 import type { Usage } from '~/types'

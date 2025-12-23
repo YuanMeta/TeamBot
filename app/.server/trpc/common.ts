@@ -4,12 +4,7 @@ import z from 'zod'
 import { PasswordManager } from '../lib/password'
 import { TRPCError } from '@trpc/server'
 import ky from 'ky'
-import {
-  users,
-  accesses,
-  userRoles,
-  accessRoles
-} from '~/.server/drizzle/schema'
+import { users, accesses, userRoles, accessRoles } from 'drizzle/schema'
 import { eq } from 'drizzle-orm'
 import { mcpManager } from '~/.server/lib/mcp'
 

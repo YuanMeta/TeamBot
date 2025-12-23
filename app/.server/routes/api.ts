@@ -12,12 +12,7 @@ import { join, resolve } from 'node:path'
 import { existsSync, createReadStream, statSync } from 'node:fs'
 import { lookup } from 'mime-types'
 import { Readable } from 'node:stream'
-import {
-  chats,
-  oauthAccounts,
-  userRoles,
-  users
-} from '~/.server/drizzle/schema'
+import { chats, oauthAccounts, userRoles, users } from 'drizzle/schema'
 import { and, eq, or } from 'drizzle-orm'
 import type { DbInstance } from '../db'
 import { recordRequest } from '../db/query'

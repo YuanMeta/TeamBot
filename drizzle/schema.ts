@@ -18,7 +18,7 @@ import type {
   MessageContext,
   SettingsRecord,
   WebSearchParams
-} from '../db/type'
+} from '~/.server/db/type'
 import type { MessagePart, WebSearchMode } from '~/types'
 
 export const accessRoles = pgTable(

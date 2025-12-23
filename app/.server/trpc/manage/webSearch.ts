@@ -5,7 +5,7 @@ import { eq } from 'drizzle-orm'
 import { runWebSearch } from '~/.server/lib/search'
 import type { WebSearchParams } from '../../db/type'
 import type { WebSearchMode } from '~/types'
-import { tools } from '~/.server/drizzle/schema'
+import { tools } from 'drizzle/schema'
 import { tid } from '~/.server/lib/utils'
 
 export const webSearchRouter = {

@@ -11,7 +11,7 @@ import type {
   settings,
   assistantUsages,
   limits
-} from '../drizzle/schema'
+} from 'drizzle/schema'
 
 export type UserData = typeof users.$inferSelect
 

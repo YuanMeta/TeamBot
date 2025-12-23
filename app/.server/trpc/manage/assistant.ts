@@ -9,10 +9,10 @@ import {
   models,
   roleAssistants,
   tools
-} from '~/.server/drizzle/schema'
+} from 'drizzle/schema'
 import { and, eq, gte, inArray, isNotNull, ne, sum } from 'drizzle-orm'
 import { aesDecrypt, aesEncrypt } from '~/.server/lib/utils'
-import { assistantTools } from '~/.server/drizzle/schema'
+import { assistantTools } from 'drizzle/schema'
 import dayjs from 'dayjs'
 import type { AssistantOptions } from '../../db/type'
 import { cacheManage } from '~/.server/lib/cache'
