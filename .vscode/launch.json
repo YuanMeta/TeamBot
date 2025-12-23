@@ -4,37 +4,23 @@
     {
       "type": "node",
       "request": "launch",
-      "name": "Server: React Router + Express",
+      "name": "Server: React Router Dev (Hono + Vite)",
       "cwd": "/Users/huangjie/team-chat/app",
-      "runtimeExecutable": "node",
-      "runtimeArgs": [
-        "--inspect-brk",
-        "--enable-source-maps",
-        "/Users/huangjie/team-chat/app/server.js"
-      ],
+      "runtimeExecutable": "pnpm",
+      "runtimeArgs": ["dev"],
       "env": {
-        "NODE_ENV": "development"
+        "NODE_ENV": "development",
+        "NODE_OPTIONS": "--inspect=9229 --enable-source-maps"
       },
       "envFile": "/Users/huangjie/team-chat/app/.env.dev",
       "console": "integratedTerminal",
       "autoAttachChildProcesses": true,
+      "sourceMaps": true,
+      "smartStep": true,
       "skipFiles": [
         "<node_internals>/**",
         "/Users/huangjie/team-chat/app/node_modules/**"
       ]
-    },
-    {
-      "type": "chrome",
-      "request": "launch",
-      "name": "Client: Chrome",
-      "url": "http://localhost:5173",
-      "webRoot": "${workspaceFolder}"
-    }
-  ],
-  "compounds": [
-    {
-      "name": "Full Stack Dev",
-      "configurations": ["Server: React Router + Express", "Client: Chrome"]
     }
   ]
 }
