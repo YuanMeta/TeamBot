@@ -1,7 +1,11 @@
 import dayjs from 'dayjs'
 import type { ChatData, ChatStore, MessageData } from './store'
 import { trpc } from '~/.client/trpc'
-import { parseJsonEventStream, type UIMessageChunk } from 'ai'
+import {
+  parseJsonEventStream,
+  uiMessageChunkSchema,
+  type UIMessageChunk
+} from 'ai'
 import type {
   MessagePart,
   ReasonPart,
@@ -11,7 +15,6 @@ import type {
 } from 'types'
 import { observable, runInAction } from 'mobx'
 import { cid, fileToBase64, findLast } from '../../../lib/utils'
-import { uiMessageChunkSchema, type TemaMessageChunk } from './msgSchema'
 export class ChatClient {
   private generateTitleSet = new Set<string>()
   constructor(private readonly store: ChatStore) {}
@@ -186,7 +189,7 @@ export class ChatClient {
       images?: string[]
       onFinish?: () => void
       onGenerateTitle?: (userPrompt: string, aiResponse: string) => void
-      onChunk?: (chunk: TemaMessageChunk) => void
+      onChunk?: (chunk: UIMessageChunk) => void
     }
   ) {
     const abortController = new AbortController()
@@ -214,7 +217,7 @@ export class ChatClient {
       }),
       credentials: 'include'
     })
-    const p = parseJsonEventStream<TemaMessageChunk>({
+    const p = parseJsonEventStream<UIMessageChunk>({
       stream: res.body as any,
       // @ts-ignore
       schema: null
@@ -260,6 +263,10 @@ export class ChatClient {
                     ;(parts[value.value.toolCallId] as ToolPart).input =
                       value.value.input
                   }
+                  break
+                case 'tool-approval-request':
+                  console.log('tool-approval-request', value.value)
+
                   break
                 case 'tool-output-error':
                   if (parts[value.value.toolCallId]) {
@@ -405,7 +412,7 @@ export class ChatClient {
     })
     const p = parseJsonEventStream<UIMessageChunk>({
       stream: res.body as any,
-      schema: uiMessageChunkSchema as any
+      schema: uiMessageChunkSchema
     })
     const reader = p?.getReader()
     if (reader) {

@@ -106,7 +106,7 @@ export const completions = async (
 
   const result = streamText({
     model: client(json.model),
-    messages: convertToModelMessages(uiMessages),
+    messages: await convertToModelMessages(uiMessages),
     stopWhen: stepCountIs(assistant.options.stepCount || 5),
     tools,
     experimental_context: {

@@ -1,8 +1,7 @@
-import { createOpenAI, openai } from '@ai-sdk/openai'
-import { createOpenRouter } from '@openrouter/ai-sdk-provider'
+import { createOpenAI } from '@ai-sdk/openai'
 import { createGoogleGenerativeAI } from '@ai-sdk/google'
 import { TRPCError } from '@trpc/server'
-import { generateText, streamText, type LanguageModel } from 'ai'
+import { generateText } from 'ai'
 import { createAnthropic } from '@ai-sdk/anthropic'
 import { createDeepSeek } from '@ai-sdk/deepseek'
 import { createOpenAICompatible } from '@ai-sdk/openai-compatible'
@@ -19,8 +18,11 @@ export const createClient = (data: {
         baseURL: data.base_url ?? undefined
       })
     case 'openrouter':
-      return createOpenRouter({
-        apiKey: data.api_key ?? undefined
+      return createOpenAICompatible({
+        name: 'openrouter',
+        apiKey: data.api_key ?? undefined,
+        baseURL: data.base_url ?? 'https://openrouter.ai/api/v1',
+        includeUsage: true
       })
     case 'anthropic':
       return createAnthropic({

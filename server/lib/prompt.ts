@@ -77,7 +77,7 @@ export const extractOrDetermineSearch = async ({
 - 不要包含判断、解释或完整句子回答、符号等多余说明
 
 只允许输出 JSON，不要输出任何额外文本。`,
-    messages: convertToModelMessages(message)
+    messages: await convertToModelMessages(message)
   })
   try {
     const query = JSON.parse(res.text)
@@ -124,7 +124,7 @@ export const compressSearchResults = async ({
   ]
   const res = await generateText({
     model: client(model),
-    messages: convertToModelMessages(message),
+    messages: await convertToModelMessages(message),
     system: `你是一个搜索结果压缩器。
 【任务】
 - 删除明显重复的信息片段
