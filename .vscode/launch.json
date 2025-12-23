@@ -1,5 +1,14 @@
 {
   "version": "0.2.0",
+  "compounds": [
+    {
+      "name": "Full Stack: Server + Chrome",
+      "configurations": [
+        "Server: React Router Dev (Hono + Vite)",
+        "Chrome: Debug Client (Vite)"
+      ]
+    }
+  ],
   "configurations": [
     {
       "type": "node",
@@ -21,6 +30,15 @@
         "<node_internals>/**",
         "/Users/huangjie/team-chat/app/node_modules/**"
       ]
+    },
+    {
+      "type": "chrome",
+      "request": "launch",
+      "name": "Chrome: Debug Client (Vite)",
+      "url": "http://localhost:5175/",
+      "webRoot": "/Users/huangjie/team-chat/app/app",
+      "sourceMaps": true,
+      "smartStep": true
     }
   ]
 }
