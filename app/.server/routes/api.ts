@@ -496,36 +496,4 @@ The historical dialogue is as follows: \n${messages
       })
     }
   })
-
-  app.post('/api/chat', async (c) => {
-    const { messages } = await c.req.json()
-    const client = createClient({
-      mode: 'deepseek',
-      api_key: 'sk-0857cc37c4d04f398924529404f084b4'
-    })!
-    const result = streamText({
-      model: client('deepseek-chat'),
-      system:
-        'You are a weather assistant, you need to get the weather in a location',
-      messages: await convertToModelMessages(messages),
-      tools: {
-        getWeather: tool({
-          description: 'Get the weather in a location',
-          inputSchema: z.object({
-            city: z.string()
-          }),
-          needsApproval: true,
-          execute: async ({ city }) => {
-            await new Promise((resolve) => setTimeout(resolve, 1000))
-            return `天气晴，26度`
-          }
-        })
-      },
-      onFinish: (data) => {
-        console.log('response', JSON.stringify(data.steps))
-      }
-    })
-
-    return result.toUIMessageStreamResponse()
-  })
 }
