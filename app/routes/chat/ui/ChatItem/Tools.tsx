@@ -15,20 +15,58 @@ import type { ToolPart } from '~/types'
 import { useStore } from '../../store/store'
 import type { MessageContext } from '~/.server/db/type'
 import { useMemo } from 'react'
+import { Button } from '~/components/ui/button'
+import { runInAction } from 'mobx'
 
 export const OtherTools = observer(({ tool }: { tool: ToolPart }) => {
+  const store = useStore()
   const className = useMemo(() => {
     if (tool.state === 'completed') return ''
     if (tool.state === 'error') return 'text-red-600/80 dark:text-red-500/80'
     return 'shine-text'
   }, [tool.state])
+  if (tool.state === 'approval-requested') {
+    return (
+      <div
+        className={
+          'flex items-center justify-between gap-2 border rounded-md px-2 py-1.5'
+        }
+      >
+        <div className={'flex items-center gap-1.5'}>
+          <Recycle className={'size-3.5'} />
+          <span className={`${className}`}>{tool.toolName}</span>
+        </div>
+        <div className={'space-x-2'}>
+          <Button variant={'outline'} size={'sm'}>
+            拒绝
+          </Button>
+          <Button
+            size={'sm'}
+            onClick={() => {
+              store.client.completion(store.state.selectedChat!, {
+                assistantId: store.state.assistant!.id,
+                model: store.state.model!,
+                approveTool: {
+                  toolCallId: tool.toolCallId,
+                  approved: true,
+                  approvalId: tool.approval?.id
+                }
+              })
+              runInAction(() => {
+                tool.state = 'start'
+              })
+            }}
+          >
+            同意
+          </Button>
+        </div>
+      </div>
+    )
+  }
   return (
-    <Badge
-      variant={'secondary'}
-      className={`text-sm cursor-default ${className}`}
-    >
+    <Badge variant={'secondary'} className={`text-sm cursor-default`}>
       <Recycle />
-      <span>{tool.toolName}</span>
+      <span className={className}>{tool.toolName}</span>
     </Badge>
   )
 })
@@ -227,6 +265,7 @@ export const WebSearchTool = observer(
 
 export const HttpTool = observer(({ tool }: { tool: ToolPart }) => {
   const store = useStore()
+  console.log('tool', tool)
   if (tool.state === 'start') {
     return (
       <div className='flex items-center gap-1'>

@@ -181,7 +181,7 @@ export class ChatClient {
     }
     return null
   }
-  private async completion(
+  async completion(
     chat: ChatData,
     options: {
       assistantId: number
@@ -190,6 +190,11 @@ export class ChatClient {
       onFinish?: () => void
       onGenerateTitle?: (userPrompt: string, aiResponse: string) => void
       onChunk?: (chunk: UIMessageChunk) => void
+      approveTool?: {
+        toolCallId: string
+        approved: boolean
+        approvalId?: string
+      }
     }
   ) {
     const abortController = new AbortController()
@@ -200,6 +205,7 @@ export class ChatClient {
         abortController
       }
     })
+
     const res = await fetch('/stream/completions', {
       method: 'POST',
       headers: {
@@ -213,7 +219,8 @@ export class ChatClient {
         repoIds: undefined,
         regenerate: undefined,
         images: options.images,
-        webSearch: this.store.state.openWebSearch
+        webSearch: this.store.state.openWebSearch,
+        approveTool: options.approveTool
       }),
       credentials: 'include'
     })
@@ -225,7 +232,14 @@ export class ChatClient {
     const reader = p?.getReader()
     if (reader) {
       try {
-        let parts: Record<string, MessagePart> = {}
+        let parts: Record<string, MessagePart> = aiMessage.parts
+          ? Object.fromEntries(
+              aiMessage.parts
+                .filter((p) => p.type === 'tool')
+                .map((part) => [part.toolCallId, part])
+            )
+          : {}
+
         while (true) {
           const { done, value } = await reader.read()
           if (done) {
@@ -265,8 +279,11 @@ export class ChatClient {
                   }
                   break
                 case 'tool-approval-request':
-                  console.log('tool-approval-request', value.value)
-
+                  const toolData = parts[value.value.toolCallId] as ToolPart
+                  toolData.state = 'approval-requested'
+                  toolData.approval = {
+                    id: value.value.approvalId
+                  }
                   break
                 case 'tool-output-error':
                   if (parts[value.value.toolCallId]) {

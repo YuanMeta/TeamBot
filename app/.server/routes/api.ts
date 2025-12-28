@@ -4,7 +4,7 @@ import { userCookie, oauthStateCookie } from '../session'
 import { completions } from './completions'
 import { TRPCError } from '@trpc/server'
 import { createClient } from '~/.server/lib/connect'
-import { APICallError, streamText } from 'ai'
+import { APICallError, convertToModelMessages, streamText, tool } from 'ai'
 import { aesDecrypt, randomString, tid } from '~/.server/lib/utils'
 import ky from 'ky'
 import { createHash } from 'node:crypto'
@@ -19,6 +19,7 @@ import { recordRequest } from '../db/query'
 import { cacheManage } from '../lib/cache'
 // import logger from 'pino'
 import type { Hono } from 'hono'
+import { getUrlContent } from '../lib/tools'
 
 // const log = logger({
 //   transport: {
@@ -494,5 +495,37 @@ The historical dialogue is as follows: \n${messages
         error: e.message || 'Authorization failed'
       })
     }
+  })
+
+  app.post('/api/chat', async (c) => {
+    const { messages } = await c.req.json()
+    const client = createClient({
+      mode: 'deepseek',
+      api_key: 'sk-0857cc37c4d04f398924529404f084b4'
+    })!
+    const result = streamText({
+      model: client('deepseek-chat'),
+      system:
+        'You are a weather assistant, you need to get the weather in a location',
+      messages: await convertToModelMessages(messages),
+      tools: {
+        getWeather: tool({
+          description: 'Get the weather in a location',
+          inputSchema: z.object({
+            city: z.string()
+          }),
+          needsApproval: true,
+          execute: async ({ city }) => {
+            await new Promise((resolve) => setTimeout(resolve, 1000))
+            return `天气晴，26度`
+          }
+        })
+      },
+      onFinish: (data) => {
+        console.log('response', JSON.stringify(data.steps))
+      }
+    })
+
+    return result.toUIMessageStreamResponse()
   })
 }

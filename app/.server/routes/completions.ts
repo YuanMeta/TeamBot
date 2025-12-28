@@ -2,11 +2,12 @@ import {
   convertToModelMessages,
   stepCountIs,
   streamText,
+  tool,
   type APICallError
 } from 'ai'
 import z from 'zod'
 import { TRPCError } from '@trpc/server'
-import type { AiContext, MessagePart, Usage } from '~/types'
+import type { AiContext, MessagePart, ToolPart, Usage } from '~/types'
 import { composeTools } from '../lib/tools'
 import { MessageManager } from '../lib/message'
 import { getUser } from '../session'
@@ -23,7 +24,15 @@ const InputSchema = z.object({
   assistantId: z.number(),
   model: z.string(),
   images: z.string().array().optional(),
-  webSearch: z.boolean().optional()
+  webSearch: z.boolean().optional(),
+  approveTool: z
+    .object({
+      toolCallId: z.string(),
+      approved: z.boolean(),
+      approvalId: z.string()
+    })
+    .optional()
+    .nullish()
 })
 
 export const completions = async (c: Context, db: DbInstance) => {
@@ -48,6 +57,31 @@ export const completions = async (c: Context, db: DbInstance) => {
       model: json.model,
       userId: user.uid
     })
+  }
+  if (json.approveTool) {
+    const aiMsg = await db.query.messages.findFirst({
+      where: { userId: user.uid, chatId: json.chatId, role: 'assistant' },
+      orderBy: { createdAt: 'desc' }
+    })
+    if (aiMsg && aiMsg.parts) {
+      const toolPart = aiMsg.parts.find(
+        (p) =>
+          p.type === 'tool' && p.approval?.id === json.approveTool?.approvalId
+      ) as ToolPart
+      console.log('update tool part', toolPart, json.approveTool)
+      if (toolPart) {
+        toolPart.approval = {
+          id: toolPart.approval?.id!,
+          approved: json.approveTool.approved
+        }
+        await db
+          .update(messages)
+          .set({
+            parts: aiMsg.parts
+          })
+          .where(eq(messages.id, aiMsg.id))
+      }
+    }
   }
   const { uiMessages, chat, client, aiMsg, assistant, userMsg } =
     await MessageManager.getStreamMessage(db, {
@@ -108,7 +142,18 @@ export const completions = async (c: Context, db: DbInstance) => {
     model: client(json.model),
     messages: await convertToModelMessages(uiMessages),
     stopWhen: stepCountIs(assistant.options.stepCount || 5),
-    tools,
+    tools: {
+      get_weather: tool({
+        description: 'Get the weather in a location',
+        inputSchema: z.object({
+          city: z.string()
+        }),
+        needsApproval: true,
+        execute: async ({ city }: { city: string }) => {
+          return `天气晴，26度, 北风3级`
+        }
+      })
+    },
     experimental_context: {
       db,
       aiMessageId: aiMsg.id,
@@ -156,9 +201,9 @@ export const completions = async (c: Context, db: DbInstance) => {
       }
     },
     onFinish: async (data) => {
-      // console.log('data', data.steps)
+      // console.log('data', JSON.stringify(data.steps))
       // console.log('request', JSON.stringify(data.request.body || null))
-      // console.log('response', JSON.stringify(data.response || null))
+      console.log('response', JSON.stringify(data.steps || null))
       const steps: any[] = []
       const parts: MessagePart[] = []
       let usage: Usage = {
@@ -196,6 +241,20 @@ export const completions = async (c: Context, db: DbInstance) => {
               text = c.text
             }
           }
+          if (c.type === 'tool-approval-request') {
+            parts.push({
+              type: 'tool',
+              toolName: c.toolCall.toolName,
+              toolCallId: c.toolCall.toolCallId,
+              input: c.toolCall.input,
+              output: null,
+              state: 'approval-requested',
+              approval: {
+                id: c.approvalId
+              }
+            })
+          }
+
           if (c.type === 'tool-result' || c.type === 'tool-error') {
             parts.push({
               type: 'tool',
@@ -226,7 +285,7 @@ export const completions = async (c: Context, db: DbInstance) => {
         await db
           .update(messages)
           .set({
-            parts: parts,
+            parts: [...(aiMsg.parts || []), ...parts],
             steps: steps,
             inputTokens: usage.inputTokens,
             outputTokens: usage.outputTokens,

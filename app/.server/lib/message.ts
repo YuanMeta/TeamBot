@@ -124,6 +124,85 @@ async function getMessagesByCompress(
   return { messagesHistory, userMessage, assistantMessage }
 }
 
+const toMessagePart = (m: MessageItem) => {
+  const msg: UIMessage = {
+    id: m.id,
+    role: m.role as 'user' | 'assistant',
+    parts: []
+  }
+  if (m.role === 'user') {
+    let text = m.text
+    text = addMessageContext(text!, {
+      context: m.context,
+      summary: m.previousSummary
+    })
+    msg.parts.push({
+      type: 'text',
+      text: text
+    })
+  } else {
+    let parts = (m.parts as unknown as MessagePart[]) || []
+    for (let p of parts) {
+      if (p.type === 'text') {
+        msg.parts.push({
+          type: 'text',
+          text: p.text
+        })
+      }
+      if (p.type === 'tool') {
+        if (p.state === 'approval-requested') {
+          if (!p.output && p.approval?.approved) {
+            continue
+          }
+          if (p.output) {
+            msg.parts.push({
+              type: 'dynamic-tool',
+              toolName: p.toolName,
+              toolCallId: p.toolCallId,
+              input: p.input,
+              output: p.output || null,
+              state: 'output-available'
+            })
+          } else {
+            msg.parts.push({
+              type: 'dynamic-tool',
+              toolName: p.toolName,
+              toolCallId: p.toolCallId,
+              input: p.input,
+              output: p.output || null,
+              state: 'approval-responded',
+              approval: {
+                approved: p.approval?.approved || false,
+                id: p.approval?.id!
+              }
+            })
+          }
+        } else if (p.state === 'error') {
+          msg.parts.push({
+            type: 'dynamic-tool',
+            toolName: p.toolName,
+            toolCallId: p.toolCallId,
+            input: p.input,
+            output: undefined,
+            state: 'output-error',
+            errorText: p.errorText || ''
+          })
+        } else {
+          msg.parts.push({
+            type: 'dynamic-tool',
+            toolName: p.toolName,
+            toolCallId: p.toolCallId,
+            input: p.input,
+            output: p.output,
+            state: 'output-available'
+          })
+        }
+      }
+    }
+  }
+  return msg
+}
+
 async function getMessagesBySlice(
   db: DbInstance,
   {
@@ -338,56 +417,7 @@ Output only the summarized version of the conversation.`,
     const uiMessages: UIMessage[] = []
     if (history.length >= 2) {
       history.map((m) => {
-        const msg: UIMessage = {
-          id: m.id,
-          role: m.role as 'user' | 'assistant',
-          parts: []
-        }
-        if (m.role === 'user') {
-          let text = m.text
-          text = addMessageContext(text!, {
-            context: m.context,
-            summary: m.previousSummary
-          })
-          msg.parts.push({
-            type: 'text',
-            text: text
-          })
-        } else {
-          let parts = (m.parts as unknown as MessagePart[]) || []
-          for (let p of parts) {
-            if (p.type === 'text') {
-              msg.parts.push({
-                type: 'text',
-                text: p.text
-              })
-            }
-            if (p.type === 'tool') {
-              if (p.state === 'error') {
-                msg.parts.push({
-                  type: 'dynamic-tool',
-                  toolName: p.toolName,
-                  toolCallId: p.toolCallId,
-                  input: p.input,
-                  output: undefined,
-                  state: 'output-error',
-                  errorText: p.errorText || ''
-                })
-              } else {
-                msg.parts.push({
-                  type: 'dynamic-tool',
-                  toolName: p.toolName,
-                  toolCallId: p.toolCallId,
-                  input: p.input,
-                  output: p.output,
-                  state: 'output-available'
-                })
-              }
-            }
-          }
-        }
-
-        uiMessages.push(msg)
+        uiMessages.push(toMessagePart(m))
       })
     }
     const userMsgUI: UIMessage = {
@@ -414,6 +444,9 @@ Output only the summarized version of the conversation.`,
       })
     }
     uiMessages.push(userMsgUI)
+    if (aiMsg?.parts) {
+      uiMessages.push(toMessagePart(aiMsg))
+    }
     return {
       uiMessages,
       chat,

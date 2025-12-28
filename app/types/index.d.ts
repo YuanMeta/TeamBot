@@ -52,8 +52,19 @@ interface ToolPart {
   toolCallId: string
   input: any
   output: any
-  state?: 'start' | 'completed' | 'error'
+  state?:
+    | 'start'
+    | 'completed'
+    | 'error'
+    | 'approval-requested'
+    | 'approval-responded'
+    | 'output-denied'
   errorText?: string
+  approval?: {
+    id: string
+    approved?: boolean
+    reason?: strong
+  }
   text?: string
 }
 

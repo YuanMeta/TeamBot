@@ -164,6 +164,7 @@
   background-clip: text;
   -webkit-background-clip: text;
   background-size: 200% 100%;
+  line-height: inherit;
   animation: shine 1.5s linear infinite;
 }
 
